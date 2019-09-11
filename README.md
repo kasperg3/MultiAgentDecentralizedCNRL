@@ -35,9 +35,9 @@ __3: Go to /home/_user_/catkin_ws/ and clone v_rep interface:__
     git clone --recursive https://github.com/CoppeliaRobotics/v_repExtRosInterface.git vrep_ros_interface
 ```
 
-__4: Setup VREP environment: __
+__4: In order to build the packages, navigate to the catkin_ws folder and type: __
 ```
-    echo 'export VREP_ROOT="$HOME/V-REP_PRO_EDU_V3_6_2_Ubuntu18_04/"' >> ~/.bashrc 
+    export VREP_ROOT=~/path/to/v_rep/folder 
     source ~/.bashrc
 ```
 
