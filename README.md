@@ -20,5 +20,17 @@ roslaunch caros_universalrobot simple_demo_using_move_ptp.test
 
 ## Install V-Rep Ros Bridge:
 
+__1: Install xsltproc and python 2.7 or greater:
+```
+    sudo apt-get install xsltproc 
+```
 
+__2: Go to /home/_user_/catkin_ws/ and clone v_rep interface: 
+```
+git clone --recursive https://github.com/CoppeliaRobotics/v_repExtRosInterface.git vrep_ros_interface
+```
 
+__3: Build the workspace with catkin
+```
+    catkin_make
+```
