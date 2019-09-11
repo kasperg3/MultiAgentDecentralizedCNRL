@@ -27,7 +27,7 @@ __1: Install xsltproc and python 2.7 or greater:__
 
 __2: Make sure to have all ros dependencies:__
 ```
-    rosdep install --from-paths src --ignore-src --rosdistro hydro -y
+    rosdep install --from-paths src --ignore-src --rosdistro melodic -y
 ```
 
 __3: Go to /home/_user_/catkin_ws/ and clone v_rep interface:__
