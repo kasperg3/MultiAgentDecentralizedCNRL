@@ -25,7 +25,7 @@ __1: Install xsltproc and python 2.7 or greater:__
     sudo apt-get install xsltproc 
 ```
 
-__2: Go to /home/_user_/catkin_ws/ and clone v_rep interface: __
+__2: Go to /home/_user_/catkin_ws/ and clone v_rep interface:__
 ```
 git clone --recursive https://github.com/CoppeliaRobotics/v_repExtRosInterface.git vrep_ros_interface
 ```
