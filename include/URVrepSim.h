@@ -8,14 +8,15 @@
 #include <iostream>
 
 #include "ros/node_handle.h"
+#include "ros/publisher.h"
 #include "rw/rw.hpp"
 #include "ros/package.h"
 #include <rw/kinematics.hpp>
 #include <geometry_msgs/Transform.h>
-#include <std_msgs/Float64.h>
-
+#include <std_msgs/Float32MultiArray.h>
 //Collision detection
 #include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>
+#include <vector>
 
 class URVrepSim {
     using Q = rw::math::Q;
@@ -28,6 +29,7 @@ public:
     bool moveHome();
     rw::kinematics::State getState();
     rw::models::Device::Ptr getDevice();
+    void publishQ(Q,  ros::Publisher);
 private:
     ros::NodeHandle nh;
     rw::models::WorkCell::Ptr wc;

@@ -6,11 +6,11 @@
 
 
 URVrepSim::URVrepSim() {
-    auto packagePath = ros::package::getPath("");
+   /* auto packagePath = ros::package::getPath("");
     wc = rw::loaders::WorkCellLoader::Factory::load(packagePath + "/WorkCell/Scene.wc.xml");
     device = wc->findDevice("UR5");
     state = wc->getDefaultState();
-    detector = new rw::proximity::CollisionDetector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());
+    detector = new rw::proximity::CollisionDetector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());*/
 }
 
 URVrepSim::Q URVrepSim::getQ() {
@@ -37,9 +37,23 @@ rw::models::Device::Ptr URVrepSim::getDevice() {
     return device;
 }
 
+void URVrepSim::publishQ(URVrepSim::Q q, ros::Publisher pub) {
+    std_msgs::Float32MultiArray msg;
+    msg.data.clear();
+    for(int i = 0; i < q.size(); i++){
+        msg.data.push_back((float)q(i));
+    }
+    pub.publish(msg);
+}
+
+
 //Execute what the node should do underneath
-int main(){
+int main(int argc, char **argv){
     std::cout << "Hello World!" << std::endl;
+    ros::init(argc, argv, "URVrepSim");
+    ros::NodeHandle n;
+    ros::Publisher pub = n.advertise<std_msgs::Float32MultiArray>("/robotQ", 1);
+    ros::Rate loop_rate(10);
 
 //Define Q's
     rw::math::Q q1(6, 0.7732124328613281, -1.0053818982890625, 2.140766445790426, -2.1643673382201136, 1.160172939300537, -1.7588465849505823);
@@ -47,8 +61,17 @@ int main(){
     rw::math::Q q3(6, 0.8070425987243652, -0.9067686361125489, 1.3945773283587855, -1.5328548711589356, 0.9157900810241699, -3.199463669453756);
     rw::math::Q q4(6, 0.7325644493103027, -0.9267538350871583, 1.7901080290423792, -2.11643185238027, 1.0915303230285645, -4.623188320790426);
 
-    URVrepSim simHandle();
-    
+    std_msgs::Float32MultiArray msg;
+    msg.data.clear();
+    for(int i = 0; i < q1.size(); i++){
+        msg.data.push_back((float)q3(i));
+    }
+    while (ros::ok()) {
+        pub.publish(msg);
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
 
+    return 0;
 
 }
