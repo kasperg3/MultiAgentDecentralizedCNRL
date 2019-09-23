@@ -40,7 +40,7 @@ rw::models::Device::Ptr URVrepSim::getDevice() {
 void URVrepSim::publishQ(URVrepSim::Q q, ros::Publisher pub) {
     std_msgs::Float32MultiArray msg;
     msg.data.clear();
-    for(int i = 0; i < q.size(); i++){
+    for(unsigned int i = 0; i < q.size(); i++){
         msg.data.push_back((float)q(i));
     }
     pub.publish(msg);
@@ -63,7 +63,7 @@ int main(int argc, char **argv){
 
     std_msgs::Float32MultiArray msg;
     msg.data.clear();
-    for(int i = 0; i < q1.size(); i++){
+    for(unsigned int i = 0; i < q1.size(); i++){
         msg.data.push_back((float)q3(i));
     }
     while (ros::ok()) {

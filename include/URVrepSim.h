@@ -10,13 +10,10 @@
 #include "ros/node_handle.h"
 #include "ros/publisher.h"
 #include "rw/rw.hpp"
-#include "ros/package.h"
 #include <rw/kinematics.hpp>
-#include <geometry_msgs/Transform.h>
 #include <std_msgs/Float32MultiArray.h>
 //Collision detection
 #include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>
-#include <vector>
 
 class URVrepSim {
     using Q = rw::math::Q;
