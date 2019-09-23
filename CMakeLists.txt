@@ -17,7 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
         std_msgs
         #message_generation
         )
-
 ###################################
 ##         RobWork setup         ##
 ###################################
