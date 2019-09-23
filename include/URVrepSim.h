@@ -7,12 +7,10 @@
 
 #include <iostream>
 
+#include "ros/node_handle.h"
 #include "rw/rw.hpp"
-#include "caros/serial_device_si_proxy.h"
 #include "ros/package.h"
 #include <rw/kinematics.hpp>
-#include <rw/invkin/JacobianIKSolver.hpp>
-#include <rw/invkin/InvKinSolver.hpp>
 #include <geometry_msgs/Transform.h>
 #include <std_msgs/Float64.h>
 
