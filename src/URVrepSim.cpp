@@ -6,11 +6,12 @@
 #include "URrobot.cpp"
 
 URVrepSim::URVrepSim() {
-   /* auto packagePath = ros::package::getPath("");
+    auto packagePath = ros::package::getPath("mergable_industrial_robots");
     wc = rw::loaders::WorkCellLoader::Factory::load(packagePath + "/WorkCell/Scene.wc.xml");
     device = wc->findDevice("UR5");
     state = wc->getDefaultState();
-    detector = new rw::proximity::CollisionDetector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());*/
+    detector = new rw::proximity::CollisionDetector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());
+    defaultQ = this->getDevice().get()->getQ(this->getState());
 }
 
 URVrepSim::Q URVrepSim::getQ() {
@@ -41,7 +42,7 @@ void URVrepSim::publishQ(URVrepSim::Q q, ros::Publisher pub) {
     std_msgs::Float32MultiArray msg;
     msg.data.clear();
     for(unsigned int i = 0; i < q.size(); i++){
-        msg.data.push_back((float)q(i));
+            msg.data.push_back((float)q(i) - defaultQ(i));
     }
     pub.publish(msg);
 }
@@ -49,6 +50,12 @@ void URVrepSim::publishQ(URVrepSim::Q q, ros::Publisher pub) {
 
 //Execute what the node should do underneath
 int main(int argc, char **argv){
+//init workcell for robwork
+   // URRobot robot;
+   // auto packagePath = ros::package::getPath("mergable_industrial_robots");
+   // rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(packagePath + "/WorkCell/Scene.wc.xml");
+
+
     std::cout << "Hello World!" << std::endl;
     ros::init(argc, argv, "URVrepSim");
     ros::NodeHandle n;
@@ -60,16 +67,25 @@ int main(int argc, char **argv){
     rw::math::Q q2(6, 0.5958089828491211, -0.5720837873271485, 1.3198588530169886, -2.1279221973814906, 0.7736911773681641, -2.633404795323507);
     rw::math::Q q3(6, 0.8070425987243652, -0.9067686361125489, 1.3945773283587855, -1.5328548711589356, 0.9157900810241699, -3.199463669453756);
     rw::math::Q q4(6, 0.7325644493103027, -0.9267538350871583, 1.7901080290423792, -2.11643185238027, 1.0915303230285645, -4.623188320790426);
+    
+    rw::math::Q qtest(6, 0, 0, 0, 0, 0, 0);
+    qtest = Q(6, -0.979, -0.859, 1.195, 1.236, 1.571, -2.55); //beautiful bottlegrab -40 40 10 0 0 180
+   // Frame *tcp_frame = wc->findFrame("UR5.TCP");
+   // Frame *bottle_frame = wc->findFrame("Bottle");
+    //Device::ptr device->setQ(qgrab,state);
+    //Kinematics::gripFrame(bottle_frame, tcp_frame,state);   //Grip the bottle
 
+    URVrepSim urVrepSim;
     std_msgs::Float32MultiArray msg;
     msg.data.clear();
     for(unsigned int i = 0; i < q1.size(); i++){
-        msg.data.push_back((float)q3(i));
+        msg.data.push_back((float)qtest(i));
     }
+
     while (ros::ok()) {
-        pub.publish(msg);
-        ros::spinOnce();
-        loop_rate.sleep();
+            urVrepSim.publishQ(qtest,pub);
+            ros::spinOnce();
+            loop_rate.sleep();
     }
 
     return 0;

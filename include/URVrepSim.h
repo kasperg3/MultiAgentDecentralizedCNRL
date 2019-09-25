@@ -33,6 +33,7 @@ private:
     rw::models::Device::Ptr device;
     rw::kinematics::State state;
     rw::proximity::CollisionDetector::Ptr detector;
+    Q defaultQ;
 
 };
 

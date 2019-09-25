@@ -20,4 +20,11 @@
 </Drawable>
 </Frame>
 
+<Frame name="Bottle" refframe="Robot" type="Movable" daf="true">
+	<RPY> 0 0 90 </RPY> <Pos>-0.4 0.4 0.1</Pos>
+	<Drawable name="Bottle" refframe="Bottle">
+		<Polytope file="Geometry/bottle" />
+	</Drawable>
+</Frame>
+
 </WorkCell>
