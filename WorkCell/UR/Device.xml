@@ -43,7 +43,3 @@
     <RPY> 180 0 0</RPY> <Pos> 0 0 0.0475</Pos>
     <Polytope file="geometry/rob_6c" /> 
   </Drawable>
-   <Drawable name="ToolGeo" refframe="ToolBase" >
-    <RPY> 180 180 -90</RPY> <Pos> 0 0 0</Pos>
-    <Polytope file="geometry/Gripper" /> 
-  </Drawable>

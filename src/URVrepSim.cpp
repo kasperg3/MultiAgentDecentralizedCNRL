@@ -3,7 +3,7 @@
 //
 
 #include "../include/URVrepSim.h"
-
+#include "URrobot.cpp"
 
 URVrepSim::URVrepSim() {
    /* auto packagePath = ros::package::getPath("");
