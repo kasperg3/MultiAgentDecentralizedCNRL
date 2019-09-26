@@ -9,14 +9,26 @@ set (CMAKE_CXX_STANDARD 11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
         roscpp
+        rospy
         roslib
         caros_common_msgs
         caros_control_msgs
         caros_common
         caros_control
         std_msgs
-        #message_generation
+        message_generation
         )
+
+add_service_files(
+        FILES
+        moveRobot.srv
+)
+
+generate_messages(
+        DEPENDENCIES
+        std_msgs
+)
+
 ###################################
 ##         RobWork setup         ##
 ###################################
@@ -43,7 +55,7 @@ add_definitions(${PCL_DEFINITIONS})
 ## catkin specific configuration ##
 ###################################
 catkin_package(
-        #    CATKIN_DEPENDS message_runtime
+        CATKIN_DEPENDS message_runtime
         #  INCLUDE_DIRS include
         #  LIBRARIES rovi2_rob
         #  CATKIN_DEPENDS roscpp
@@ -54,10 +66,10 @@ catkin_package(
 ## Build ##
 ###########
 
-include_directories(
+include_directories(include
         ${catkin_INCLUDE_DIRS}
 )
 
 add_executable(mergableIndustrialRobots src/URVrepSim.cpp)
 target_link_libraries(mergableIndustrialRobots ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} ${ROS_LIBRARIES})
-add_dependencies(mergableIndustrialRobots caros_common_msgs caros_control_msgs caros_control)
+add_dependencies(mergableIndustrialRobots caros_common_msgs caros_control_msgs caros_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
