@@ -76,4 +76,11 @@ __3.2: and to project.xml__
     <depend>roslib</depend>
 ```
 
+__4: Build vrep_ros_interface__
+```
+    catkin build vrep_ros_interface
+    ./catkin_ws/vrep_ros_interface/install.sh
+```
+
+__5: Enjoy a cold beer, it's friday ma dood__
 
