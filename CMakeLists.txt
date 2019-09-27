@@ -70,6 +70,6 @@ include_directories(include
         ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(mergableIndustrialRobots src/URVrepSim.cpp)
+add_executable(mergableIndustrialRobots src/URVrepSim.cpp src/main.cpp)
 target_link_libraries(mergableIndustrialRobots ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} ${ROS_LIBRARIES})
 add_dependencies(mergableIndustrialRobots caros_common_msgs caros_control_msgs caros_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

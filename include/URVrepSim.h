@@ -30,6 +30,8 @@ public:
     rw::models::Device::Ptr getDevice();
     void publishQ(Q,  ros::Publisher);
 private:
+    bool callVrepService(Q);
+    ros::ServiceClient client;
     ros::NodeHandle nh;
     rw::models::WorkCell::Ptr wc;
     rw::models::Device::Ptr device;
