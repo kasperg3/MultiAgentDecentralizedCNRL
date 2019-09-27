@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
     std::cout << "Hello World!" << std::endl;
     ros::init(argc, argv, "URVrepSim");
     ros::NodeHandle n;
-    ros::ServiceClient client = n.serviceClient<mergable_industrial_robots::moveRobotRequest>("/srvRobotQ");
+    ros::ServiceClient client = n.serviceClient<mergable_industrial_robots::moveRobot>("/srvRobotQ");
     ros::Publisher pub = n.advertise<std_msgs::Float32MultiArray>("/robotQ", 1);
     ros::Rate loop_rate(10);
 
@@ -89,9 +89,9 @@ int main(int argc, char **argv) {
 
     while (ros::ok()) {
 /*
-            urVrepSim.publishQ(qtest,pub);
-            ros::spinOnce();
-            loop_rate.sleep();
+        urVrepSim.publishQ(qtest,pub);
+        ros::spinOnce();
+        loop_rate.sleep();
 */
         if (client.call(srv)) {
             ROS_INFO("Sum: %ld", (long int) srv.response.response);
