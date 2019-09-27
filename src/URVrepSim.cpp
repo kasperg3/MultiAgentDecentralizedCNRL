@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
     std::cout << "Hello World!" << std::endl;
     ros::init(argc, argv, "URVrepSim");
     ros::NodeHandle n;
-    ros::ServiceClient client = n.serviceClient<mergable_industrial_robots::moveRobot>("/srvRobotQ");
+    ros::ServiceClient client = n.serviceClient<mergable_industrial_robots::moveRobot>("vrep_ros_interface/moveRobot");
     ros::Publisher pub = n.advertise<std_msgs::Float32MultiArray>("/robotQ", 1);
     ros::Rate loop_rate(10);
 
@@ -77,15 +77,14 @@ int main(int argc, char **argv) {
     //  qtest = Q(6, 2.547, -2.14, -1.939, -0.639, 1.57, 0.977);
     qtest = rw::math::Q(6, 0, -2.14, -1.939, -0.639, 1.57, 0.977); //beautiful box grab
 
-    URVrepSim urVrepSim;
-    std_msgs::Float32MultiArray msg;
-    msg.data.clear();
-    for (unsigned int i = 0; i < q1.size(); i++) {
-        msg.data.push_back((float) qtest(i));
-    }
 
+    URVrepSim urVrepSim;
     mergable_industrial_robots::moveRobot srv;
-    srv.request.requestQ = msg.data;
+    rw::math::Q defaultQ = urVrepSim.getDevice().get()->getQ(urVrepSim.getState());
+
+    for (unsigned int i = 0; i < q1.size(); i++) {
+        srv.request.requestQ.push_back((float) qtest(i)- defaultQ(i));
+    }
 
     while (ros::ok()) {
 /*
@@ -94,9 +93,9 @@ int main(int argc, char **argv) {
         loop_rate.sleep();
 */
         if (client.call(srv)) {
-            ROS_INFO("Sum: %ld", (long int) srv.response.response);
+            ROS_INFO("Succesfully moved the robot", (long int) srv.response.response);
         } else {
-            ROS_ERROR("Failed to call service /srvRobotQ");
+            ROS_ERROR("Failed to call service vrep_ros_interface/moveRobot");
             return 1;
         }
         return 0;
