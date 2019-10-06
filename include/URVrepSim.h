@@ -16,6 +16,7 @@
 //Collision detection
 #include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>
 #include "mergable_industrial_robots/moveRobot.h"
+#include <chrono>
 
 class URVrepSim {
     using Q = rw::math::Q;

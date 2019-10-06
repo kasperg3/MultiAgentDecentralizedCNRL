@@ -17,8 +17,7 @@ int main(int argc, char **argv) {
     std::cout << "Hello World!" << std::endl;
     ros::init(argc, argv, "URVrepSim");
     ros::NodeHandle n;
-    ros::ServiceClient client = n.serviceClient<mergable_industrial_robots::moveRobot>("vrep_ros_interface/moveRobot");
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(0.5);
 
 //Define Q's
     rw::math::Q q1(6, 0.7732124328613281, -1.0053818982890625, 2.140766445790426, -2.1643673382201136,
@@ -36,10 +35,15 @@ int main(int argc, char **argv) {
     qtest = rw::math::Q(6, 0, -2.14, -1.939, -0.639, 1.57, 0.977); //beautiful box grab
 
     URVrepSim urVrepSim;
-
+    int dummy = 0;
     while (ros::ok()) {
-        urVrepSim.moveHome();
+        if(dummy % 2){
+            urVrepSim.moveHome();
+        }else{
+            urVrepSim.setQ(qtest);
+        }
+        dummy++;
         ros::spinOnce();
-        return 0;
+        loop_rate.sleep();
     }
 }

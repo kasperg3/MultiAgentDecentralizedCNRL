@@ -24,7 +24,13 @@ URVrepSim::Q URVrepSim::getQ() {
 
 bool URVrepSim::setQ(URVrepSim::Q q) {
     this->device.get()->setQ(q, state );
-    callVrepService(q);
+    //init clock for timeput
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    while(callVrepService(q) == false) {
+        //If timeout reached then terminate and choose different q
+        if(std::chrono::steady_clock::now() - start > std::chrono::seconds(10))
+            break;
+    }
     return true;
 }
 
