@@ -8,16 +8,10 @@
 #include "URVrepSim.h"
 //Execute what the node should do underneath
 int main(int argc, char **argv) {
-//init workcell for robwork
-    // URRobot robot;
-    // auto packagePath = ros::package::getPath("mergable_industrial_robots");
-    // rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(packagePath + "/WorkCell/Scene.wc.xml");
-
-
-    std::cout << "Hello World!" << std::endl;
+//init robwork
     ros::init(argc, argv, "URVrepSim");
     ros::NodeHandle n;
-    ros::Rate loop_rate(0.5);
+    ros::Rate loop_rate(100);
 
 //Define Q's
     rw::math::Q q1(6, 0.7732124328613281, -1.0053818982890625, 2.140766445790426, -2.1643673382201136,
