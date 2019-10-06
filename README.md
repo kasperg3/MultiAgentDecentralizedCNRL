@@ -49,38 +49,10 @@ __5: Build the workspace with catkin__
 
 ### How to add a custom service for V-rep
 
-__1: add your custom serviec file(.srv) to the vrep_ros_interface package:__
+__1: Clone the vrep_ros_interface from https://github.com/kasperg3/vrep_ros_interface into catkin_ws directory (This is a version with a service created for recieving Q's)__
+__2: Build vrep_ros_interface__
 ```
-    mkdir ~/catkin_ws/src/vrep_ros_interface/srv
-    cp ~/catkin_ws/src/mergableindustrialrobots/srv/moveRobot.srv ~/catkin_ws/src/vrep_ros_interface/srv/
-    cp ~/catkin_ws/src/mergableindustrialrobots/srv/moveRobot.srv ~/catkin_ws/src/vrep_ros_interface/
+    catkin build vrep_ros_interface && ./home/user/catkin_ws/vrep_ros_interface/install.sh
 ```
-
-__2: Edit the Meta service tag__
-```
-    echo "vrep_ros_interface/moveRobot" >> ~/catkin_ws/src/vrep_ros_interface/meta/services.txt
-```
-
-__3.1: Add this to vrep_ros_interface CMakelist.txt__
-```
-    add_service_files(FILES moveRobot.srv)
-
-    generate_messages(
-    DEPENDENCIES
-    std_msgs
-    )
-```
-
-__3.2: and to project.xml__
-```
-    <depend>roslib</depend>
-```
-
-__4: Build vrep_ros_interface__
-```
-    catkin build vrep_ros_interface
-    ./catkin_ws/vrep_ros_interface/install.sh
-```
-
-__5: Enjoy a cold beer, it's friday ma dood__
+__3: Enjoy a cold beer, it's friday ma dood__
 
