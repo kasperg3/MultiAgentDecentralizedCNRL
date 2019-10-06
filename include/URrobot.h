@@ -11,21 +11,6 @@
 #include <iostream>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-
-using namespace std;
-
-using namespace rw;
-using namespace rw::models;
-using namespace rw::kinematics;
-using namespace rw::proximity;
-using namespace rw::common;
-using namespace rw::math;
-
-using namespace rwlibs::proximitystrategies;
-
-
-int myfunc(int a, int b);
-
 class URRobot {
     using Q = rw::math::Q;
 
@@ -45,16 +30,19 @@ public:
 
     bool setQ(Q q);
     bool moveQ(Q dq);
-    bool goToZeroPos();
+    bool moveHome();
     bool checkCollision(Q q);     //Check if given configuration 'q' is in collision:
     bool moveToPose(rw::math::Transform3D<> T_BT_desired);
-    bool moveToPose(RPY<> RPY_desired, Vector3D<> displacement_desired);
+    bool moveToPose(rw::math::RPY<> RPY_desired, rw::math::Vector3D<> displacement_desired);
     bool moveToPose(double arr[]); //State-vector: [X,Y,Z,R,P,Y]
     void follow_path(std::vector<Q>);
-    Transform3D<> getPose();
+    rw::math::Transform3D<> getPose();
 
     Eigen::Matrix<double,6,1> computeTaskError(Q qnear, Q qs);
     Q randomConfig();
+
+    Q inverseKin();
+
 
 
 };
