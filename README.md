@@ -56,3 +56,22 @@ __2: Build vrep_ros_interface__
 ```
 __3: Enjoy a cold beer, it's friday ma dood__
 
+
+## Install gazebo and moveit
+git clone -b melodic-devel https://github.com/ros-industrial/universal_robot.git
+ 1792  cd ..
+ 1793  rosdep update
+ 1794  rosdep install --rosdistro $ROS_DISTRO --ignore-src --from-paths src
+ 1795  rosdep install --rosdistro melodic --ignore-src --from-paths src
+ 1796  cd src/
+ 1797  ls
+ 1798  catkin build universal_robot
+ 1799  sudo apt-get install ros-melodic-moveit-core
+ 1800  catkin build universal_robot
+ 1801  sudo apt-get install ros-melodic-moveit-kinematics
+ 1802  catkin build universal_robot
+ 1803  sudo apt-get install ros-melodic-tf-conversions
+ 1804  catkin build universal_robot
+ 1805  rostopic list
+ 1806  sudo apt-get install ros-melodic-moveit-ros-visualization
+
