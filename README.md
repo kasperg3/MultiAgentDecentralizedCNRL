@@ -58,6 +58,28 @@ __3: Enjoy a cold beer, it's friday ma dood__
 
 
 ## Install gazebo and moveit
+__REDUCED VERSION__
+```
+CLONE INTO CATKIN_WS/SRC/
+1791  git clone -b melodic-devel https://github.com/ros-industrial/universal_robot.git
+ 1792  cd ..
+ 1793  rosdep update
+ 1794  rosdep install --rosdistro $ROS_DISTRO --ignore-src --from-paths src
+ 1795  rosdep install --rosdistro melodic --ignore-src --from-paths src
+ 1827  sudo apt-get install ros-melodic-gazebo-ros
+ 1829  sudo apt-get install ros-melodic-xacro
+ 1834  sudo apt-get install ros-melodic-rviz
+ 1838  sudo apt-get install ros-melodic-moveit-planners-ompl 
+ 1840  sudo apt-get install ros-melodic-moveit-simple-controller-manager
+ 1846  sudo apt-get install ros-melodic-moveit-ros-visualization
+ 1853  sudo apt-get install ros-melodic-robot-state-publisher
+ 1854  sudo apt-get install ros-melodic-controller-manager
+ 1851  roslaunch ur5_moveit_config moveit_rviz.launch config:=true
+ 1852  roslaunch ur5_moveit_config moveit_rviz.launch
+ 1855  roslaunch ur_gazebo ur5.launch
+ 1856  rostopic list
+```
+__FULL VERSION__
 ```
 1791  git clone -b melodic-devel https://github.com/ros-industrial/universal_robot.git
  1792  cd ..
