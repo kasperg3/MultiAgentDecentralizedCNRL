@@ -6,11 +6,9 @@
 #include "mergable_industrial_robots/moveRobot.h"
 #include "rw/math/Q.hpp"
 #include "URVrepSim.h"
-//Execute what the node should do underneath
-int main(int argc, char **argv) {
-//init robwork
-    ros::init(argc, argv, "URVrepSim");
-    ros::NodeHandle n;
+#include "URrobot.h"
+
+void testVrep(){
     ros::Rate loop_rate(100);
 
 //Define Q's
@@ -40,4 +38,31 @@ int main(int argc, char **argv) {
         ros::spinOnce();
         loop_rate.sleep();
     }
+}
+
+//Not working
+void testURSim(){
+    //INIT ROBOT
+    URRobot robot;
+    ros::Rate loop_rate(10);
+
+    while(ros::ok()) {
+        if(robot.moveHome()){
+            std::cout << std::endl << "Successfully moved robot" << std::endl;
+        }else{std::cout << std::endl << "Failed to move robot" << std::endl;}
+
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
+
+
+}
+
+int main(int argc, char **argv) {
+    ros::init(argc, argv, "URVrepSim");
+    ros::NodeHandle n("~");
+
+    //testVrep();
+    //testURSim();
+
 }

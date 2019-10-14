@@ -21,15 +21,16 @@ URVrepSim::Q URVrepSim::getQ() {
     return URVrepSim::Q();
 }
 
-
 bool URVrepSim::setQ(URVrepSim::Q q) {
     this->device.get()->setQ(q, state );
     //init clock for timeput
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    while(callVrepService(q) == false) {
-        //If timeout reached then terminate and choose different q
+    //Stay in while loop until timeout or call is complete
+    while(!callVrepService(q)) {
         if(std::chrono::steady_clock::now() - start > std::chrono::seconds(10))
             break;
+        std::chrono::milliseconds timespan(100); // or whatever
+        std::this_thread::sleep_for(timespan);
     }
     return true;
 }
@@ -67,7 +68,6 @@ bool URVrepSim::callVrepService(URVrepSim::Q q) {
         srv.request.requestQ.push_back((float) q(i)- defaultQ(i));
     }
     if (client.call(srv)) {
-        ROS_INFO("Succesfully moved the robot");
     } else {
         ROS_ERROR("Failed to call service vrep_ros_interface/moveRobot");
         return false;

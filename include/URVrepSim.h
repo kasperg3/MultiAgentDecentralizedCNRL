@@ -17,6 +17,7 @@
 #include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>
 #include "mergable_industrial_robots/moveRobot.h"
 #include <chrono>
+#include <thread>
 
 class URVrepSim {
     using Q = rw::math::Q;
