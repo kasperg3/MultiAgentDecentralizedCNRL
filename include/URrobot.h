@@ -1,11 +1,14 @@
 #ifndef URROBOT_H
 #define URROBOT_H
 
-#include "rw/rw.hpp"
+#include <rw/math/Q.hpp>
+#include <rw/models/Device.hpp>
+#include <rw/kinematics/State.hpp>
+#include <rw/models/WorkCell.hpp>
+#include <rw/proximity/CollisionDetector.hpp>
+#include <rw/loaders/WorkCellLoader.hpp>
+//Collision detection
 #include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>
-#include <rw/invkin/InvKinSolver.hpp>
-#include <rw/math/Transform3D.hpp>
-
 #include "caros/serial_device_si_proxy.h"
 #include "ros/package.h"
 #include <iostream>
