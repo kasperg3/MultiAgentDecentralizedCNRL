@@ -1,22 +1,22 @@
 #ifndef URROBOT_H
 #define URROBOT_H
 
+#include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>
+#include <rw/invkin/InvKinSolver.hpp>
+#include <rw/math/Transform3D.hpp>
 #include <rw/math/Q.hpp>
 #include <rw/models/Device.hpp>
 #include <rw/kinematics/State.hpp>
 #include <rw/models/WorkCell.hpp>
 #include <rw/proximity/CollisionDetector.hpp>
 #include <rw/loaders/WorkCellLoader.hpp>
-//Collision detection
-#include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>
+
 #include "caros/serial_device_si_proxy.h"
 #include "ros/package.h"
 #include <iostream>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
+
 class URRobot {
     using Q = rw::math::Q;
-
 private:
     ros::NodeHandle nh;
     rw::models::WorkCell::Ptr wc;

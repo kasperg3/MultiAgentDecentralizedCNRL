@@ -49,7 +49,6 @@ bool URRobot::checkCollision(Q q){
     device->setQ(q, state);
     rw::proximity::CollisionDetector::QueryResult data;
     bool collision = detector->inCollision(state,&data);
-
     getQ(); //reset q to actual config:
 
     return collision;
