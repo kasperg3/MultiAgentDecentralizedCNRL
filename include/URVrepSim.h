@@ -7,11 +7,15 @@
 
 #include <iostream>
 
-#include "ros/node_handle.h"
-#include "ros/package.h"
-#include "ros/publisher.h"
-#include "rw/rw.hpp"
-#include <rw/kinematics.hpp>
+#include <ros/node_handle.h>
+#include <ros/package.h>
+#include <ros/publisher.h>
+#include <rw/math/Q.hpp>
+#include <rw/models/Device.hpp>
+#include <rw/kinematics/State.hpp>
+#include <rw/models/WorkCell.hpp>
+#include <rw/proximity/CollisionDetector.hpp>
+#include <rw/loaders/WorkCellLoader.hpp>
 #include <std_msgs/Float32MultiArray.h>
 //Collision detection
 #include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>

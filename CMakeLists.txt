@@ -66,10 +66,17 @@ catkin_package(
 ## Build ##
 ###########
 
+##SET OWN VREP DIR
+set(vrep_INCLUDE_DIRS ~/V-REP_PRO_EDU_V3_6_2_Ubuntu18_04/programming/remoteApi)
+
 include_directories(include
         ${catkin_INCLUDE_DIRS}
+        ${vrep_INCLUDE_DIRS}
 )
 
-add_executable(mergableIndustrialRobots src/URVrepSim.cpp src/main.cpp src/URrobot.cpp)
+
+
+
+add_executable(mergableIndustrialRobots src/URVrepSim.cpp src/main.cpp src/URrobot.cpp include)
 target_link_libraries(mergableIndustrialRobots ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} ${ROS_LIBRARIES})
 add_dependencies(mergableIndustrialRobots caros_common_msgs caros_control_msgs caros_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
