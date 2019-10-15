@@ -26,13 +26,20 @@ void testVrep(){
     //  qtest = Q(6, 2.547, -2.14, -1.939, -0.639, 1.57, 0.977);
     qtest = rw::math::Q(6, 0, -2.14, -1.939, -0.639, 1.57, 0.977); //beautiful box grab
 
-    URVrepSim urVrepSim;
+    URVrepSim robot0;
+    URVrepSim robot1;
+
+    robot0.setServiceName("/vrep_ros_interface/moveRobot0");
+    robot1.setServiceName("/vrep_ros_interface/moveRobot1");
+
     int dummy = 0;
     while (ros::ok()) {
         if(dummy % 2){
-            urVrepSim.moveHome();
+            robot0.moveHome();
+            robot1.moveHome();
         }else{
-            urVrepSim.setQ(qtest);
+            robot0.setQ(qtest);
+            robot1.setQ(qtest);
         }
         dummy++;
         ros::spinOnce();
@@ -62,7 +69,7 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "URVrepSim");
     ros::NodeHandle n("~");
 
-    //testVrep();
+    testVrep();
     //testURSim();
 
 }

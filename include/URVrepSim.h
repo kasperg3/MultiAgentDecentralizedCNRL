@@ -31,6 +31,7 @@ public:
     rw::kinematics::State getState();
     rw::models::Device::Ptr getDevice();
     void publishQ(Q,  ros::Publisher);
+    void setServiceName(std::string);
 private:
     bool callVrepService(Q);
     ros::ServiceClient client;

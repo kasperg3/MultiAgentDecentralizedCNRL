@@ -69,9 +69,13 @@ bool URVrepSim::callVrepService(URVrepSim::Q q) {
     }
     if (client.call(srv)) {
     } else {
-        ROS_ERROR("Failed to call service vrep_ros_interface/moveRobot");
+        ROS_ERROR("Failed to call service");
         return false;
     }
     return true;
+}
+
+void URVrepSim::setServiceName(std::string serviceName) {
+    client = nh.serviceClient<mergable_industrial_robots::moveRobot>(serviceName);
 }
 
