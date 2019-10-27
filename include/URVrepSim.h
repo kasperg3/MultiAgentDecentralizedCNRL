@@ -28,7 +28,9 @@ class URVrepSim {
 
 public:
     URVrepSim();
+
     Q getQ();
+
     bool setQ(Q);
     bool moveQ(Q);
     bool moveHome();

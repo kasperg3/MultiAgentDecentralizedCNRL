@@ -23,7 +23,6 @@ private:
     rw::models::Device::Ptr device;
     rw::kinematics::State state;
     caros::SerialDeviceSIProxy* robot;
-    //shp:
     rw::proximity::CollisionDetector::Ptr detector;
 
 public:
