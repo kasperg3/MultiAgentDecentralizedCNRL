@@ -95,9 +95,9 @@ int TTTRL::playGame() {
     //printGameState();
     while(gameFinished() == 0){
         //printGameState();
-        makeQmove(player2);
         makeRandomMove(player1);
-        printGameState();
+        makeQmove(player2);
+        //printGameState();
     }
     //printGameState();
     //std::cout << "the winner is: " << gameFinished() << std::endl;
@@ -109,9 +109,9 @@ int TTTRL::playGame() {
 }
 
 void TTTRL::playGames(int numberGames) {
-    int player1Wins = 0;
-    int player2Wins = 0;
-    int ties = 0;
+    double player1Wins = 0;
+    double player2Wins = 0;
+    double ties = 0;
     for(int i = 0; i < numberGames; i++){
         if(playGame()==-1){
             ties += 1;
@@ -121,7 +121,8 @@ void TTTRL::playGames(int numberGames) {
             player2Wins+= 1;
         }
         double ratio = ((double)player2Wins)/((double)player1Wins);
-        std::cout << "ratio: " << ratio << " WinRatio[P1/P2]: "  << player1Wins << "/" << player2Wins  << " Ties: " << ties << " Total games: " << numberGames << std::endl;
+
+        std::cout << "Win Rate[%] " << (double)(player2Wins/(i+1))*100 << " Ties[%]: " << (double)(ties/(i+1))*100.0 << " WinRatio[P1/P2]: "  << player1Wins << "/" << player2Wins  << " Ties: " << ties << " Total games: " << numberGames << std::endl;
     }
 
 
@@ -147,7 +148,6 @@ std::vector<double> TTTRL::getAndCreateQVector(std::vector<int> state){
 }
 
 void TTTRL::rewardQPlayer(int player, int won) {
-    //Only reward the winning action
     std::vector<double> winningQValues = getAndCreateQVector(gameState);
 
     double reward;
@@ -162,22 +162,19 @@ void TTTRL::rewardQPlayer(int player, int won) {
     }
 
     bool firstIteration = true;
-    std::vector<double> oldQValue = {};
-    for(int j = 0; j < qPlayerStateHistory.size(); j++){
-        if(firstIteration){
-            firstIteration = false;
-        }else{
-            std::vector<double> newQValue = {};
-            for(int i = 0; i < winningQValues.size(); i++){
-                if(getAndCreateQVector(qPlayerStateHistory[j])[i] != 0){
-                    double qValue = (1-learningRate) * getAndCreateQVector(qPlayerStateHistory[j])[i] + learningRate*(reward + discountFactor * getMaxElement(winningQValues));
-                    newQValue.push_back(qValue);
-                }else{
-                    newQValue.push_back(0);
-                }
+    for(int j = 0; j < qPlayerStateHistory.size()-1; j++){
+        std::vector<double> currentQValues = getAndCreateQVector(qPlayerStateHistory[j]);
+        double maxQValueNextState = getMaxElement(getAndCreateQVector(qPlayerStateHistory[j+1]));
+        std::vector<double> newQValue = {};
+        for(int i = 0; i < winningQValues.size(); i++){
+            if(getAndCreateQVector(qPlayerStateHistory[j])[i] != 0){
+                double qValue = currentQValues[i] + learningRate*(discountFactor*maxQValueNextState-currentQValues[i]);
+                newQValue.push_back(qValue);
+            }else{
+                newQValue.push_back(0);
             }
-            qTable[qPlayerStateHistory.at(j)] = newQValue;
         }
+        qTable[qPlayerStateHistory.at(j)] = newQValue;
     }
 }
 
