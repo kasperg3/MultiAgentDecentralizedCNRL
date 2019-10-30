@@ -23,7 +23,7 @@ void TTTRL::resetGameState() {
                  0,0,0,
                  0,0,0};
 
-    qPlayerStates = {};
+    qPlayerStateHistory = {};
 
 }
 
@@ -95,9 +95,9 @@ int TTTRL::playGame() {
     //printGameState();
     while(gameFinished() == 0){
         //printGameState();
-        makeRandomMove(player1);
-        //printGameState();
         makeQmove(player2);
+        makeRandomMove(player1);
+        printGameState();
     }
     //printGameState();
     //std::cout << "the winner is: " << gameFinished() << std::endl;
@@ -149,8 +149,6 @@ std::vector<double> TTTRL::getAndCreateQVector(std::vector<int> state){
 void TTTRL::rewardQPlayer(int player, int won) {
     //Only reward the winning action
     std::vector<double> winningQValues = getAndCreateQVector(gameState);
-    std::vector<int> stateBeforeEnd = qPlayerStates.at(qPlayerStates.size()-2);
-    std::vector<double > qValueBeforeEnd = getAndCreateQVector(stateBeforeEnd);
 
     double reward;
     if(won==player1){
@@ -163,17 +161,28 @@ void TTTRL::rewardQPlayer(int player, int won) {
         reward = 0.5;
     }
 
-    std::vector<double> newQValue = {};
-    for(int i = 0; i < winningQValues.size(); i++){
-        double qValue = (1-learningRate) * qValueBeforeEnd[i] + learningRate*(reward + discountFactor * getMaxElement(winningQValues));
-        newQValue.push_back(qValue);
+    bool firstIteration = true;
+    std::vector<double> oldQValue = {};
+    for(int j = 0; j < qPlayerStateHistory.size(); j++){
+        if(firstIteration){
+            firstIteration = false;
+        }else{
+            std::vector<double> newQValue = {};
+            for(int i = 0; i < winningQValues.size(); i++){
+                if(getAndCreateQVector(qPlayerStateHistory[j])[i] != 0){
+                    double qValue = (1-learningRate) * getAndCreateQVector(qPlayerStateHistory[j])[i] + learningRate*(reward + discountFactor * getMaxElement(winningQValues));
+                    newQValue.push_back(qValue);
+                }else{
+                    newQValue.push_back(0);
+                }
+            }
+            qTable[qPlayerStateHistory.at(j)] = newQValue;
+        }
     }
-    qTable[gameState] = newQValue;
-
 }
 
 void TTTRL::makeQmove(int player) {
-    qPlayerStates.push_back(gameState); //Save the current gamestate
+    qPlayerStateHistory.push_back(gameState); //Save the current gamestate
     //Check that the game is not finished
     if(gameFinished()){
         //Already lost, because starting number 2

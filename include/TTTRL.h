@@ -20,9 +20,8 @@ public:
     void playGames(int);
 private:
     std::vector<int> gameState;
-    std::vector<std::vector<int>> qPlayerStates;
+    std::vector<std::vector<int>> qPlayerStateHistory;
     void resetGameState();
-    int gameCount;
     int gameFinished();
     void makeRandomMove(int);
     void makeQmove(int);
