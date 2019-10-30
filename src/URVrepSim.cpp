@@ -27,7 +27,7 @@ bool URVrepSim::setQ(URVrepSim::Q q) {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     //Stay in while loop until timeout or call is complete
     while(!callVrepService(q)) {
-        if(std::chrono::steady_clock::now() - start > std::chrono::seconds(10))
+        if(std::chrono::steady_clock::now() - start > std::chrono::seconds(20))
             break;
         std::chrono::milliseconds timespan(100); // or whatever
         std::this_thread::sleep_for(timespan);
@@ -67,12 +67,15 @@ bool URVrepSim::callVrepService(URVrepSim::Q q) {
     for (unsigned int i = 0; i < q.size(); i++) {
         srv.request.requestQ.push_back((float) q(i)- defaultQ(i));
     }
-    if (client.call(srv)) {
+    if (client.call(srv.request,srv.response)) {
     } else {
         ROS_ERROR("Failed to call service");
-        return false;
+
     }
-    return true;
+    if (srv.response.response == true)
+        return true;
+    else
+        return false;
 }
 
 void URVrepSim::setServiceName(std::string serviceName) {

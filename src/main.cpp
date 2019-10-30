@@ -3,10 +3,16 @@
 //
 
 #include <ros/ros.h>
+#include "ros/ros.h"
+#include <std_msgs/Bool.h>
+
 #include "mergable_industrial_robots/moveRobot.h"
 #include <rw/math/Q.hpp>
 #include "URVrepSim.h"
 #include "TTTRL.h"
+// #include "../lib/b0RemoteApiBindings/cpp/b0RemoteApi.h"
+
+//b0RemoteApi* cl=NULL;
 
 void testVrep(){
     ros::Rate loop_rate(100);
@@ -22,25 +28,52 @@ void testVrep(){
                    1.0915303230285645, -4.623188320790426);
 
     rw::math::Q qtest(6, 0, 0, 0, 0, 0, 0);
-    //  qtest = Q(6, -0.979, -0.859, 1.195, 1.236, 1.571, -2.55); //beautiful bottlegrab -40 40 10 0 0 180
+    rw::math::Q qtest2(6, -0.979, -0.859, 1.195, 1.236, 1.571, -2.55); //beautiful bottlegrab -40 40 10 0 0 180
     //  qtest = Q(6, 2.547, -2.14, -1.939, -0.639, 1.57, 0.977);
     qtest = rw::math::Q(6, 0, -2.14, -1.939, -0.639, 1.57, 0.977); //beautiful box grab
 
     URVrepSim robot0;
     URVrepSim robot1;
 
+
     robot0.setServiceName("/vrep_ros_interface/moveRobot0");
     robot1.setServiceName("/vrep_ros_interface/moveRobot1");
+
+    ros::NodeHandle n;
+    ros::Publisher suctionPad1chatter = n.advertise<std_msgs::Bool>("/suctionPad1",1000);
+   // b0RemoteApi client("b0RemoteApi_c++Client","b0RemoteApi");
+   // cl=&client;
+   // std::vector<bool> response = client.simxSetBoolParameter();
+   // std::cout << response[1] << std::endl;
+
     int dummy = 0;
+    std_msgs::Bool msg1;
     while (ros::ok()) {
-        if(dummy % 2){
+        if(dummy % 3 == 0){
+            msg1.data = false;
+            suctionPad1chatter.publish(msg1);
             robot0.moveHome();
+            std::cout << "moveHome" << std::endl;
             robot1.moveHome();
-        }else{
+
+        }else if (dummy % 3 == 1){
+            msg1.data = false;
+            suctionPad1chatter.publish(msg1);
             robot0.setQ(qtest);
+            std::cout << "setQ" << std::endl;
             robot1.setQ(qtest);
+
+        }else{
+            msg1.data = true;
+            suctionPad1chatter.publish(msg1);
+            robot0.setQ(qtest2);
+            std::cout << "setQ2" << std::endl;
+            robot1.setQ(qtest2);
+
         }
         dummy++;
+        std::cout << "dummy: " << dummy << std::endl;
+
         ros::spinOnce();
         loop_rate.sleep();
     }
@@ -67,9 +100,9 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "URVrepSim");
     ros::NodeHandle n("~");
 
-    //testVrep();
+    testVrep();
 
-    TTTRL game;
+    //TTTRL game;
 
 
 
