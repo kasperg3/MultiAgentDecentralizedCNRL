@@ -4,25 +4,43 @@
 
 #ifndef MERGABLE_INDUSTRIAL_ROBOTS_TTTRL_H
 #define MERGABLE_INDUSTRIAL_ROBOTS_TTTRL_H
+#include <vector>
+#include <iostream>
+#include <map>
+
+
+
 
 class TTTRL {
 
 public:
     TTTRL();
-    ~TTTRL();
+    int playGame();
 
-
-
+    void playGames(int);
 private:
-
-    double gameState[9];
+    std::vector<int> gameState;
+    std::vector<std::vector<int>> qPlayerStates;
+    void resetGameState();
     int gameCount;
-
     int gameFinished();
-    double evalQ();
-    void makeMove();
-    void playGame();
-    void learn();
+    void makeRandomMove(int);
+    void makeQmove(int);
+    bool isValidMove(int);
+    void printGameState();
+    double getMaxElement(std::vector<double>);
+    int getMaxElementIndex(std::vector<double>);
+    void rewardQPlayer(int player, int won);
+    void printVector(std::vector<double> const &input);
+    std::vector<double> getAndCreateQVector(std::vector<int>);
+
+    int player1 = 1;
+    int player2 = 2;
+    std::map<std::vector<int>, std::vector<double>> qTable;
+
+//Q LEARNING DEFINES
+    double learningRate = 0.90;
+    double discountFactor = 0.95;
 
 };
 

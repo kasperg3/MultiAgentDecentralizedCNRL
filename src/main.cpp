@@ -97,14 +97,12 @@ void testVrep(){
 //}
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "URVrepSim");
-    ros::NodeHandle n("~");
+    //ros::init(argc, argv, "URVrepSim");
+    //ros::NodeHandle n("~");
 
-    testVrep();
+    //testVrep();
 
-    //TTTRL game;
-
-
-
-
+    TTTRL game;
+    game.playGames(500000);
+    //game.playGame();
 }

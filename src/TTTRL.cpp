@@ -1,51 +1,204 @@
 //
+
+
+#include <algorithm>
+#include "TTTRL.h"
+//
 // Created by kasper on 10/27/19.
 //
-
-#include "TTTRL.h"
 
 
 TTTRL::TTTRL() {
     //Init game parameters
+    resetGameState();
+    srand(time(nullptr));
+
+    //Init q table
+}
+
+
+void TTTRL::resetGameState() {
+    //Init gamestates
+    gameState = {0,0,0,
+                 0,0,0,
+                 0,0,0};
+
+    qPlayerStates = {};
 
 }
 
 /*
  * Return 0 if not finished, if player 1 won, return 1, 2 if player 2 won
+ * return -1 if tied
  */
+
+
 int TTTRL::gameFinished() {
-    int checkArray1[10];
+    std::vector<int> checkArray1 = {0,1,2,0,2,0,3,6};
+    std::vector<int> checkArray2 = {3,4,5,4,4,1,4,7};
+    std::vector<int> checkArray3 = {6,7,8,8,6,2,5,8};
 
+    for(int i = 0; i < checkArray1.size(); i++){
+        //Check if player 1 has 3 in a row
+        if(gameState[checkArray1[i]] == 1 && gameState[checkArray2[i]] == 1 && gameState[checkArray3[i]] == 1){
+            return 1;
+        }
+        //Check if player 2 has 3 in a row
+        if(gameState[checkArray1[i]] == 2 && gameState[checkArray2[i]] == 2 && gameState[checkArray3[i]] == 2){
+            return 2;
+        }
+    }
 
-
-
-    return 0;
+    //Checks if there are more vacant spots left
+    int vacantSpots = 0;
+    for(int i = 0; i < gameState.size(); i++){
+        if(gameState[i] == 0)
+            vacantSpots++;
+    }
+    if(vacantSpots == 0)
+        return -1;
+    else return 0;
 }
 
-double TTTRL::evalQ() {
-    return 0;
+void TTTRL::printGameState() {
+
+    std::cout << gameState[0]  << " " << gameState[1]  << " " << gameState[2]   << std::endl;
+    std::cout << gameState[3]  << " " << gameState[4]  << " " << gameState[5]   << std::endl;
+    std::cout << gameState[6]  << " " << gameState[7]  << " " << gameState[8]   << std::endl;
+
+    std::cout << std::endl << std::flush;
 }
 
-void TTTRL::makeMove() {
-
-
-
+bool TTTRL::isValidMove(int idx) {
+    if(gameState[idx] != 0)
+        return false;
+    else
+        return true;
 }
 
-void TTTRL::playGame() {
+void TTTRL::makeRandomMove(int player) {
+
+    if(gameFinished()){
+        return;
+    }
+    int randIdx = rand()%9;
+    while(!isValidMove(randIdx)){
+        randIdx = rand()%9;
+    }
+    gameState[randIdx] = player;
+}
 
 
-    while(gameFinished() != 0){
-        makeMove();
+
+int TTTRL::playGame() {
+    resetGameState();
+    //printGameState();
+    while(gameFinished() == 0){
+        //printGameState();
+        makeRandomMove(player1);
+        //printGameState();
+        makeQmove(player2);
+    }
+    //printGameState();
+    //std::cout << "the winner is: " << gameFinished() << std::endl;
+
+    //Evaluate the Q player and give reward
+    rewardQPlayer(player2, gameFinished());
+
+    return gameFinished();
+}
+
+void TTTRL::playGames(int numberGames) {
+    int player1Wins = 0;
+    int player2Wins = 0;
+    int ties = 0;
+    for(int i = 0; i < numberGames; i++){
+        if(playGame()==-1){
+            ties += 1;
+        }else if(playGame()==1){
+            player1Wins+= 1;
+        }else if(playGame()==2){
+            player2Wins+= 1;
+        }
+        double ratio = ((double)player2Wins)/((double)player1Wins);
+        std::cout << "ratio: " << ratio << " WinRatio[P1/P2]: "  << player1Wins << "/" << player2Wins  << " Ties: " << ties << " Total games: " << numberGames << std::endl;
     }
 
 
+}
 
+std::vector<double> TTTRL::getAndCreateQVector(std::vector<int> state){
+    std::vector<double> qValues;
+    if(qTable.find(state) == qTable.end()){
+        //Not found
+        //Check if there is a valid "move", then initialize it to 0.1, if invalid init to 0
+        for(int j = 0; j < gameState.size(); j++){
+            if(state[j] == 0){
+                double randInit = ((rand() % 1000) + 1)/1000.0;
+                qValues.push_back(randInit);
+            }else
+                qValues.push_back(0);
+        }
+
+        qTable[state] = qValues;
+        return qTable[state];
+    }
+    return qTable[state];
+}
+
+void TTTRL::rewardQPlayer(int player, int won) {
+    //Only reward the winning action
+    std::vector<double> winningQValues = getAndCreateQVector(gameState);
+    std::vector<int> stateBeforeEnd = qPlayerStates.at(qPlayerStates.size()-2);
+    std::vector<double > qValueBeforeEnd = getAndCreateQVector(stateBeforeEnd);
+
+    double reward;
+    if(won==player1){
+        reward = 0;
+    }
+    if(won == player2){
+        reward = 1;
+    }
+    if(won == -1){
+        reward = 0.5;
+    }
+
+    std::vector<double> newQValue = {};
+    for(int i = 0; i < winningQValues.size(); i++){
+        double qValue = (1-learningRate) * qValueBeforeEnd[i] + learningRate*(reward + discountFactor * getMaxElement(winningQValues));
+        newQValue.push_back(qValue);
+    }
+    qTable[gameState] = newQValue;
 
 }
 
-void TTTRL::learn() {
-
+void TTTRL::makeQmove(int player) {
+    qPlayerStates.push_back(gameState); //Save the current gamestate
+    //Check that the game is not finished
+    if(gameFinished()){
+        //Already lost, because starting number 2
+        return;
+    }
+    //get State from q table and choose max value move
+    int bestMove = getMaxElementIndex(getAndCreateQVector(gameState));
+    gameState[bestMove] = player;
 }
+
+void TTTRL::printVector(std::vector<double> const &input){
+    for (int i = 0; i < input.size(); i++) {
+        std::cout << input.at(i) << ' ';
+    }
+    std::cout << std::endl;
+}
+
+double TTTRL::getMaxElement(std::vector<double> input) {
+    return *std::max_element(input.begin(), input.end());
+}
+
+int TTTRL::getMaxElementIndex(std::vector<double> input) {
+    auto maxi = std::max_element(input.begin(), input.end());
+    return std::distance(input.begin(), maxi);
+}
+
 
 
