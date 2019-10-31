@@ -1,11 +1,8 @@
-//
 
-
-#include <algorithm>
-#include "TTTRL.h"
 //
 // Created by kasper on 10/27/19.
 //
+#include "TTTRL.h"
 
 
 TTTRL::TTTRL() {
@@ -40,11 +37,11 @@ int TTTRL::gameFinished() {
 
     for(int i = 0; i < checkArray1.size(); i++){
         //Check if player 1 has 3 in a row
-        if(gameState[checkArray1[i]] == 1 && gameState[checkArray2[i]] == 1 && gameState[checkArray3[i]] == 1){
+        if(gameState[checkArray1[i]] == player1 && gameState[checkArray2[i]] == player1 && gameState[checkArray3[i]] == player1){
             return 1;
         }
         //Check if player 2 has 3 in a row
-        if(gameState[checkArray1[i]] == 2 && gameState[checkArray2[i]] == 2 && gameState[checkArray3[i]] == 2){
+        if(gameState[checkArray1[i]] == player2 && gameState[checkArray2[i]] == player2 && gameState[checkArray3[i]] == player2){
             return 2;
         }
     }
@@ -112,6 +109,12 @@ void TTTRL::playGames(int numberGames) {
     double player1Wins = 0;
     double player2Wins = 0;
     double ties = 0;
+    std::vector<double> playerTies = {};
+    std::vector<double> playerQWins = {};
+    std::vector<double> playerRandWins = {};
+    std::vector<double> xAxis = {};
+
+
     for(int i = 0; i < numberGames; i++){
         if(playGame()==-1){
             ties += 1;
@@ -120,11 +123,30 @@ void TTTRL::playGames(int numberGames) {
         }else if(playGame()==2){
             player2Wins+= 1;
         }
-        double ratio = ((double)player2Wins)/((double)player1Wins);
 
-        std::cout << "Win Rate[%] " << (double)(player2Wins/(i+1))*100 << " Ties[%]: " << (double)(ties/(i+1))*100.0 << " WinRatio[P1/P2]: "  << player1Wins << "/" << player2Wins  << " Ties: " << ties << " Total games: " << numberGames << std::endl;
+        std::cout
+        << "Qplayer[%] " << (double)(player2Wins/(i+1))*100.0
+        << " Random[%]: " << (double)(player1Wins/(i+1))*100.0
+        <<" Ties[%]: " << (double)(ties/(i+1))*100.0
+        << " WinRatio[P1/P2]: "  << player1Wins << "/" << player2Wins
+        << " Total games: " << numberGames << std::endl;
+
+        playerQWins.push_back((double)(player2Wins/(i+1))*100.0);
+        playerRandWins.push_back((double)(player1Wins/(i+1))*100.0 );
+        playerTies.push_back((double)(ties/(i+1))*100.0 );
+        xAxis.push_back(i);
     }
 
+    plt::figure_size(1200, 780);
+    plt::named_plot("Q player[%]",xAxis, playerQWins);
+    plt::named_plot("Random player[%]", xAxis, playerRandWins);
+    plt::named_plot("Ties[%]", xAxis, playerTies);
+    plt::ylim(0, 100);
+    std::string plotTitle("Q learner starting first");
+    plt::title(plotTitle);
+    plt::legend();
+    plt::show();
+    plt::save(plotTitle.append(".png"));
 
 }
 
@@ -161,14 +183,13 @@ void TTTRL::rewardQPlayer(int player, int won) {
         reward = 0.5;
     }
 
-    bool firstIteration = true;
     for(int j = 0; j < qPlayerStateHistory.size()-1; j++){
         std::vector<double> currentQValues = getAndCreateQVector(qPlayerStateHistory[j]);
         double maxQValueNextState = getMaxElement(getAndCreateQVector(qPlayerStateHistory[j+1]));
         std::vector<double> newQValue = {};
         for(int i = 0; i < winningQValues.size(); i++){
             if(getAndCreateQVector(qPlayerStateHistory[j])[i] != 0){
-                double qValue = currentQValues[i] + learningRate*(discountFactor*maxQValueNextState-currentQValues[i]);
+                double qValue = currentQValues[i] + learningRate*(discountFactor[i]*maxQValueNextState-currentQValues[i]);
                 newQValue.push_back(qValue);
             }else{
                 newQValue.push_back(0);

@@ -103,6 +103,7 @@ int main(int argc, char **argv) {
     //testVrep();
 
     TTTRL game;
-    game.playGames(500000000);
+    game.playGames(400000);
+    //game.playGames(10000);
     //game.playGame();
 }
