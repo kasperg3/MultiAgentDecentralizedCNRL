@@ -8,7 +8,7 @@
 #include <iostream>
 #include <map>
 #include <algorithm>
-#include "../lib/matplotlib-cpp/matplotlibcpp.h"
+#include "../lib/matplotlib/matplotlibcpp.h"
 
 namespace plt = matplotlibcpp;
 
