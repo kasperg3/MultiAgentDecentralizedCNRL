@@ -10,8 +10,9 @@
 #include <rw/models/WorkCell.hpp>
 #include <rw/proximity/CollisionDetector.hpp>
 #include <rw/loaders/WorkCellLoader.hpp>
-
-#include "caros/serial_device_si_proxy.h"
+#include <rtde_receive_interface.h>
+#include <rtde_control_interface.h>
+#include <ros/node_handle.h>
 #include "ros/package.h"
 #include <iostream>
 
@@ -22,31 +23,26 @@ private:
     rw::models::WorkCell::Ptr wc;
     rw::models::Device::Ptr device;
     rw::kinematics::State state;
-    caros::SerialDeviceSIProxy* robot;
     rw::proximity::CollisionDetector::Ptr detector;
+    ur_rtde::RTDEReceiveInterface *rtdeReceive;
+    ur_rtde::RTDEControlInterface *rtdeControl;
 
 public:
-    URRobot();
+
+    URRobot(std::string);
 
     Q getQ();
-
-    bool setQ(Q q);
-    bool moveQ(Q dq);
+    bool moveRelative(Q dq);
+    std::vector<double> qToVector(Q q);
+    std::vector<std::vector<double>> transformToVector(rw::math::Transform3D<double>);
     bool moveHome();
     bool checkCollision(Q q);     //Check if given configuration 'q' is in collision:
     bool moveToPose(rw::math::Transform3D<> T_BT_desired);
-    bool moveToPose(rw::math::RPY<> RPY_desired, rw::math::Vector3D<> displacement_desired);
-    bool moveToPose(double arr[]); //State-vector: [X,Y,Z,R,P,Y]
     void follow_path(std::vector<Q>);
     rw::math::Transform3D<> getPose();
 
     Eigen::Matrix<double,6,1> computeTaskError(Q qnear, Q qs);
     Q randomConfig();
-
-    Q inverseKin();
-
-
-
 };
 
 

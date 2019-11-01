@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(mergable_industrial_robots)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -62,6 +62,12 @@ catkin_package(
         #  DEPENDS system_lib
 )
 
+###################################
+##         UR_RTDE setup         ##
+###################################
+
+find_package(ur_rtde REQUIRED)
+
 ###########
 ## Build ##
 ###########
@@ -78,5 +84,5 @@ set(SOURCES
         )
 
 add_executable(mergableIndustrialRobots ${SOURCES})
-target_link_libraries(mergableIndustrialRobots ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} ${ROS_LIBRARIES})
-add_dependencies(mergableIndustrialRobots caros_common_msgs caros_control_msgs caros_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(mergableIndustrialRobots PRIVATE ur_rtde::rtde ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} ${ROS_LIBRARIES})
+add_dependencies(mergableIndustrialRobots ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

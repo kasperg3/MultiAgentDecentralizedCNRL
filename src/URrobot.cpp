@@ -1,48 +1,60 @@
 #include "../include/URrobot.h"
 
-
-URRobot::URRobot(){
+URRobot::URRobot(std::string robot_ip){
     auto packagePath = ros::package::getPath("mergable_industrial_robots");
     wc = rw::loaders::WorkCellLoader::Factory::load(packagePath + "/WorkCell/Scene.wc.xml");
     device = wc->findDevice("UR5");
     state = wc->getDefaultState();
-    robot = new caros::SerialDeviceSIProxy(nh, "caros_universalrobot");
-
-    //shp:
     detector = new rw::proximity::CollisionDetector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());
 
-    // Wait for first state message, to make sure robot is ready
-    ros::topic::waitForMessage<caros_control_msgs::RobotState>("/caros_universalrobot/caros_serial_device_service_interface/robot_state", nh);
-    ros::spinOnce();
+    ROS_INFO("robotController.cpp : Connecting to controller to the robot");
+    rtdeControl = new ur_rtde::RTDEControlInterface(robot_ip);
+    while(!rtdeControl->isConnected()){
+        rtdeControl->reconnect();               //try reconnect to robot
+    }
+    ROS_INFO("robotController.cpp : Connecting receiver to the robot");
+    rtdeReceive = new ur_rtde::RTDEReceiveInterface(robot_ip);
+    while(!rtdeReceive->isConnected()){
+        rtdeReceive->reconnect();               //try reconnect to robot
+    }
+    rtdeControl->servoStop();
+    ROS_INFO("[ URRobot: ]");
 }
 
 URRobot::Q URRobot::getQ(){
     // spinOnce processes one batch of messages, calling all the callbacks
     ros::spinOnce();
-    Q q = robot->getQ();
+    Q q = rtdeReceive->getActualQ();
     device->setQ(q, state);
     return q;
 }
 
-bool URRobot::setQ(Q q){
-    // Tell robot to move to joint config q
-    float speed = 0.5;
-    if (robot->movePtp(q, speed)) {
-        return true;
-    } else
-        return false;
+std::vector<double> URRobot::qToVector(Q q){
+    std::vector<double> tempVec = {};
+    for(int i = 0; i < q.m().size(); i++){
+        tempVec.push_back(q[i]);
+    }
+    return tempVec;
 }
 
-bool URRobot::moveQ(Q dq){
+std::vector<std::vector<double>> URRobot::transformToVector(rw::math::Transform3D<double> transform){
+
+}
+
+bool URRobot::moveRelative(Q dq){
     Q currentQ = getQ();
     Q desiredQ = currentQ + dq;
-    return setQ(desiredQ);
+    return rtdeControl->moveJ(qToVector(desiredQ));
 }
 
 bool URRobot::moveHome(){
     rw::kinematics::State default_state = wc->getDefaultState();
     Q homeQ = device->getQ(default_state);
-    return setQ(homeQ);
+    return rtdeControl->moveJ(qToVector(homeQ), 1,1);
+}
+
+bool URRobot::moveToPose(rw::math::Transform3D<> T_BT_desired){
+    return rtdeControl->moveL(transformToVector(T_BT_desired));
 }
 
 bool URRobot::checkCollision(Q q){
@@ -54,21 +66,6 @@ bool URRobot::checkCollision(Q q){
     return collision;
 }
 
-bool URRobot::moveToPose(rw::math::Transform3D<> T_BT_desired){
-    robot->movePtpT(T_BT_desired);
-}
-
-bool URRobot::moveToPose(rw::math::RPY<> RPY_desired, rw::math::Vector3D<> displacement_desired){
-    rw::math::Transform3D<> T_BT_desired(displacement_desired, RPY_desired.toRotation3D());
-    robot->movePtpT(T_BT_desired);
-}
-
-bool URRobot::moveToPose(double arr[]){ //State-vector: [X,Y,Z,R,P,Y]
-    rw::math::Vector3D<> disp_des(arr[0], arr[1], arr[2]);
-    rw::math::RPY<> RPY_des(arr[3], arr[4], arr[5]);
-    rw::math::Transform3D<> T_BT_desired(disp_des,RPY_des.toRotation3D());
-    robot->movePtpT(T_BT_desired);
-}
 
 rw::math::Transform3D<> URRobot::getPose(){
     //List every frame:
@@ -114,7 +111,7 @@ Eigen::Matrix<double,6,1> URRobot::computeTaskError(Q qnear, Q qs){
     std::cout << "TTaskEnd: " << std::endl;
     std::cout << TTaskEnd.e() << std::endl;
 
-    rw::math::Transform3D<> TBaseEnd = device->baseTend(state);
+    rw::math::Transform3D<double> TBaseEnd = device->baseTend(state);
 
     rw::math::Rotation3D<> R_diff = TTaskEnd.R();
     rw::math::RPY<> RPY_diff(R_diff);
@@ -143,10 +140,4 @@ URRobot::Q URRobot::randomConfig(){
     rw::math::Math::seed();
     Q q1 = rw::math::Math::ranQ(qMin,qMax);
     return q1;
-}
-
-
-void URRobot::follow_path(std::vector<Q> path){
-    for(int i = 0; i < path.size(); i++ )
-        setQ(path[i]);
 }

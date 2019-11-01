@@ -3,16 +3,11 @@
 //
 
 #include <ros/ros.h>
-#include "ros/ros.h"
 #include <std_msgs/Bool.h>
-
-#include "mergable_industrial_robots/moveRobot.h"
 #include <rw/math/Q.hpp>
 #include "URVrepSim.h"
+#include "URrobot.h"
 #include "TTTRL.h"
-// #include "../lib/b0RemoteApiBindings/cpp/b0RemoteApi.h"
-
-//b0RemoteApi* cl=NULL;
 
 void testVrep(){
     ros::Rate loop_rate(100);
@@ -79,31 +74,24 @@ void testVrep(){
     }
 }
 
-//Not working
-//void testURSim(){
-//    //INIT ROBOT
-//    ros::Rate loop_rate(10);
-//    URRobot robot;
-//    while(ros::ok()) {
-//        if(robot.moveHome()){
-//            std::cout << std::endl << "Successfully moved robot" << std::endl;
-//        }else{std::cout << std::endl << "Failed to move robot" << std::endl;}
-//
-//        ros::spinOnce();
-//        loop_rate.sleep();
-//    }
-//
-//
-//}
+void testURRobot(std::string ip){
+    URRobot robot(ip);
+    robot.moveHome();
+}
 
-int main(int argc, char **argv) {
-    //ros::init(argc, argv, "URVrepSim");
-    //ros::NodeHandle n("~");
-
-    //testVrep();
-
+void TTTGame(){
     TTTRL game;
     game.playGames(400000);
     //game.playGames(10000);
     //game.playGame();
+
+}
+
+int main(int argc, char **argv) {
+    ros::init(argc, argv, "URVrepSim");
+    ros::NodeHandle n("~");
+
+    //testVrep();
+    testURRobot("127.0.0.1");
+
 }
