@@ -24,23 +24,10 @@
 #include <thread>
 #include <std_msgs/Bool.h>
 
-class URVrepSim {
+class URVrep {
     using Q = rw::math::Q;
 
-public:
-    URVrepSim();
 
-    Q getQ();
-
-    bool setQ(Q);
-    bool moveQ(Q);
-    bool moveHome();
-    rw::kinematics::State getState();
-    rw::models::Device::Ptr getDevice();
-    void publishQ(Q, ros::Publisher);
-    void setServiceName(std::string);
-    void startSim();
-    void stopSim();
 private:
     bool callVrepService(Q);
     ros::ServiceClient client;
@@ -55,7 +42,20 @@ private:
     rw::kinematics::State state;
     rw::proximity::CollisionDetector::Ptr detector;
     Q defaultQ;
+public:
+    URVrep();
 
+    Q getQ();
+
+    bool setQ(Q);
+    bool moveQ(Q);
+    bool moveHome();
+    rw::kinematics::State getState();
+    rw::models::Device::Ptr getDevice();
+    void publishQ(Q, ros::Publisher);
+    void setServiceName(std::string);
+    void startSim();
+    void stopSim();
 };
 
 

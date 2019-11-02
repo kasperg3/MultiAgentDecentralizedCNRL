@@ -5,8 +5,8 @@
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
 #include <rw/math/Q.hpp>
-#include "URVrepSim.h"
-#include "URrobot.h"
+#include "URVrep.h"
+#include "URControl.h"
 #include "TTTRL.h"
 
 void testVrep(){
@@ -27,8 +27,8 @@ void testVrep(){
     //  qtest = Q(6, 2.547, -2.14, -1.939, -0.639, 1.57, 0.977);
     qtest = rw::math::Q(6, 0, -2.14, -1.939, -0.639, 1.57, 0.977); //beautiful box grab
 
-    URVrepSim robot0 = URVrepSim();
-    URVrepSim robot1 = URVrepSim();
+    URVrep robot0 = URVrep();
+    URVrep robot1 = URVrep();
     robot0.setServiceName("/vrep_ros_interface/moveRobot0");
     robot1.setServiceName("/vrep_ros_interface/moveRobot1");
     robot0.startSim();
@@ -75,8 +75,8 @@ void testVrep(){
     }
 }
 
-void testURRobot(std::string ip){
-    URRobot robot(ip);
+void testURControl(std::string ip){
+    URControl robot(ip);
     robot.moveHome();
 }
 
@@ -93,6 +93,6 @@ int main(int argc, char **argv) {
     ros::NodeHandle n("~");
 
     testVrep();
-    //testURRobot("127.0.0.1");
+    //testURControl("127.0.0.1");
     //TTTGame();
 }

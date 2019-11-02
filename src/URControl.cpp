@@ -1,6 +1,6 @@
-#include "../include/URrobot.h"
+#include "URControl.h"
 
-URRobot::URRobot(std::string robot_ip){
+URControl::URControl(std::string robot_ip){
     auto packagePath = ros::package::getPath("mergable_industrial_robots");
     wc = rw::loaders::WorkCellLoader::Factory::load(packagePath + "/WorkCell/Scene.wc.xml");
     device = wc->findDevice("UR5");
@@ -21,7 +21,7 @@ URRobot::URRobot(std::string robot_ip){
     ROS_INFO("[ URRobot: ]");
 }
 
-URRobot::Q URRobot::getQ(){
+URControl::Q URControl::getQ(){
     // spinOnce processes one batch of messages, calling all the callbacks
     ros::spinOnce();
     Q q = rtdeReceive->getActualQ();
@@ -29,7 +29,7 @@ URRobot::Q URRobot::getQ(){
     return q;
 }
 
-std::vector<double> URRobot::qToVector(Q q){
+std::vector<double> URControl::qToVector(Q q){
     std::vector<double> tempVec = {};
     for(int i = 0; i < q.m().size(); i++){
         tempVec.push_back(q[i]);
@@ -37,27 +37,27 @@ std::vector<double> URRobot::qToVector(Q q){
     return tempVec;
 }
 
-std::vector<std::vector<double>> URRobot::transformToVector(rw::math::Transform3D<double> transform){
+std::vector<std::vector<double>> URControl::transformToVector(rw::math::Transform3D<double> transform){
 
 }
 
-bool URRobot::moveRelative(Q dq){
+bool URControl::moveRelative(Q dq){
     Q currentQ = getQ();
     Q desiredQ = currentQ + dq;
     return rtdeControl->moveJ(qToVector(desiredQ));
 }
 
-bool URRobot::moveHome(){
+bool URControl::moveHome(){
     rw::kinematics::State default_state = wc->getDefaultState();
     Q homeQ = device->getQ(default_state);
     return rtdeControl->moveJ(qToVector(homeQ), 1,1);
 }
 
-bool URRobot::moveToPose(rw::math::Transform3D<> T_BT_desired){
+bool URControl::moveToPose(rw::math::Transform3D<> T_BT_desired){
     return rtdeControl->moveL(transformToVector(T_BT_desired));
 }
 
-bool URRobot::checkCollision(Q q){
+bool URControl::checkCollision(Q q){
     device->setQ(q, state);
     rw::proximity::CollisionDetector::QueryResult data;
     bool collision = detector->inCollision(state,&data);
@@ -67,7 +67,7 @@ bool URRobot::checkCollision(Q q){
 }
 
 
-rw::math::Transform3D<> URRobot::getPose(){
+rw::math::Transform3D<> URControl::getPose(){
     //List every frame:
     for(auto frame : wc->getFrames())
         std::cout << frame->getName() << std::endl;
@@ -99,7 +99,7 @@ rw::math::Transform3D<> URRobot::getPose(){
     return T_BT;
 }
 
-Eigen::Matrix<double,6,1> URRobot::computeTaskError(Q qnear, Q qs){
+Eigen::Matrix<double,6,1> URControl::computeTaskError(Q qnear, Q qs){
     rw::kinematics::Frame* taskFrame = wc->findFrame("TaskFrame");
     rw::math::Transform3D<> TBaseTask = device->baseTframe(taskFrame, state);
 
@@ -134,7 +134,7 @@ Eigen::Matrix<double,6,1> URRobot::computeTaskError(Q qnear, Q qs){
 
 }
 
-URRobot::Q URRobot::randomConfig(){
+URControl::Q URControl::randomConfig(){
     Q qMin = device->getBounds().first;
     Q qMax = device->getBounds().second;
     rw::math::Math::seed();

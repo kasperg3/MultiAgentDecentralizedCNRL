@@ -2,9 +2,9 @@
 // Created by kasper on 9/23/19.
 //
 
-#include "../include/URVrepSim.h"
+#include "URVrep.h"
 
-URVrepSim::URVrepSim() {
+URVrep::URVrep() {
     auto packagePath = ros::package::getPath("mergable_industrial_robots");
     wc = rw::loaders::WorkCellLoader::Factory::load(packagePath + "/WorkCell/Scene.wc.xml");
     device = wc->findDevice("UR5");
@@ -19,11 +19,12 @@ URVrepSim::URVrepSim() {
     startSimPublisher = nh.advertise<std_msgs::Bool>("/startSimulation", 1);
 }
 
-URVrepSim::Q URVrepSim::getQ() {
-    return URVrepSim::Q();
+////TODO: IMPLEMENT THIS
+URVrep::Q URVrep::getQ() {
+    return URVrep::Q();
 }
 
-bool URVrepSim::setQ(URVrepSim::Q q) {
+bool URVrep::setQ(URVrep::Q q) {
     this->device.get()->setQ(q, state );
     //init clock for timeput
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -37,24 +38,24 @@ bool URVrepSim::setQ(URVrepSim::Q q) {
     return true;
 }
 
-bool URVrepSim::moveQ(URVrepSim::Q q) {
+bool URVrep::moveQ(URVrep::Q q) {
     Q currentQ = this->device->getQ(state);
     return setQ(currentQ + q);
 }
 
-bool URVrepSim::moveHome() {
+bool URVrep::moveHome() {
     return setQ(defaultQ);
 }
 
-rw::kinematics::State URVrepSim::getState() {
+rw::kinematics::State URVrep::getState() {
     return state;
 }
 
-rw::models::Device::Ptr URVrepSim::getDevice() {
+rw::models::Device::Ptr URVrep::getDevice() {
     return device;
 }
 
-void URVrepSim::publishQ(URVrepSim::Q q, ros::Publisher pub) {
+void URVrep::publishQ(URVrep::Q q, ros::Publisher pub) {
     std_msgs::Float32MultiArray msg;
     msg.data.clear();
     for(unsigned int i = 0; i < q.size(); i++){
@@ -63,7 +64,7 @@ void URVrepSim::publishQ(URVrepSim::Q q, ros::Publisher pub) {
     pub.publish(msg);
 }
 
-bool URVrepSim::callVrepService(URVrepSim::Q q) {
+bool URVrep::callVrepService(URVrep::Q q) {
     mergable_industrial_robots::moveRobot srv;
 
     for (unsigned int i = 0; i < q.size(); i++) {
@@ -80,17 +81,17 @@ bool URVrepSim::callVrepService(URVrepSim::Q q) {
         return false;
 }
 
-void URVrepSim::setServiceName(std::string serviceName) {
+void URVrep::setServiceName(std::string serviceName) {
     client = nh.serviceClient<mergable_industrial_robots::moveRobot>(serviceName);
 }
 
-void URVrepSim::startSim() {
+void URVrep::startSim() {
     startSimPublisher.publish(std_msgs::Bool());
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     ros::spinOnce();
 }
 
-void URVrepSim::stopSim() {
+void URVrep::stopSim() {
     stopSimPublisher.publish(std_msgs::Bool());
     ros::spinOnce();
 }

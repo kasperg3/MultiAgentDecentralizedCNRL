@@ -78,8 +78,8 @@ include_directories(include
 
 set(SOURCES
         src/main.cpp
-        src/URVrepSim.cpp include/URVrepSim.h
-        src/URrobot.cpp include/URrobot.h
+        src/URVrep.cpp include/URVrep.h
+        src/URControl.cpp include/URControl.h
         src/TTTRL.cpp include/TTTRL.h
         )
 

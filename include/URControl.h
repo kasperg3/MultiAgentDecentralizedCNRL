@@ -16,7 +16,7 @@
 #include "ros/package.h"
 #include <iostream>
 
-class URRobot {
+class URControl {
     using Q = rw::math::Q;
 private:
     ros::NodeHandle nh;
@@ -29,18 +29,17 @@ private:
 
 public:
 
-    URRobot(std::string);
+    URControl(std::string);
 
     Q getQ();
-    bool moveRelative(Q dq);
     std::vector<double> qToVector(Q q);
     std::vector<std::vector<double>> transformToVector(rw::math::Transform3D<double>);
     bool moveHome();
+    rw::math::Transform3D<> getPose();
+    bool moveRelative(Q dq);
     bool checkCollision(Q q);     //Check if given configuration 'q' is in collision:
     bool moveToPose(rw::math::Transform3D<> T_BT_desired);
     void follow_path(std::vector<Q>);
-    rw::math::Transform3D<> getPose();
-
     Eigen::Matrix<double,6,1> computeTaskError(Q qnear, Q qs);
     Q randomConfig();
 };
