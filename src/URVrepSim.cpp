@@ -69,8 +69,8 @@ bool URVrepSim::callVrepService(URVrepSim::Q q) {
     }
     if (client.call(srv.request,srv.response)) {
     } else {
-        ROS_ERROR("Failed to call service");
-
+        std::string error("Failed to call service: ");
+        ROS_ERROR((const char*)error.append(client.getService()).c_str());
     }
     if (srv.response.response == true)
         return true;
