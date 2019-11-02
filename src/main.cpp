@@ -27,12 +27,13 @@ void testVrep(){
     //  qtest = Q(6, 2.547, -2.14, -1.939, -0.639, 1.57, 0.977);
     qtest = rw::math::Q(6, 0, -2.14, -1.939, -0.639, 1.57, 0.977); //beautiful box grab
 
-    URVrepSim robot0;
-    URVrepSim robot1;
-
-
+    URVrepSim robot0 = URVrepSim();
+    URVrepSim robot1 = URVrepSim();
     robot0.setServiceName("/vrep_ros_interface/moveRobot0");
     robot1.setServiceName("/vrep_ros_interface/moveRobot1");
+    robot0.startSim();
+    //robot0.stopSim();
+
 
     ros::NodeHandle n;
     ros::Publisher suctionPad1chatter = n.advertise<std_msgs::Bool>("/suctionPad1",1000);
@@ -40,7 +41,7 @@ void testVrep(){
    // cl=&client;
    // std::vector<bool> response = client.simxSetBoolParameter();
    // std::cout << response[1] << std::endl;
-
+    robot0.startSim();
     int dummy = 0;
     std_msgs::Bool msg1;
     while (ros::ok()) {
@@ -91,7 +92,7 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "URVrepSim");
     ros::NodeHandle n("~");
 
-    //testVrep();
-    testURRobot("127.0.0.1");
+    testVrep();
+    //testURRobot("127.0.0.1");
     //TTTGame();
 }

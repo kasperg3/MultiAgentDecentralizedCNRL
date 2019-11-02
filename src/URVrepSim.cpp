@@ -12,9 +12,12 @@ URVrepSim::URVrepSim() {
     detector = new rw::proximity::CollisionDetector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());
     defaultQ = this->getDevice().get()->getQ(state);
     ros::NodeHandle nh;
-    //Create Service for controlling the robot in V-rep
-    client = nh.serviceClient<mergable_industrial_robots::moveRobot>("vrep_ros_interface/moveRobot");
+    //Set the default Q
     defaultQ = this->getDevice().get()->getQ(state);
+
+    //Create publishers for starting and stopping the sim
+    stopSimPublisher = nh.advertise<std_msgs::Bool>("/stopSimulation", 1);
+    startSimPublisher = nh.advertise<std_msgs::Bool>("/startSimulation", 1);
 }
 
 URVrepSim::Q URVrepSim::getQ() {
@@ -80,5 +83,16 @@ bool URVrepSim::callVrepService(URVrepSim::Q q) {
 
 void URVrepSim::setServiceName(std::string serviceName) {
     client = nh.serviceClient<mergable_industrial_robots::moveRobot>(serviceName);
+}
+
+void URVrepSim::startSim() {
+    startSimPublisher.publish(std_msgs::Bool());
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    ros::spinOnce();
+}
+
+void URVrepSim::stopSim() {
+    stopSimPublisher.publish(std_msgs::Bool());
+    ros::spinOnce();
 }
 

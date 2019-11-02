@@ -22,6 +22,7 @@
 #include "mergable_industrial_robots/moveRobot.h"
 #include <chrono>
 #include <thread>
+#include <std_msgs/Bool.h>
 
 class URVrepSim {
     using Q = rw::math::Q;
@@ -36,12 +37,19 @@ public:
     bool moveHome();
     rw::kinematics::State getState();
     rw::models::Device::Ptr getDevice();
-    void publishQ(Q,  ros::Publisher);
+    void publishQ(Q, ros::Publisher);
     void setServiceName(std::string);
+    void startSim();
+    void stopSim();
 private:
     bool callVrepService(Q);
     ros::ServiceClient client;
     ros::NodeHandle nh;
+
+    ros::Publisher startSimPublisher;
+    ros::Publisher stopSimPublisher;
+
+    //RW and collision detection
     rw::models::WorkCell::Ptr wc;
     rw::models::Device::Ptr device;
     rw::kinematics::State state;
