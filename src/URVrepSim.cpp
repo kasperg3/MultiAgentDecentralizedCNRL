@@ -14,7 +14,6 @@ URVrepSim::URVrepSim() {
     ros::NodeHandle nh;
     //Set the default Q
     defaultQ = this->getDevice().get()->getQ(state);
-
     //Create publishers for starting and stopping the sim
     stopSimPublisher = nh.advertise<std_msgs::Bool>("/stopSimulation", 1);
     startSimPublisher = nh.advertise<std_msgs::Bool>("/startSimulation", 1);
