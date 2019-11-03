@@ -4,19 +4,13 @@
 
 #include "URVrep.h"
 
-URVrep::URVrep() {
-    auto packagePath = ros::package::getPath("mergable_industrial_robots");
-    wc = rw::loaders::WorkCellLoader::Factory::load(packagePath + "/WorkCell/Scene.wc.xml");
-    device = wc->findDevice("UR5");
-    state = wc->getDefaultState();
-    detector = new rw::proximity::CollisionDetector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());
-    defaultQ = this->getDevice().get()->getQ(state);
-    ros::NodeHandle nh;
-    //Set the default Q
-    defaultQ = this->getDevice().get()->getQ(state);
+URVrep::URVrep(const std::string& serviceName) {
     //Create publishers for starting and stopping the sim
     stopSimPublisher = nh.advertise<std_msgs::Bool>("/stopSimulation", 1);
     startSimPublisher = nh.advertise<std_msgs::Bool>("/startSimulation", 1);
+
+    //Create service client
+    client = nh.serviceClient<mergable_industrial_robots::moveRobot>(serviceName);
 }
 
 ////TODO: IMPLEMENT THIS
@@ -26,6 +20,7 @@ URVrep::Q URVrep::getQ() {
 
 bool URVrep::setQ(URVrep::Q q) {
     this->device.get()->setQ(q, state );
+
     //init clock for timeput
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     //Stay in while loop until timeout or call is complete
@@ -47,12 +42,12 @@ bool URVrep::moveHome() {
     return setQ(defaultQ);
 }
 
-rw::kinematics::State URVrep::getState() {
-    return state;
-}
-
 rw::models::Device::Ptr URVrep::getDevice() {
     return device;
+}
+
+rw::kinematics::State URVrep::getState() {
+    return state;
 }
 
 void URVrep::publishQ(URVrep::Q q, ros::Publisher pub) {
@@ -79,10 +74,6 @@ bool URVrep::callVrepService(URVrep::Q q) {
         return true;
     else
         return false;
-}
-
-void URVrep::setServiceName(std::string serviceName) {
-    client = nh.serviceClient<mergable_industrial_robots::moveRobot>(serviceName);
 }
 
 void URVrep::startSim() {

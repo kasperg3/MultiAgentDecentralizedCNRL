@@ -1,12 +1,6 @@
 #include "URControl.h"
 
 URControl::URControl(std::string robot_ip){
-    auto packagePath = ros::package::getPath("mergable_industrial_robots");
-    wc = rw::loaders::WorkCellLoader::Factory::load(packagePath + "/WorkCell/Scene.wc.xml");
-    device = wc->findDevice("UR5");
-    state = wc->getDefaultState();
-    detector = new rw::proximity::CollisionDetector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());
-
     ROS_INFO("robotController.cpp : Connecting to controller to the robot");
     rtdeControl = new ur_rtde::RTDEControlInterface(robot_ip);
     while(!rtdeControl->isConnected()){
@@ -37,8 +31,11 @@ std::vector<double> URControl::qToVector(Q q){
     return tempVec;
 }
 
-std::vector<std::vector<double>> URControl::transformToVector(rw::math::Transform3D<double> transform){
-
+std::vector<double> URControl::transformToVector(rw::math::Transform3D<double> transform){
+    rw::math::RPY rpy(transform.R());
+    rw::math::Vector3D pos(transform.P());
+    std::vector vec = {pos(0), pos(1),pos(3), rpy(0), rpy(1), rpy(2)};
+    return vec;
 }
 
 bool URControl::moveRelative(Q dq){
@@ -54,7 +51,7 @@ bool URControl::moveHome(){
 }
 
 bool URControl::moveToPose(rw::math::Transform3D<> T_BT_desired){
-    return rtdeControl->moveL(transformToVector(T_BT_desired));
+    return rtdeControl->moveJ_IK(transformToVector(T_BT_desired));
 }
 
 bool URControl::checkCollision(Q q){
@@ -93,8 +90,6 @@ rw::math::Transform3D<> URControl::getPose(){
     std::cout << T_BToolbase.e() << std::endl;
     std::cout << "RPY of T_BToolbase" << std::endl;
     std::cout << RPY_Toolbase << std::endl;
-
-    //robot->
 
     return T_BT;
 }

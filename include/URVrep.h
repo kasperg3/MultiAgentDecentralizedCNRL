@@ -31,19 +31,19 @@ class URVrep {
 private:
     bool callVrepService(Q);
     ros::ServiceClient client;
-    ros::NodeHandle nh;
 
     ros::Publisher startSimPublisher;
     ros::Publisher stopSimPublisher;
 
     //RW and collision detection
-    rw::models::WorkCell::Ptr wc;
-    rw::models::Device::Ptr device;
-    rw::kinematics::State state;
-    rw::proximity::CollisionDetector::Ptr detector;
-    Q defaultQ;
+    ros::NodeHandle nh;
+    rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(ros::package::getPath("mergable_industrial_robots") + "/WorkCell/Scene.wc.xml");
+    rw::models::Device::Ptr device = wc->findDevice("UR5");
+    rw::kinematics::State state = wc->getDefaultState();
+    rw::proximity::CollisionDetector::Ptr detector = new rw::proximity::CollisionDetector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());
+    Q defaultQ = device.get()->getQ(state);
 public:
-    URVrep();
+    URVrep(const std::string&);
 
     Q getQ();
 

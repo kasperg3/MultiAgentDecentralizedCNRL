@@ -27,10 +27,8 @@ void testVrep(){
     //  qtest = Q(6, 2.547, -2.14, -1.939, -0.639, 1.57, 0.977);
     qtest = rw::math::Q(6, 0, -2.14, -1.939, -0.639, 1.57, 0.977); //beautiful box grab
 
-    URVrep robot0 = URVrep();
-    URVrep robot1 = URVrep();
-    robot0.setServiceName("/vrep_ros_interface/moveRobot0");
-    robot1.setServiceName("/vrep_ros_interface/moveRobot1");
+    URVrep robot0 = URVrep("/vrep_ros_interface/moveRobot0");
+    URVrep robot1 = URVrep("/vrep_ros_interface/moveRobot1");
     robot0.startSim();
     //robot0.stopSim();
 
