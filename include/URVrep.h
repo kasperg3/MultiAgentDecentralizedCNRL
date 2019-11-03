@@ -23,6 +23,7 @@
 #include <chrono>
 #include <thread>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 
 class URVrep {
     using Q = rw::math::Q;
@@ -34,17 +35,21 @@ private:
 
     ros::Publisher startSimPublisher;
     ros::Publisher stopSimPublisher;
+    ros::Subscriber simStateSubscriber;
+    void stateCallback(const std_msgs::Int32::ConstPtr&);
+    int simState = 0;
 
     //RW and collision detection
     ros::NodeHandle nh;
+    ros::NodeHandle nCtrl;
     rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(ros::package::getPath("mergable_industrial_robots") + "/WorkCell/Scene.wc.xml");
     rw::models::Device::Ptr device = wc->findDevice("UR5");
     rw::kinematics::State state = wc->getDefaultState();
     rw::proximity::CollisionDetector::Ptr detector = new rw::proximity::CollisionDetector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());
     Q defaultQ = device.get()->getQ(state);
 public:
-    URVrep(const std::string&);
-
+    explicit URVrep(const std::string&);
+    ~URVrep();
     Q getQ();
 
     bool setQ(Q);
@@ -53,7 +58,8 @@ public:
     rw::kinematics::State getState();
     rw::models::Device::Ptr getDevice();
     void publishQ(Q, ros::Publisher);
-    void setServiceName(std::string);
+    bool simRunning();
+    bool simStopped();
     void startSim();
     void stopSim();
 };

@@ -6,11 +6,24 @@
 
 URVrep::URVrep(const std::string& serviceName) {
     //Create publishers for starting and stopping the sim
-    stopSimPublisher = nh.advertise<std_msgs::Bool>("/stopSimulation", 1);
-    startSimPublisher = nh.advertise<std_msgs::Bool>("/startSimulation", 1);
-
+    stopSimPublisher = nCtrl.advertise<std_msgs::Bool>("/stopSimulation", 5);
+    startSimPublisher = nCtrl.advertise<std_msgs::Bool>("/startSimulation", 5);
+    //Create subscriber for simulation state:
+    simStateSubscriber = nCtrl.subscribe("/simulationState", 2, &URVrep::stateCallback, this);
     //Create service client
     client = nh.serviceClient<mergable_industrial_robots::moveRobot>(serviceName);
+}
+
+URVrep::~URVrep() {
+    stopSim();
+    stopSimPublisher.shutdown();
+    startSimPublisher.shutdown();
+    simStateSubscriber.shutdown();
+    client.shutdown();
+}
+
+void URVrep::stateCallback(const std_msgs::Int32::ConstPtr& msg){
+    simState = msg.get()->data;
 }
 
 ////TODO: IMPLEMENT THIS
@@ -76,14 +89,36 @@ bool URVrep::callVrepService(URVrep::Q q) {
         return false;
 }
 
+bool URVrep::simStopped(){
+    if(simState == 0)
+        return true;
+    else
+        return false;
+}
+
+bool URVrep::simRunning(){
+    if(simState == 1)
+        return true;
+    else
+        return false;
+}
+
+
 void URVrep::startSim() {
-    startSimPublisher.publish(std_msgs::Bool());
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    ros::spinOnce();
+    ROS_INFO("Starting VRep simulation...");
+    while(!simRunning()){
+        startSimPublisher.publish(std_msgs::Bool());
+        ros::spinOnce();
+    }
+    ROS_INFO("VRep simulation started");
 }
 
 void URVrep::stopSim() {
-    stopSimPublisher.publish(std_msgs::Bool());
-    ros::spinOnce();
+    ROS_INFO("Stopping VRep simulation...");
+    while(!simStopped()){
+        stopSimPublisher.publish(std_msgs::Bool());
+        ros::spinOnce();
+    }
+    ROS_INFO("VRep simulation Stopped");
 }
 

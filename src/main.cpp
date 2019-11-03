@@ -30,7 +30,6 @@ void testVrep(){
     URVrep robot0 = URVrep("/vrep_ros_interface/moveRobot0");
     URVrep robot1 = URVrep("/vrep_ros_interface/moveRobot1");
     robot0.startSim();
-    //robot0.stopSim();
 
 
     ros::NodeHandle n;
@@ -39,7 +38,6 @@ void testVrep(){
    // cl=&client;
    // std::vector<bool> response = client.simxSetBoolParameter();
    // std::cout << response[1] << std::endl;
-    robot0.startSim();
     int dummy = 0;
     std_msgs::Bool msg1;
     while (ros::ok()) {
@@ -49,21 +47,18 @@ void testVrep(){
             robot0.moveHome();
             std::cout << "moveHome" << std::endl;
             robot1.moveHome();
-
         }else if (dummy % 3 == 1){
             msg1.data = false;
             suctionPad1chatter.publish(msg1);
             robot0.setQ(qtest);
             std::cout << "setQ" << std::endl;
             robot1.setQ(qtest);
-
         }else{
             msg1.data = true;
             suctionPad1chatter.publish(msg1);
             robot0.setQ(qtest2);
             std::cout << "setQ2" << std::endl;
             robot1.setQ(qtest2);
-
         }
         dummy++;
         std::cout << "dummy: " << dummy << std::endl;
