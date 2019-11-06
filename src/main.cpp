@@ -81,11 +81,29 @@ void TTTGame(){
 
 }
 
+void sendRobotQToSim(){
+    //URControl robot("24.5.19.10");
+    rw::math::Q qtest(6, -0.667, -1.84571, -2.10352, -0.758907, 1.60592, 0.903087); //Q over table
+    //std::cout << robot.getQ() << std::endl;
+
+    URVrep simRobot1 = URVrep("/vrep_ros_interface/moveRobot1");
+    simRobot1.startSim();
+    ros::Rate loop_rate(1);
+    while (ros::ok()) {
+    //    rw::math::Q qRobot = robot.getQ();
+    //simRobot0.setQ(qRobot);
+        simRobot1.setQ(qtest);
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
+}
+
 int main(int argc, char **argv) {
     ros::init(argc, argv, "URVrepSim");
     ros::NodeHandle n("~");
 
-    testVrep();
+    //testVrep();
     //testURControl("127.0.0.1");
     //TTTGame();
+    sendRobotQToSim();
 }
