@@ -68,6 +68,12 @@ catkin_package(
 
 find_package(ur_rtde REQUIRED)
 
+###################################
+##           NEAT setup          ##
+###################################
+add_subdirectory(lib/NEAT/)
+include_directories(lib/NEAT/include)
+
 ###########
 ## Build ##
 ###########
