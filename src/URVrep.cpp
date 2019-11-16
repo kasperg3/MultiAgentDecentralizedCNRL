@@ -4,14 +4,25 @@
 
 #include "URVrep.h"
 
-URVrep::URVrep(const std::string& serviceName) {
+/*
+ * ROBOT Number can be wither 0 or 1, others are not completed
+ */
+URVrep::URVrep(const std::string& robotNumber) {
+
+    if(robotNumber != "1" && robotNumber != "0"){
+        ROS_ERROR("[URVrep] NOT A VALID ROBOT NUMBER");
+        throw "[URVrep] NOT A VALID ROBOT NUMBER";
+    }
     //Create publishers for starting and stopping the sim
     stopSimPublisher = nCtrl.advertise<std_msgs::Bool>("/stopSimulation", 5);
     startSimPublisher = nCtrl.advertise<std_msgs::Bool>("/startSimulation", 5);
     //Create subscriber for simulation state:
     simStateSubscriber = nCtrl.subscribe("/simulationState", 2, &URVrep::stateCallback, this);
     //Create service client
-    client = nh.serviceClient<mergable_industrial_robots::moveRobot>(serviceName);
+    client = nh.serviceClient<mergable_industrial_robots::moveRobot>("/vrep_ros_interface/moveRobot" + robotNumber);
+    //Setup gripper control
+    gripperSimPublisher = nCtrl.advertise<std_msgs::Bool>("/closeGripper" + robotNumber, 5);
+
 }
 
 URVrep::~URVrep() {
@@ -89,6 +100,8 @@ bool URVrep::callVrepService(URVrep::Q q) {
         return false;
 }
 
+
+
 bool URVrep::simStopped(){
     if(simState == 0)
         return true;
@@ -113,6 +126,9 @@ void URVrep::startSim() {
     ROS_INFO("VRep simulation started");
 }
 
+
+
+
 void URVrep::stopSim() {
     ROS_INFO("Stopping VRep simulation...");
     while(!simStopped()){
@@ -120,5 +136,21 @@ void URVrep::stopSim() {
         ros::spinOnce();
     }
     ROS_INFO("VRep simulation Stopped");
+}
+
+void URVrep::closeGripper() {
+    std_msgs::Bool msg;
+    msg.data = true;
+    gripperSimPublisher.publish(msg);
+    ros::spinOnce();
+
+}
+
+void URVrep::openGripper() {
+    std_msgs::Bool msg;
+    msg.data = false;
+    gripperSimPublisher.publish(msg);
+    ros::spinOnce();
+
 }
 

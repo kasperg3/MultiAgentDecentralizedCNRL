@@ -27,8 +27,8 @@ void testVrep(){
     //  qtest = Q(6, 2.547, -2.14, -1.939, -0.639, 1.57, 0.977);
     qtest = rw::math::Q(6, 0, -2.14, -1.939, -0.639, 1.57, 0.977); //beautiful box grab
 
-    URVrep robot0 = URVrep("/vrep_ros_interface/moveRobot0");
-    URVrep robot1 = URVrep("/vrep_ros_interface/moveRobot1");
+    URVrep robot0 = URVrep("0");
+    URVrep robot1 = URVrep("1");
     robot0.startSim();
 
 
@@ -43,22 +43,21 @@ void testVrep(){
     while (ros::ok()) {
         if(dummy % 3 == 0){
             msg1.data = false;
-            suctionPad1chatter.publish(msg1);
-            robot0.moveHome();
+            //robot0.moveHome();
             std::cout << "moveHome" << std::endl;
-            robot1.moveHome();
+            //robot1.moveHome();
+            robot0.closeGripper();
+            robot1.closeGripper();
         }else if (dummy % 3 == 1){
             msg1.data = false;
-            suctionPad1chatter.publish(msg1);
-            robot0.setQ(qtest);
+            //robot0.setQ(qtest);
             std::cout << "setQ" << std::endl;
-            robot1.setQ(qtest);
+            //robot1.setQ(qtest);
         }else{
             msg1.data = true;
-            suctionPad1chatter.publish(msg1);
-            robot0.setQ(qtest2);
+            //robot0.setQ(qtest2);
             std::cout << "setQ2" << std::endl;
-            robot1.setQ(qtest2);
+            //robot1.setQ(qtest2);
         }
         dummy++;
         std::cout << "dummy: " << dummy << std::endl;
@@ -82,7 +81,7 @@ void TTTGame(){
 }
 
 void sendRobotQToSim(){
-    URVrep simRobot1 = URVrep("/vrep_ros_interface/moveRobot1");
+    URVrep simRobot1 = URVrep("1");
     simRobot1.startSim();
 
     URControl robot("127.0.0.1");

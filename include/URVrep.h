@@ -35,6 +35,7 @@ private:
 
     ros::Publisher startSimPublisher;
     ros::Publisher stopSimPublisher;
+    ros::Publisher gripperSimPublisher;
     ros::Subscriber simStateSubscriber;
     void stateCallback(const std_msgs::Int32::ConstPtr&);
     int simState = 0;
@@ -55,6 +56,8 @@ public:
     bool setQ(Q);
     bool moveQ(Q);
     bool moveHome();
+    void closeGripper();
+    void openGripper();
     rw::kinematics::State getState();
     rw::models::Device::Ptr getDevice();
     void publishQ(Q, ros::Publisher);
