@@ -43,21 +43,21 @@ void testVrep(){
     while (ros::ok()) {
         if(dummy % 3 == 0){
             msg1.data = false;
-            //robot0.moveHome();
+            robot0.moveHome();
             std::cout << "moveHome" << std::endl;
-            //robot1.moveHome();
-            robot0.closeGripper();
-            robot1.closeGripper();
+            robot1.moveHome();
+            //robot0.closeGripper();
+            //robot1.closeGripper();
         }else if (dummy % 3 == 1){
             msg1.data = false;
-            //robot0.setQ(qtest);
+            robot0.setQ(qtest);
             std::cout << "setQ" << std::endl;
-            //robot1.setQ(qtest);
+            robot1.setQ(qtest);
         }else{
             msg1.data = true;
-            //robot0.setQ(qtest2);
+            robot0.setQ(qtest2);
             std::cout << "setQ2" << std::endl;
-            //robot1.setQ(qtest2);
+            robot1.setQ(qtest2);
         }
         dummy++;
         std::cout << "dummy: " << dummy << std::endl;
