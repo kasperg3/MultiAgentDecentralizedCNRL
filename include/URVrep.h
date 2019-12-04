@@ -36,9 +36,13 @@ private:
     ros::Publisher startSimPublisher;
     ros::Publisher stopSimPublisher;
     ros::Publisher gripperSimPublisher;
+    ros::Publisher robotQPublisher;
+    ros::Subscriber isMovingSubscriber;
     ros::Subscriber simStateSubscriber;
     void stateCallback(const std_msgs::Int32::ConstPtr&);
+    void robotMovingCallback(const std_msgs::Bool::ConstPtr&);
     int simState = 0;
+    bool isMoving = false;
 
     //RW and collision detection
     ros::NodeHandle nh;
@@ -58,6 +62,7 @@ public:
     bool moveHome();
     void closeGripper();
     void openGripper();
+    bool isRobotMoving();
     rw::kinematics::State getState();
     rw::models::Device::Ptr getDevice();
     void publishQ(Q, ros::Publisher);

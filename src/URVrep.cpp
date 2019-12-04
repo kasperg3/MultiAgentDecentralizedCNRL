@@ -18,11 +18,12 @@ URVrep::URVrep(const std::string& robotNumber) {
     startSimPublisher = nCtrl.advertise<std_msgs::Bool>("/startSimulation", 5);
     //Create subscriber for simulation state:
     simStateSubscriber = nCtrl.subscribe("/simulationState", 2, &URVrep::stateCallback, this);
-    //Create service client
-    client = nh.serviceClient<mergable_industrial_robots::moveRobot>("/vrep_ros_interface/moveRobot" + robotNumber);
     //Setup gripper control
     gripperSimPublisher = nCtrl.advertise<std_msgs::Bool>("/closeGripper" + robotNumber, 5);
-
+    //Moving subscriber
+    isMovingSubscriber = nCtrl.subscribe("/robotMoving" + robotNumber, 2, &URVrep::robotMovingCallback, this);
+    //Robot Q publisher
+    robotQPublisher = nCtrl.advertise<std_msgs::Float32MultiArray>("/robotQ" + robotNumber, 5);
 }
 
 URVrep::~URVrep() {
@@ -30,12 +31,18 @@ URVrep::~URVrep() {
     stopSimPublisher.shutdown();
     startSimPublisher.shutdown();
     simStateSubscriber.shutdown();
-    client.shutdown();
+    robotQPublisher.shutdown();
+    isMovingSubscriber.shutdown();
 }
 
 void URVrep::stateCallback(const std_msgs::Int32::ConstPtr& msg){
     simState = msg.get()->data;
 }
+
+void URVrep::robotMovingCallback(const std_msgs::Bool::ConstPtr &msg) {
+    isMoving = msg.get()->data;
+}
+
 
 ////TODO: IMPLEMENT THIS
 URVrep::Q URVrep::getQ() {
@@ -48,12 +55,21 @@ bool URVrep::setQ(URVrep::Q q) {
     //init clock for timeput
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     //Stay in while loop until timeout or call is complete
-    while(!callVrepService(q)) {
-        if(std::chrono::steady_clock::now() - start > std::chrono::seconds(20))
-            break;
+
+    while(isRobotMoving()) {   //Wait until done moving or timeout
+        if(std::chrono::steady_clock::now() - start > std::chrono::seconds(20)) {
+            return false;
+        }
         std::chrono::milliseconds timespan(100); // or whatever
         std::this_thread::sleep_for(timespan);
     }
+
+    publishQ(q, robotQPublisher);
+    ros::spinOnce();
+
+    //Sleep to not spam the robot with move requests until is has started moving
+    std::chrono::milliseconds timespan(1000); // or whatever
+    std::this_thread::sleep_for(timespan);
     return true;
 }
 
@@ -83,24 +99,6 @@ void URVrep::publishQ(URVrep::Q q, ros::Publisher pub) {
     pub.publish(msg);
 }
 
-bool URVrep::callVrepService(URVrep::Q q) {
-    mergable_industrial_robots::moveRobot srv;
-
-    for (unsigned int i = 0; i < q.size(); i++) {
-        srv.request.requestQ.push_back((float) q(i)- defaultQ(i));
-    }
-    if (client.call(srv.request,srv.response)) {
-    } else {
-        std::string error("Failed to call service: ");
-        ROS_ERROR((const char*)error.append(client.getService()).c_str());
-    }
-    if (srv.response.response == true)
-        return true;
-    else
-        return false;
-}
-
-
 
 bool URVrep::simStopped(){
     if(simState == 0)
@@ -125,9 +123,6 @@ void URVrep::startSim() {
     }
     ROS_INFO("VRep simulation started");
 }
-
-
-
 
 void URVrep::stopSim() {
     ROS_INFO("Stopping VRep simulation...");
@@ -154,3 +149,7 @@ void URVrep::openGripper() {
 
 }
 
+bool URVrep::isRobotMoving() {
+    ros::spinOnce();
+    return isMoving;
+}
