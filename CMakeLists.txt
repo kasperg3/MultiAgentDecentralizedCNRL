@@ -45,10 +45,12 @@ LINK_DIRECTORIES( ${ROBWORK_LIBRARY_DIRS} )
 ###################################
 ##         PCL setup             ##
 ###################################
-find_package(PCL 1.3 REQUIRED COMPONENTS)# common io visualization)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+#find_package(PCL 1.3 REQUIRED COMPONENTS)# common io visualization)
+#include_directories(${PCL_INCLUDE_DIRS})
+#link_directories(${PCL_LIBRARY_DIRS})
+#add_definitions(${PCL_DEFINITIONS})
+find_package(PythonLibs REQUIRED)
+include_directories(${PYTHON_INCLUDE_DIRS})
 
 
 ###################################
@@ -90,5 +92,5 @@ set(SOURCES
         )
 
 add_executable(mergableIndustrialRobots ${SOURCES})
-target_link_libraries(mergableIndustrialRobots PRIVATE ur_rtde::rtde ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} ${ROS_LIBRARIES})
+target_link_libraries(mergableIndustrialRobots PRIVATE ur_rtde::rtde ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} ${ROS_LIBRARIES} ${PYTHON_LIBRARIES})
 add_dependencies(mergableIndustrialRobots ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
