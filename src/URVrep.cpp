@@ -68,7 +68,7 @@ bool URVrep::setQ(URVrep::Q q) {
     ros::spinOnce();
 
     //Sleep to not spam the robot with move requests until is has started moving
-    std::chrono::milliseconds timespan(1000); // or whatever
+    std::chrono::milliseconds timespan(500); // or whatever
     std::this_thread::sleep_for(timespan);
     return true;
 }

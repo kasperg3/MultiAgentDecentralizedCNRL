@@ -31,37 +31,26 @@ void testVrep(){
     URVrep robot1 = URVrep("1");
     robot0.startSim();
 
-
     ros::NodeHandle n;
     ros::Publisher suctionPad1chatter = n.advertise<std_msgs::Bool>("/suctionPad1",1000);
-   // b0RemoteApi client("b0RemoteApi_c++Client","b0RemoteApi");
-   // cl=&client;
-   // std::vector<bool> response = client.simxSetBoolParameter();
-   // std::cout << response[1] << std::endl;
     int dummy = 0;
     std_msgs::Bool msg1;
     while (ros::ok()) {
         if(dummy % 3 == 0){
             msg1.data = false;
             robot0.moveHome();
-            std::cout << "moveHome" << std::endl;
             robot1.moveHome();
-            //robot0.closeGripper();
-            //robot1.closeGripper();
         }else if (dummy % 3 == 1){
             msg1.data = false;
             robot0.setQ(qtest);
-            std::cout << "setQ" << std::endl;
             robot1.setQ(qtest);
         }else{
             msg1.data = true;
             robot0.setQ(qtest2);
-            std::cout << "setQ2" << std::endl;
             robot1.setQ(qtest2);
+            dummy = 0;
         }
         dummy++;
-        std::cout << "dummy: " << dummy << std::endl;
-
         ros::spinOnce();
         loop_rate.sleep();
     }
@@ -89,6 +78,10 @@ void sendRobotQToSim(){
 
     ros::Rate loop_rate(1);
     while (ros::ok()) {
+        ros::Rate loop_rate(1);
+        simRobot1.closeGripper();
+        ros::spinOnce();
+        loop_rate.sleep();
         simRobot0.setQ(qtest);
         simRobot1.setQ(qtest);
         ros::spinOnce();
@@ -105,13 +98,25 @@ void testGripper(){
 
 }
 
+void testVrepGripper(){
+    URVrep simRobot1 = URVrep("1");
+    simRobot1.startSim();
+    while(ros::ok()){
+        ros::Rate loop_rate(1);
+        simRobot1.closeGripper();
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
+}
+
 int main(int argc, char **argv) {
     ros::init(argc, argv, "URVrepSim");
     ros::NodeHandle n("~");
 
-    testVrep();
+    //testVrep();
     //testURControl("127.0.0.1");
     //TTTGame();
     //testGripper();
-    //sendRobotQToSim();
+    //testVrepGripper();
+    sendRobotQToSim();
 }
