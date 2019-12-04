@@ -100,12 +100,22 @@ void sendRobotQToSim(){
     }
 }
 
+void testGripper(){
+    URControl robot("24.5.19.10");
+    robot.moveHome();
+    robot.closeGripper();
+    sleep(1);
+    robot.openGripper();
+
+}
+
 int main(int argc, char **argv) {
     ros::init(argc, argv, "URVrepSim");
     ros::NodeHandle n("~");
 
-    testVrep();
+    //testVrep();
     //testURControl("127.0.0.1");
     //TTTGame();
+    testGripper();
     //sendRobotQToSim();
 }
