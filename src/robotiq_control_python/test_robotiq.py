@@ -12,9 +12,6 @@ gripper.set_speed(100)  # from 0 to 100 %
 
 # Perform some gripper actions
 gripper.open()
-gripper.close()
-time.sleep(1)
-gripper.open()
 gripper.move(30)  # mm
 
 # Stop the rtde control script
