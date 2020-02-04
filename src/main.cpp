@@ -118,5 +118,7 @@ int main(int argc, char **argv) {
     //TTTGame();
     //testGripper();
     //testVrepGripper();
-    sendRobotQToSim();
+    //sendRobotQToSim();
+    URVrep simRobot1 = URVrep("1");
+    std::cout << "Robot Default Q: " << simRobot1.getDevice().get()->getQ(simRobot1.getState()) << std::endl;
 }
