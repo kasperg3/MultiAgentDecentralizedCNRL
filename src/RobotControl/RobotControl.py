@@ -27,6 +27,9 @@ class RobotControl:
             return False
         return True
 
+    def moveHome(self):
+        self.rtde_c.moveJ()
+
     def moveRobot(self, q):
         self.rtde_c.moveJ(q, self.velocity, self.acceleration)
 

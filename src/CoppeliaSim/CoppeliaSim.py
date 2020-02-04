@@ -5,29 +5,6 @@ import rospy
 from std_msgs.msg import Int32
 from std_msgs.msg import Bool
 from std_msgs.msg import Float32MultiArray
-''' bool callVrepService(Q);
-    ros::ServiceClient client;
-
-    ros::Publisher startSimPublisher;
-    ros::Publisher stopSimPublisher;
-    ros::Publisher gripperSimPublisher;
-    ros::Publisher robotQPublisher;
-    ros::Subscriber isMovingSubscriber;
-    ros::Subscriber simStateSubscriber;
-    void stateCallback(const std_msgs::Int32::ConstPtr&);
-    void robotMovingCallback(const std_msgs::Bool::ConstPtr&);
-    int simState = 0;
-    bool isMoving = false;
-
-    //RW and collision detection
-    ros::NodeHandle nh;
-    ros::NodeHandle nCtrl;
-    rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(ros::package::getPath("mergable_industrial_robots") + "/WorkCell/Scene.wc.xml");
-    rw::models::Device::Ptr device = wc->findDevice("UR5");
-    rw::kinematics::State state = wc->getDefaultState();
-    rw::proximity::CollisionDetector::Ptr detector = new rw::proximity::CollisionDetector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());
-    Q defaultQ = device.get()->getQ(state);
-'''
 
 
 class CoppeliaSim(object):
@@ -162,18 +139,6 @@ class CoppeliaSim(object):
         return self.isMoving
 
 
-robot0 = CoppeliaSim("0")
-robot1 = CoppeliaSim("1")
-robot0.startSim()
-
-robot0.setQ(np.array([-0.667, -1.84571, -2.10352, -0.758907, 1.60592, 0.903087], dtype=np.float32))
-robot1.setQ(np.array([-0.667, -1.84571, -2.10352, -0.758907, 1.60592, 0.903087], dtype=np.float32))
-robot1.setQ(np.array([-0.1, -1.84571, -2.10352, -0.758907, 1.60592, 0.903087], dtype=np.float32))
-
-robot0.closeGripper()
-robot1.closeGripper()
-
-robot0.stopSim()
 
 
 
