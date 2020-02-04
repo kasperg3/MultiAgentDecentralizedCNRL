@@ -35,7 +35,6 @@ class CoppeliaSim(object):
         self.defaultQ = np.array([0, -1.57, 0, -1.57, 0, 0], dtype=np.float32)
         self.currentQ = self.defaultQ
 
-
     """ 
     Attributes: 
         std_msgs::Int32 msg
@@ -137,8 +136,3 @@ class CoppeliaSim(object):
     def robotMoving(self):
         rospy.wait_for_message(topic='/robotMoving' + self.robotNumber, topic_type=Bool)
         return self.isMoving
-
-
-
-
-

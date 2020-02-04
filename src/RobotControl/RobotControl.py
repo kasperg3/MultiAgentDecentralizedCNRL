@@ -2,45 +2,38 @@ import numpy
 import rtde_control
 import rtde_receive
 import rtde_io
-import time, json
 import logging
-import rootpath
+from RobotControl.robotiq_gripper import RobotiqGripper
 
 class RobotControl:
 
     def __init__(self, ip):
-        self.rtde_c = None
-        self.rtde_r = None
-        self.rtde_i = None
-        try:
-            self.rtde_c = rtde_control.RTDEControlInterface(ip)
-            self.rtde_r = rtde_receive.RTDEReceiveInterface(ip)
-            self.rtde_i = rtde_io.RTDEIOInterface(ip)
-        except RuntimeError:
-            logging.error("[RobotControl] Cannot connect to Universal robot")
+        self.rtde_c = rtde_control.RTDEControlInterface(ip)
+        self.rtde_r = rtde_receive.RTDEReceiveInterface(ip)
 
         self.velocity = 0.5
         self.acceleration = 2
+
+        #Gripper Setup
+        self.gripper = RobotiqGripper(self.rtde_c)
+        self.gripper.activate()     # returns to previous position after activation
+        self.gripper.set_force(50)  # from 0 to 100 %
+        self.gripper.set_speed(100) # from 0 to 100 %
+        self.gripper.open()         # Open the gripper
 
     def isConnected(self):
         if not self.rtde_c.isConnected() or not self.rtde_r.isConnected():
             return False
         return True
 
+    def moveGripper(self, pos):
+        return self.gripper.move(pos)
+
     def moveHome(self):
-        self.rtde_c.moveJ()
+        return self.moveRobot([0, -1.57, 0, -1.57, 0, 0])
 
     def moveRobot(self, q):
-        self.rtde_c.moveJ(q, self.velocity, self.acceleration)
-
-        while not self.destinationReached(q):
-            if not self.isConnected():
-                self.reconnect()
-
-            self.rtde_c.moveJ(q, self.velocity, self.acceleration)
-
-        return True
-
+        return self.rtde_c.moveJ(q, self.velocity, self.acceleration)
 
     def destinationReached(self, q):
         difference = numpy.subtract(q,  self.getQ())
@@ -68,3 +61,7 @@ class RobotControl:
 
     def getQ(self):
         return self.rtde_r.getActualQ()
+
+    def stopScript(self):
+        # Stop the rtde control script
+        self.rtde_c.stopRobot()

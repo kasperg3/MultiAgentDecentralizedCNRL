@@ -1,4 +1,4 @@
-from robotiq_gripper import RobotiqGripper
+from RobotControl.robotiq_gripper import RobotiqGripper
 from rtde_control import RTDEControlInterface
 import time
 

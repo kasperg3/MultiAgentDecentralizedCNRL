@@ -18,16 +18,13 @@ def coppeliaSimTest():
     robot1.stopSim()
 
 def RobotControlTest():
-    robot0 = RobotControl("24.5.19.20")
-    robot1 = RobotControl("24.5.19.10")
-
-    robot1.
-
+    robot0 = RobotControl('24.5.19.15')
+    robot0.moveHome()
+    robot0.stopScript()
 
 def main():
     #coppeliaSimTest()
-
-
+    RobotControlTest()
 
 if __name__ == "__main__":
     main()
