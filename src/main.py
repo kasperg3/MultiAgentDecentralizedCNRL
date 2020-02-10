@@ -1,6 +1,9 @@
+import time
+
 from CoppeliaSim.CoppeliaSim import CoppeliaSim
 from RobotControl.RobotControl import RobotControl
 import numpy as np
+import CoppeliaSim.sim as sim
 
 
 def coppeliaSimTest():
@@ -17,14 +20,34 @@ def coppeliaSimTest():
 
     robot1.stopSim()
 
+
 def RobotControlTest():
-    robot0 = RobotControl('24.5.19.15')
-    robot0.moveHome()
-    robot0.stopScript()
+    robot1 = RobotControl("24.5.19.20")
+    robot1.moveHome()
+    # robot1.stopScript()
+
 
 def main():
-    #coppeliaSimTest()
-    RobotControlTest()
+    # coppeliaSimTest()
+    # RobotControlTest()
+
+    #Init the remote api
+    remoteClientID = sim.simxStart('127.0.0.1', 19997, True, True, 5000, 5)  # Connect to CoppeliaSim
+    if remoteClientID != -1:
+        print("Successfully connected to Coppelia RemoteAPI")
+    else:
+        print('Failed connecting to remote API server')
+
+    robot0 = CoppeliaSim("0", remoteClientID)
+    robot1 = CoppeliaSim("1", remoteClientID)
+
+    robot0.setQ(np.array([-0.667, -1.84571, -2.10352, -0.758907, 1.60592, 0.903087], dtype=np.float32))
+    robot0.setQ(np.array([-0.667, -2, -2.10352, -0.758907, 1.60, 0.903087], dtype=np.float32))
+    time.sleep(3)
+    robot0.closeGripper()
+    time.sleep(1)
+
+    robot0.moveHome()
 
 if __name__ == "__main__":
     main()
