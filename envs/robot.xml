@@ -9,7 +9,7 @@
             <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="4" diaginertia="0.0072 0.00443333 0.00443333" />
             <geom name="standoff" type="cylinder" euler="0 0 0" size="0.1 0.035" material="RobMat" />
             <geom name="base_mesh" type="mesh" pos="0 0 0.035" euler="1.57 0 0" mesh="base" material="RobMat" />
-            <body name="shoulder_link" pos="0 0 0.20">
+            <body name="shoulder_link" pos="0 0 0.201">
                 <inertial pos="0 0 0" mass="3.7" diaginertia="0.0102675 0.0102675 0.00666" />
                 <geom name="shoulder_mesh" type="mesh" mesh="shoulder" material="RobMat" />
                 <joint name="joint1" axis="0 0 1" limited="false"/>

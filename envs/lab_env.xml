@@ -1,21 +1,8 @@
 <mujoco model="ur5">
-    <compiler angle="radian" meshdir="meshes" coordinate="local" texturedir="textures"/>
-    <option gravity="0 0 0" cone="elliptic" timestep="0.02" />
-
-    <size njmax="500" nconmax="100" />
-
-    <visual>
-        <map znear="0.001" />
-    </visual>
-
-    <default>
-        <light castshadow="false" diffuse="1 1 1" />
-        <joint frictionloss="1" damping="1" />
-        <camera fovy="60" />
-        <motor gear="0.8"/>
-        <velocity kv="10"/>
-        <position kp="5"/>
-    </default>
+	<compiler angle="radian" coordinate="local" meshdir="meshes" texturedir="textures"/>
+	<option timestep="0.002">
+		<flag warmstart="enable"/>
+	</option>
 
     <include file="shared.xml"/>
 
