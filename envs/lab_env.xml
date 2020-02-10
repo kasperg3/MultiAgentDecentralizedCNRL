@@ -13,10 +13,10 @@
 		</body>
 
         <!--Include the UR robot-->
-		<include file="robot.xml"/>
+        <include file="robot.xml"/>
 
-		<body pos="1.3 0.75 0.2" name="table0">
-			<geom size="0.25 0.35 0.2" type="box" mass="2000" material="table_mat"/>
+		<body pos="0.4 1.2 0.2" name="table0">
+			<geom size="0.4 1.2 0.2" type="box" mass="2000" material="table_mat"/>
 		</body>
 
 		<body name="object0" pos="0.025 0.025 0.025">
@@ -29,7 +29,7 @@
 	</worldbody>
 
     <actuator>
-		<position ctrllimited="true" ctrlrange="0 0.2" joint="joint7_l" kp="30000" name="l_gripper_finger_joint" user="1"/>
-		<position ctrllimited="true" ctrlrange="0 0.2" joint="joint7_r" kp="30000" name="r_gripper_finger_joint" user="1"/>
+		<position ctrllimited="true" ctrlrange="0 0.2" joint="robot0:joint7_l" kp="30000" name="robot0:l_gripper_finger_joint" user="1"/>
+		<position ctrllimited="true" ctrlrange="0 0.2" joint="robot0:joint7_r" kp="30000" name="robot0:r_gripper_finger_joint" user="1"/>
     </actuator>
 </mujoco>

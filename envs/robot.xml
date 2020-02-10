@@ -5,54 +5,57 @@
 		<geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="0.005 1 0.001" type="box"/>
 		<geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="0.005 0.005 1" type="box"/>
 	</body>
-    <body childclass="robot0:ur5" name="base_link" pos="-0.175 0.175 0" quat="0.3826834324 0 0 0.9238795325">
+    <body childclass="robot0:ur5" name="robot0:base_link" pos="0.125 0.575 0.4" quat="0.3826834324 0 0 0.9238795325">
             <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="4" diaginertia="0.0072 0.00443333 0.00443333" />
-            <geom name="standoff" type="cylinder" euler="0 0 0" size="0.1 0.035" material="RobMat" />
-            <geom name="base_mesh" type="mesh" pos="0 0 0.035" euler="1.57 0 0" mesh="base" material="RobMat" />
-            <body name="shoulder_link" pos="0 0 0.201">
+            <geom name="robot0:standoff" type="cylinder" euler="0 0 0" size="0.1 0.035" material="RobMat" />
+            <geom name="robot0:base_mesh" type="mesh" pos="0 0 0.035" euler="1.57 0 0" mesh="base" material="RobMat" />
+            <body name="robot0:shoulder_link" pos="0 0 0.201">
                 <inertial pos="0 0 0" mass="3.7" diaginertia="0.0102675 0.0102675 0.00666" />
-                <geom name="shoulder_mesh" type="mesh" mesh="shoulder" material="RobMat" />
-                <joint name="joint1" axis="0 0 1" limited="false"/>
+                <geom name="robot0:shoulder_mesh" type="mesh" mesh="shoulder" material="RobMat" />
+                <joint name="robot0:joint1" axis="0 0 1" limited="false"/>
 
-                <body name="upper_arm_link" pos="0 0.13585 0" quat="0.707107 0 0.707107 0">
+                <body name="robot0:upper_arm_link" pos="0 0.13585 0" quat="0.707107 0 0.707107 0">
                     <inertial pos="0 0 0.28" mass="8.393" diaginertia="0.226891 0.226891 0.0151074" />
-                    <geom name="upperarm_mesh" type="mesh" mesh="upperarm" material="RobMat" />
-                    <joint name="joint2" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+                    <geom name="robot0:upperarm_mesh" type="mesh" mesh="upperarm" material="RobMat" />
+                    <joint name="robot0:joint2" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
 
-                    <body name="forearm_link" pos="0 -0.1197 0.425">
+                    <body name="robot0:forearm_link" pos="0 -0.1197 0.425">
                         <inertial pos="0 0 0.25" mass="2.275" diaginertia="0.0494433 0.0494433 0.004095" />
-                        <geom name="forearm_mesh" type="mesh" mesh="forearm" material="RobMat" />
-                        <joint name="joint3" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+                        <geom name="robot0:forearm_mesh" type="mesh" mesh="forearm" material="RobMat" />
+                        <joint name="robot0:joint3" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
 
-                        <body name="wrist1_link" pos="0 0 0.39225" quat="0.707107 0 0.707107 0">
+                        <body name="robot0:wrist1_link" pos="0 0 0.39225" quat="0.707107 0 0.707107 0">
                             <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1.219" diaginertia="0.21942 0.111173 0.111173" />
-                            <geom name="wrist1_mesh" type="mesh" mesh="wrist1" material="RobMat" />
-                            <joint name="joint4" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+                            <geom name="robot0:wrist1_mesh" type="mesh" mesh="wrist1" material="RobMat" />
+                            <joint name="robot0:joint4" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
 
-                            <body name="wrist2_link" pos="0 0.093 0">
+                            <body name="robot0:wrist2_link" pos="0 0.093 0">
                                 <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1.219" diaginertia="0.21942 0.111173 0.111173" />
-                                <geom name="wrist2_mesh" type="mesh" mesh="wrist2" material="RobMat" />
-                                <joint name="joint5" pos="0 0 0" axis="0 0 1" range="-3.1405 3.1405"/>
+                                <geom name="robot0:wrist2_mesh" type="mesh" mesh="wrist2" material="RobMat" />
+                                <joint name="robot0:joint5" pos="0 0 0" axis="0 0 1" range="-3.1405 3.1405"/>
 
-                                <body name="wrist3_link" pos="0 0 0.09465" quat="0.707107 0 -0.707107 0" >
+                                <body name="robot0:wrist3_link" pos="0 0 0.09465" quat="0.707107 0 -0.707107 0" >
                                     <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.1879" diaginertia="0.033822 0.0171365 0.0171365" />
-                                    <geom name="wrist3_mesh" type="mesh" mesh="wrist3" material="RobMat" contype="1" conaffinity="1" />
-                                    <joint name="joint6" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+                                    <geom name="robot0:wrist3_mesh" type="mesh" mesh="wrist3" material="RobMat" contype="1" conaffinity="1" />
+                                    <joint name="robot0:joint6" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
 
-                                    <body name="ee_link" pos="0 0.0823 0" quat="0.707107 -0.707107 0 0">
+                                    <body name="robot0:ee_link" pos="0 0.0823 0" quat="0.707107 -0.707107 0 0">
                                         <inertial pos="0 0.0823 0" quat="0.707107 -0.707107 0 0" mass="0" diaginertia="0 0 0" />
 
-                                        <geom name="robotiq_coupler_mesh" type="mesh" mesh="robotiq_coupler" pos="0 0 0.005" material="GriMat" />
-                                        <geom name="robotiq_base_link" type="mesh" mesh="robotiq_gripper" pos="0 0 0.095" euler="1.5707 0 0" material="GriMat" />
+                                        <geom name="robot0:robotiq_coupler_mesh" type="mesh" mesh="robotiq_coupler" pos="0 0 0.005" material="GriMat" />
 
-                                        <body childclass="robot0:robotiqGripper" name="right_finger" pos="-0.005 -0.027 0.132" euler="1.5707 0 -1.5707">
-                                            <geom name="robotiq_finger_mesh_r" type="mesh" mesh="robotiq_finger" material="GriMat" contype="0" conaffinity="0"/>
-                                            <joint name='joint7_r' type='slide' axis='0 0 -1' range='0 .025'/>
-                                        </body>
+                                        <body name="robot0:robotiq_base_link" pos="0 0 0" euler="0 0 0">
+                                            <geom name="robot0:robotiq_base" type="mesh" mesh="robotiq_gripper" pos="0 0 0.095" euler="1.5707 0 0" material="GriMat" />
 
-                                        <body childclass="robot0:robotiqGripper" name="left_finger" pos="0.0025 0.027 0.132" euler="-1.5707 0 1.5707">
-                                            <geom name="robotiq_finger_mesh_l" type="mesh" mesh="robotiq_finger" material="GriMat" contype="0" conaffinity="0"/>
-                                            <joint name='joint7_l' type='slide' axis='0 0 -1' range='0 .025'/>
+                                            <body childclass="robot0:robotiqGripper" name="robot0:right_finger" pos="-0.005 -0.027 0.132" euler="1.5707 0 -1.5707">
+                                                <geom name="robotiq_finger_mesh_r" type="mesh" mesh="robotiq_finger" material="GriMat" contype="0" conaffinity="0"/>
+                                                <joint name='robot0:joint7_r' type='slide' axis='0 0 -1' range='0 .025'/>
+                                            </body>
+
+                                            <body childclass="robot0:robotiqGripper" name="robot0:left_finger" pos="0.0025 0.027 0.132" euler="-1.5707 0 1.5707">
+                                                <geom name="robot0:robotiq_finger_mesh_l" type="mesh" mesh="robotiq_finger" material="GriMat" contype="0" conaffinity="0"/>
+                                                <joint name='robot0:joint7_l' type='slide' axis='0 0 -1' range='0 .025'/>
+                                            </body>
                                         </body>
                                     </body>
                                 </body>

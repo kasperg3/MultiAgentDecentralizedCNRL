@@ -30,18 +30,18 @@
         <mesh file="robotiq_gripper.stl" />
         <mesh file="robotiq_finger.stl" />
 
-        <material name="RobMat" specular="0.9" shininess="0.5" reflectance="0" rgba="0.7 0.7 0.7 1" emission="0.1"></material>
-        <material name="GriMat" specular="0.9" shininess="0.5" reflectance="0" rgba="0.1 0.1 0.1 1" emission="0.1"></material>
-        <material name="BasketMat" specular="0" shininess="0" reflectance="0" rgba="0.26 0.16 0.16796875 1" emission="0"></material>
-        <material name="Light" specular="0" shininess="0.6" reflectance="0.9" rgba="0.5 0.5 1 1" emission="0.7"></material>
+        <material name="RobMat" specular="0.9" shininess="0.5" reflectance="0" rgba="0.7 0.7 0.7 1" emission="0.1"/>
+        <material name="GriMat" specular="0.9" shininess="0.5" reflectance="0" rgba="0.1 0.1 0.1 1" emission="0.1"/>
+        <material name="BasketMat" specular="0" shininess="0" reflectance="0" rgba="0.26 0.16 0.16796875 1" emission="0"/>
+        <material name="Light" specular="0" shininess="0.6" reflectance="0.9" rgba="0.5 0.5 1 1" emission="0.7"/>
     </asset>
 
     <equality>
-        <weld body1="robot0:mocap" body2="ee_link" solimp="0.9 0.95 0.001" solref="0.02 1"></weld>
+        <weld body1="robot0:mocap" body2="robot0:robotiq_base_link" solimp="0.9 0.95 0.001" solref="0.02 1"/>
     </equality>
 
     <contact>
-        <exclude body1="left_finger" body2="right_finger"/>
+        <exclude body1="robot0:left_finger" body2="robot0:right_finger"/>
     </contact>
 
     <default>
@@ -56,6 +56,7 @@
             <default class="robot0:grey">
                 <geom rgba="0.356 0.361 0.376 1.0"/>
             </default>
+
             <default class="robot0:blue">
                 <geom rgba="0.086 0.506 0.767 1.0"/>
             </default>
