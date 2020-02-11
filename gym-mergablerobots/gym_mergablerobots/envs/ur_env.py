@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.transform import Rotation
 
 from gym.envs.robotics import rotations, robot_env, utils
 
@@ -42,9 +43,9 @@ class UrEnv(robot_env.RobotEnv):
         self.target_range = target_range
         self.distance_threshold = distance_threshold
         self.reward_type = reward_type
-
+        # TODO Change actions to x, y, z, quaternion, gripper, such actions = 8
         super(UrEnv, self).__init__(
-            model_path=model_path, n_substeps=n_substeps, n_actions=4,
+            model_path=model_path, n_substeps=n_substeps, n_actions=8,
             initial_qpos=initial_qpos)
 
     # GoalEnv methods
@@ -69,13 +70,13 @@ class UrEnv(robot_env.RobotEnv):
 
 
     def _set_action(self, action):
-        assert action.shape == (4,)
+        assert action.shape == (8,)
         action = action.copy()  # ensure that we don't change the action outside of this scope
-        pos_ctrl, gripper_ctrl = action[:3], action[3]
+        pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:6], action[7]
 
         pos_ctrl *= 0.05  # limit maximum change in position
         # TODO: Add rotational control
-        rot_ctrl = [0, 0., 1., 0.]  # fixed rotation of the end effector, expressed as a quaternion
+        rot_ctrl *= 0.0001
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
         if self.block_gripper:
@@ -89,6 +90,8 @@ class UrEnv(robot_env.RobotEnv):
     def _get_obs(self):
         # positions
         grip_pos = self.sim.data.get_site_xpos('robot0:grip')
+        grip_rot_cart = Rotation.from_matrix(self.sim.data.get_site_xmat('robot0:grip'))# The rotation of gripper(Cartesian)
+        grip_rot = Rotation.as_quat(grip_rot_cart)
         dt = self.sim.nsubsteps * self.sim.model.opt.timestep
         grip_velp = self.sim.data.get_site_xvelp('robot0:grip') * dt
         robot_qpos, robot_qvel = utils.robot_get_obs(self.sim)
@@ -112,7 +115,7 @@ class UrEnv(robot_env.RobotEnv):
         else:
             achieved_goal = np.squeeze(object_pos.copy())
         obs = np.concatenate([
-            grip_pos, object_pos.ravel(), object_rel_pos.ravel(), gripper_state, object_rot.ravel(),
+            grip_pos, grip_rot, object_pos.ravel(), object_rel_pos.ravel(), gripper_state, object_rot.ravel(),
             object_velp.ravel(), object_velr.ravel(), grip_velp, gripper_vel,
         ])
 
@@ -176,6 +179,7 @@ class UrEnv(robot_env.RobotEnv):
         self.sim.forward()
 
         # Move end effector into position.
+        # TODO: Add default positions to contructor
         gripper_target = np.array([0.8, 0.3, 0.4 + self.gripper_extra_height]) + self.sim.data.get_site_xpos('robot0:grip')
         gripper_rotation = np.array([0., 0., 1., 0.])
         self.sim.data.set_mocap_pos('robot0:mocap', gripper_target)
