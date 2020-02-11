@@ -54,6 +54,7 @@
                                                 <geom name="robot0:robotiq_finger_mesh_l" type="mesh" mesh="robotiq_finger" material="robot:gripper_finger_mat"  contype="0" conaffinity="0"/>
                                                 <joint name='robot0:joint7_l' type='slide' axis='0 0 -1' range='0 .025'/>
                                             </body>
+                                            <site name="robot0:grip" pos="0.02 0 0" rgba="0 0 0 0" size="0.02 0.02 0.02"/>
                                         </body>
                                     </body>
                                 </body>

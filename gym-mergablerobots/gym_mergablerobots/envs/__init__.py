@@ -1,2 +1,2 @@
-from gym_mergablerobots.envs.mergablerobots_env import MergabelRobotsEnv
-from gym_mergablerobots.envs.mergablerobots_single_env import MergabelRobotsSingleEnv
+from gym_mergablerobots.envs.ur_env import UrEnv
+from gym_mergablerobots.envs.mergablerobots.ur_pick_and_place import URPickAndPlaceEnv
