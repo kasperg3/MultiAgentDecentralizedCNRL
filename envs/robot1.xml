@@ -1,0 +1,65 @@
+<mujoco>
+    <body mocap="true" name="robot1:mocap" pos="1 1 1">
+		<geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.7" size="0.005 0.005 0.005" type="box"/>
+		<geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="1 0.005 0.005" type="box"/>
+		<geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="0.005 1 0.001" type="box"/>
+		<geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="0.005 0.005 1" type="box"/>
+	</body>
+    <body childclass="robot:ur5" name="robot1:base_link" pos="0.125 1.8 0.4" quat="0.3826834324 0 0 0.9238795325">
+            <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="4" diaginertia="0.0072 0.00443333 0.00443333" />
+            <geom name="robot1:standoff" type="cylinder" euler="0 0 0" size="0.1 0.035" material="robot:base_mat" class="robot:grey"/>
+            <geom name="robot1:base_mesh" type="mesh" pos="0 0 0.035" euler="1.57 0 0" mesh="base" material="robot:base_mat" class="robot:grey" />
+            <body name="robot1:shoulder_link" pos="0 0 0.201">
+                <inertial pos="0 0 0" mass="3.7" diaginertia="0.0102675 0.0102675 0.00666" />
+                <geom name="robot1:shoulder_mesh" type="mesh" mesh="shoulder" material="robot:arm_mat" />
+                <joint name="robot1:joint1" axis="0 0 1" limited="false"/>
+
+                <body name="robot1:upper_arm_link" pos="0 0.13585 0" quat="0.707107 0 0.707107 0">
+                    <inertial pos="0 0 0.28" mass="8.393" diaginertia="0.226891 0.226891 0.0151074" />
+                    <geom name="robot1:upperarm_mesh" type="mesh" mesh="upperarm" material="robot:arm_mat" />
+                    <joint name="robot1:joint2" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+
+                    <body name="robot1:forearm_link" pos="0 -0.1197 0.425">
+                        <inertial pos="0 0 0.25" mass="2.275" diaginertia="0.0494433 0.0494433 0.004095" />
+                        <geom name="robot1:forearm_mesh" type="mesh" mesh="forearm" material="robot:arm_mat" />
+                        <joint name="robot1:joint3" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+
+                        <body name="robot1:wrist1_link" pos="0 0 0.39225" quat="0.707107 0 0.707107 0">
+                            <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1.219" diaginertia="0.21942 0.111173 0.111173" />
+                            <geom name="robot1:wrist1_mesh" type="mesh" mesh="wrist1" material="robot:arm_mat" />
+                            <joint name="robot1:joint4" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+
+                            <body name="robot1:wrist2_link" pos="0 0.093 0">
+                                <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1.219" diaginertia="0.21942 0.111173 0.111173" />
+                                <geom name="robot1:wrist2_mesh" type="mesh" mesh="wrist2" material="robot:arm_mat" />
+                                <joint name="robot1:joint5" pos="0 0 0" axis="0 0 1" range="-3.1405 3.1405"/>
+
+                                <body name="robot1:wrist3_link" pos="0 0 0.09465" quat="0.707107 0 -0.707107 0" >
+                                    <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.1879" diaginertia="0.033822 0.0171365 0.0171365" />
+                                    <geom name="robot1:wrist3_mesh" type="mesh" mesh="wrist3" material="robot:arm_mat" contype="1" conaffinity="1" />
+                                    <joint name="robot1:joint6" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+
+                                    <body name="robot1:ee_link" pos="0 0.0823 0" quat="0.707107 -0.707107 0 0">
+                                        <inertial pos="0 0.0823 0" quat="0.707107 -0.707107 0 0" mass="0" diaginertia="0 0 0" />
+                                        <geom name="robot1:robotiq_coupler_mesh" type="mesh" mesh="robotiq_coupler" pos="0 0 0.005" material="robot:gripper_mat" />
+                                        <body name="robot1:robotiq_base_link" pos="0 0 0" euler="0 0 0">
+                                            <geom name="robot1:robotiq_base" type="mesh" mesh="robotiq_gripper" pos="0 0 0.095" euler="1.5707 0 0" material="robot:gripper_mat" class="robot:grey" />
+
+                                            <body childclass="robot:robotiqGripper" name="robot1:right_finger" pos="-0.005 -0.027 0.132" euler="1.5707 0 -1.5707">
+                                                <geom name="robot1:robotiq_finger_mesh_r" type="mesh" mesh="robotiq_finger" material="robot:gripper_finger_mat" contype="0" conaffinity="0"/>
+                                                <joint name='robot1:joint7_r' type='slide' axis='0 0 -1' range='0 .025'/>
+                                            </body>
+                                            <body childclass="robot:robotiqGripper" name="robot1:left_finger" pos="0.0025 0.027 0.132" euler="-1.5707 0 1.5707">
+                                                <geom name="robot1:robotiq_finger_mesh_l" type="mesh" mesh="robotiq_finger" material="robot:gripper_finger_mat" contype="0" conaffinity="0"/>
+                                                <joint name='robot1:joint7_l' type='slide' axis='0 0 -1' range='0 .025'/>
+                                            </body>
+                                        </body>
+                                    </body>
+                                </body>
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+</mujoco>
