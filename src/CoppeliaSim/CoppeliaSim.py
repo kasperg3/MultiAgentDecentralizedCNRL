@@ -149,6 +149,10 @@ class CoppeliaSim(object):
     def moveQ(self):
         pass
 
+    def getQuat(self, entityString):
+        objectHandle = sim.simxGetObjectHandle(clientID=self.remoteClientID, objectName=entityString, operationMode=sim.simx_opmode_blocking)
+        sim.simxGetObjectQuaternion(clientID=self.remoteClientID, objectHandle=objectHandle, relativeToObjectHandle=sim.sim_handle_parent, operationMode=sim.simx_opmode_blocking)
+
     def moveHome(self):
         self.setQ(self.defaultQ)
         pass

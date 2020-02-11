@@ -39,15 +39,9 @@ def main():
         print('Failed connecting to remote API server')
 
     robot0 = CoppeliaSim("0", remoteClientID)
-    robot1 = CoppeliaSim("1", remoteClientID)
 
-    robot0.setQ(np.array([-0.667, -1.84571, -2.10352, -0.758907, 1.60592, 0.903087], dtype=np.float32))
-    robot0.setQ(np.array([-0.667, -2, -2.10352, -0.758907, 1.60, 0.903087], dtype=np.float32))
-    time.sleep(3)
-    robot0.closeGripper()
-    time.sleep(1)
+    print("Quat: " + robot0.getQuat('ROBOTIQ'))
 
-    robot0.moveHome()
 
 if __name__ == "__main__":
     main()
