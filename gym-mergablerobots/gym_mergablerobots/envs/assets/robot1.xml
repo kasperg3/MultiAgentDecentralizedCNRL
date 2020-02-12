@@ -42,17 +42,19 @@
                                     <body name="robot1:ee_link" pos="0 0.0823 0" quat="0.707107 -0.707107 0 0">
                                         <inertial pos="0 0.0823 0" quat="0.707107 -0.707107 0 0" mass="0" diaginertia="0 0 0" />
                                         <geom name="robot1:robotiq_coupler_mesh" type="mesh" mesh="robotiq_coupler" pos="0 0 0.005" material="robot:gripper_mat" />
-                                        <body name="robot1:robotiq_base_link" pos="0 0 0" euler="0 0 0">
-                                            <geom name="robot1:robotiq_base" type="mesh" mesh="robotiq_gripper" pos="0 0 0.095" euler="1.5707 0 0" material="robot:gripper_mat" class="robot:grey" />
+                                        <body name="robot1:robotiq_base_link" pos="0 0 0.095" euler="0 0 0">
+                                            <geom name="robot1:robotiq_base" type="mesh" mesh="robotiq_gripper" pos="0 0 0" euler="1.5707 0 0" material="robot:gripper_mat" class="robot:grey" />
 
-                                            <body childclass="robot:robotiqGripper" name="robot1:right_finger" pos="-0.005 -0.027 0.132" euler="1.5707 0 -1.5707">
+                                            <body childclass="robot:robotiqGripper" name="robot1:right_finger" pos="-0.005 -0.027 0.037" euler="1.5707 0 -1.5707">
                                                 <geom name="robot1:robotiq_finger_mesh_r" type="mesh" mesh="robotiq_finger" material="robot:gripper_finger_mat" contype="0" conaffinity="0"/>
                                                 <joint name='robot1:joint7_r' type='slide' axis='0 0 -1' range='0 .025'/>
                                             </body>
-                                            <body childclass="robot:robotiqGripper" name="robot1:left_finger" pos="0.0025 0.027 0.132" euler="-1.5707 0 1.5707">
+                                            <body childclass="robot:robotiqGripper" name="robot1:left_finger" pos="0.0025 0.027 0.037" euler="-1.5707 0 1.5707">
                                                 <geom name="robot1:robotiq_finger_mesh_l" type="mesh" mesh="robotiq_finger" material="robot:gripper_finger_mat" contype="0" conaffinity="0"/>
                                                 <joint name='robot1:joint7_l' type='slide' axis='0 0 -1' range='0 .025'/>
                                             </body>
+                                            <site name="robot1:grip" pos="0.0 0 0" rgba="0 0 0 0" size="0.02 0.02 0.02"/>
+
                                         </body>
                                     </body>
                                 </body>
