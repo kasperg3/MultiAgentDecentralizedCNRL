@@ -1,2 +1,3 @@
 from gym_mergablerobots.envs.ur_env import UrEnv
 from gym_mergablerobots.envs.mergablerobots.ur_pick_and_place import URPickAndPlaceEnv
+from gym_mergablerobots.envs.mergablerobots.ur_reach import UrReachEnv

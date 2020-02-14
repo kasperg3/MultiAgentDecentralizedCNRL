@@ -1,7 +1,7 @@
 import numpy as np
-
-from gym.envs.robotics import rotations, utils, robot_env
 from scipy.spatial.transform import Rotation
+
+from gym.envs.robotics import rotations, robot_env, utils
 
 
 def goal_distance(goal_a, goal_b):
@@ -9,7 +9,7 @@ def goal_distance(goal_a, goal_b):
     return np.linalg.norm(goal_a - goal_b, axis=-1)
 
 
-class UrEnv(robot_env.RobotEnv):
+class DualUrEnv(robot_env.RobotEnv):
     """Superclass for all Fetch environments.
     """
 
@@ -43,9 +43,9 @@ class UrEnv(robot_env.RobotEnv):
         self.target_range = target_range
         self.distance_threshold = distance_threshold
         self.reward_type = reward_type
-        # TODO Change actions to x, y, z, quaternion, gripper, such actions = 8
-        super(UrEnv, self).__init__(
-            model_path=model_path, n_substeps=n_substeps, n_actions=8,
+        # TODO Change actions to x, y, z, quaternion, gripper, such actions = 16
+        super(DualUrEnv, self).__init__(
+            model_path=model_path, n_substeps=n_substeps, n_actions=16,
             initial_qpos=initial_qpos)
 
     # GoalEnv methods
@@ -64,27 +64,35 @@ class UrEnv(robot_env.RobotEnv):
 
     def _step_callback(self):
         if self.block_gripper:
-            self.sim.data.set_joint_qpos('robot0:joint7_l', 0.)
-            self.sim.data.set_joint_qpos('robot0:joint7_r', 0.)
+            self.sim.data.set_joint_qpos('robot0:l_gripper_finger_joint', 0.)
+            self.sim.data.set_joint_qpos('robot0:r_gripper_finger_joint', 0.)
+            self.sim.data.set_joint_qpos('robot1:l_gripper_finger_joint', 0.)
+            self.sim.data.set_joint_qpos('robot1:r_gripper_finger_joint', 0.)
             self.sim.forward()
 
+
     def _set_action(self, action):
-        #Change action space if number of is changed
-        assert action.shape == (8,)
+        assert action.shape == (16,)
         action = action.copy()  # ensure that we don't change the action outside of this scope
-        pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
-        pos_ctrl *= 0.05  # limit maximum change in position
+        robot0_pos_ctrl, robot0_rot_ctrl, robot0_gripper_ctrl = action[:3], action[3:6], action[7]
+        robot1_pos_ctrl, robot1_rot_ctrl, robot1_gripper_ctrl = action[8:11], action[11:14], action[15]
+
         # TODO: Add rotational control
-        rot_ctrl *= 0.0001
-        gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
-        assert gripper_ctrl.shape == (2,)
+        max_change_pos = 0.05
+        max_change_rot = 0.0001
+        robot0_pos_ctrl *= max_change_pos  # limit maximum change in position
+        robot0_rot_ctrl *= max_change_rot
+
+        robot0_gripper_ctrl = np.array([robot0_gripper_ctrl, robot0_gripper_ctrl])
+        assert robot0_gripper_ctrl.shape == (2,)
         if self.block_gripper:
-            gripper_ctrl = np.zeros_like(gripper_ctrl)
-        action = np.concatenate([pos_ctrl, rot_ctrl, gripper_ctrl])
+            robot0_gripper_ctrl = np.zeros_like(robot0_gripper_ctrl)
+        action = np.concatenate([robot0_pos_ctrl, robot0_rot_ctrl, robot0_gripper_ctrl])
 
         # Apply action to simulation.
         utils.ctrl_set_action(self.sim, action)
         utils.mocap_set_action(self.sim, action)
+
 
     def _get_obs(self):
         # positions
@@ -113,7 +121,6 @@ class UrEnv(robot_env.RobotEnv):
             achieved_goal = grip_pos.copy()
         else:
             achieved_goal = np.squeeze(object_pos.copy())
-        #TODO Add gripper rotation to observation
         obs = np.concatenate([
             grip_pos, grip_rot, object_pos.ravel(), object_rel_pos.ravel(), gripper_state, object_rot.ravel(),
             object_velp.ravel(), object_velr.ravel(), grip_velp, gripper_vel,
@@ -180,10 +187,13 @@ class UrEnv(robot_env.RobotEnv):
 
         # Move end effector into position.
         # TODO: Add default positions to contructor
-        gripper_target = np.array([0.8, 0.3, 0.4 + self.gripper_extra_height]) + self.sim.data.get_site_xpos('robot0:grip')
-        gripper_rotation = np.array([0., 0., 1., 0.])
-        self.sim.data.set_mocap_pos('robot0:mocap', gripper_target)
-        self.sim.data.set_mocap_quat('robot0:mocap', gripper_rotation)
+        robot0_gripper_target = np.array([0.8, 0.3, 0.4 + self.gripper_extra_height]) + self.sim.data.get_site_xpos('robot0:grip')
+        robot0_gripper_rotation = np.array([0., 0., 1., 0.])
+        robot1_gripper_target = np.array([0.8, 0.3, 0.4 + self.gripper_extra_height]) + self.sim.data.get_site_xpos('robot1:grip')
+        self.sim.data.set_mocap_pos('robot0:mocap', robot0_gripper_target)
+        self.sim.data.set_mocap_quat('robot0:mocap', robot0_gripper_rotation)
+        self.sim.data.set_mocap_pos('robot1:mocap', robot1_gripper_target)
+        self.sim.data.set_mocap_quat('robot1:mocap', robot0_gripper_rotation)
         for _ in range(10):
             self.sim.step()
 
@@ -193,4 +203,4 @@ class UrEnv(robot_env.RobotEnv):
             self.height_offset = self.sim.data.get_site_xpos('object0')[2]
 
     def render(self, mode='human', width=500, height=500):
-        return super(UrEnv, self).render(mode, width, height)
+        return super(DualUrEnv, self).render(mode)

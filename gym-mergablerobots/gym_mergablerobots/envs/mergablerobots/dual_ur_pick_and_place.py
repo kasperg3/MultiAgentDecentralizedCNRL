@@ -2,11 +2,12 @@ import os
 from gym import utils
 from gym_mergablerobots.envs.ur_env import UrEnv
 
+
 # Ensure we get the path separator correct on windows
-MODEL_XML_PATH = '/home/kasper/workspace/mergableindustrialrobots/gym-mergablerobots/gym_mergablerobots/envs/assets/single_robot.xml'
+MODEL_XML_PATH ='/home/kasper/workspace/mergableindustrialrobots/gym-mergablerobots/gym_mergablerobots/envs/assets/two_robots.xml'
 
 
-class URPickAndPlaceEnv(UrEnv, utils.EzPickle):
+class DualURPickAndPlaceEnv(UrEnv, utils.EzPickle):
     def __init__(self, reward_type='sparse'):
         initial_qpos = {
         }
