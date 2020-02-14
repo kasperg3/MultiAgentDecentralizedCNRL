@@ -270,7 +270,7 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
         else:
             a = env.action_space.sample()
 
-        # Step the env
+        # Step the env with action a
         o2, r, d, _ = env.step(a)
         ep_ret += r
         ep_len += 1
@@ -287,7 +287,7 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
         # most recent observation!
         o = o2
 
-        # End of trajectory handling
+        # End of trajectory handling or ep_len has reached max
         if d or (ep_len == max_ep_len):
             logger.store(EpRet=ep_ret, EpLen=ep_len)
             o, ep_ret, ep_len = env.reset(), 0, 0
@@ -323,6 +323,14 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
             logger.dump_tabular()
 
 
+def main(args):
+    ddpg(lambda: gym.make(args.env), actor_critic=core.MLPActorCritic,
+         ac_kwargs=dict(hidden_sizes=[args.hid] * args.l),
+         gamma=args.gamma, seed=args.seed, epochs=args.epochs,
+         logger_kwargs=logger_kwargs, render=args.render)
+    pass
+
+
 if __name__ == '__main__':
     import argparse
 
@@ -340,8 +348,4 @@ if __name__ == '__main__':
     from spinup.utils.run_utils import setup_logger_kwargs
 
     logger_kwargs = setup_logger_kwargs(args.exp_name, args.seed)
-
-    ddpg(lambda: gym.make(args.env), actor_critic=core.MLPActorCritic,
-         ac_kwargs=dict(hidden_sizes=[args.hid] * args.l),
-         gamma=args.gamma, seed=args.seed, epochs=args.epochs,
-         logger_kwargs=logger_kwargs, render=args.render)
+    main(args)
