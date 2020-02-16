@@ -75,7 +75,7 @@ class UrEnv(robot_env.RobotEnv):
         pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
         pos_ctrl *= 0.05  # limit maximum change in position
         # TODO: Add rotational control
-        rot_ctrl *= 0.1
+        rot_ctrl *= 0.01
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
         if self.block_gripper:
