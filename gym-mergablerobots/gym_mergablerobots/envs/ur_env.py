@@ -180,7 +180,7 @@ class UrEnv(robot_env.RobotEnv):
 
         # Move end effector into position.
         # TODO: Add default positions to contructor
-        gripper_target = np.array([0.8, 0.3, 0.4 + self.gripper_extra_height]) + self.sim.data.get_site_xpos('robot0:grip')
+        gripper_target = np.array([1, -0.5, 0.4 + self.gripper_extra_height]) + self.sim.data.get_site_xpos('robot0:grip')
         gripper_rotation = np.array([0., 0., 1., 0.])
         self.sim.data.set_mocap_pos('robot0:mocap', gripper_target)
         self.sim.data.set_mocap_quat('robot0:mocap', gripper_rotation)

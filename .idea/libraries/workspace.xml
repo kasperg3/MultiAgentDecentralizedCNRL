@@ -21,7 +21,7 @@
       <root url="file://$PROJECT_DIR$/../caros/hwcomponents/caros_netft" />
       <root url="file://$PROJECT_DIR$/../universal_robot/ur3_e_moveit_config" />
       <root url="file://$PROJECT_DIR$/../universal_robot/ur5_moveit_config" />
-      <root url="file://$PROJECT_DIR$" />
+      <root url="file://$PROJECT_DIR$/.." />
       <root url="file://$PROJECT_DIR$/../robotiq/robotiq_2f_140_gripper_visualization" />
       <root url="file://$PROJECT_DIR$/../caros/hwcomponents/caros_schunkpg70" />
       <root url="file://$PROJECT_DIR$/../caros/interfaces/caros_sensor" />
