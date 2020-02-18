@@ -1,21 +1,48 @@
 # MergableIndustrialRobots
 
 ## Connect to UR: 
-__1: Specify the ip in the robots interface.__ Settings -> Network -> IP:192.168.100.1
 
-__2: Make your wired connection static and set ip to__ 192.168.100.2
+UR RTDE STUFF TODO
 
-__3: Establish a connection between the robot and the node:__
-```
-roslaunch caros_universalrobot caros_universalrobot.launch device_ip:=192.168.100.1
-```
+## Prerequisites
 
-__4: run your program, eg:__
+__SpinningUp from OpenAIGym:__
 ```
-roslaunch caros_universalrobot simple_demo_using_move_ptp.test
+git clone https://github.com/openai/spinningup.git
+cd spinningup
+pip3 install -e .
 ```
 
-## Setup V-Rep: 
+__gym-mergablerobots:__
+
+```
+git clone https://gitlab.com/kasperg3/mergableindustrialrobots
+cd mergableindustrialrobots
+pip3 install -e gym-mergablerobots/
+```
+
+__Tensorflow:__
+```
+pip3 install tensorflow
+```
+
+Add this to .bashrc:
+```
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
+```
+
+And source: 
+```
+cd 
+source .bashrc
+```
+
+
+
+
+
+
+## Setup V-Rep: (DEPRECATED)
 
 
 ### Install V-Rep Ros Interface(Requires a catkin workspace):
