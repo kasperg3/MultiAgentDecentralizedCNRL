@@ -1,6 +1,5 @@
 import numpy
 import tensorflow as tf
-import tensorflow.contrib as tc
 
 
 # Actor Class
@@ -140,18 +139,18 @@ class Critic(object):
         x = tf.layers.dense(inputs, self.hidden_size[0],
                             kernel_initializer=tf.initializers.random_uniform(-f1, f1),
                             bias_initializer=tf.initializers.random_uniform(-f1, f1))
-        x = tc.layers.layer_norm(x, center=True, scale=True)
+        x = tf.layers.batch_normalization(x)
         #x = tf.nn.relu(x)
 
         # action branch
-        actions = tf.layers.dense(self.actions, units=self.fc2_dims,
-                                    activation='relu')
+        actions = tf.placeholder(tf.float32, shape=[None, self.action_dim])
+
         # merge
         x = tf.concat([x, actions], axis=1)
         x = tf.layers.dense(x, self.hidden_size[1],
                             kernel_initializer=tf.initializers.random_uniform(-f2, f2),
                             bias_initializer=tf.initializers.random_uniform(-f2, f2))
-        x = tc.layers.batch_normalization(x)
+        x = tf.layers.batch_normalization(x)
         x = tf.nn.relu(x)
 
         # activation layer

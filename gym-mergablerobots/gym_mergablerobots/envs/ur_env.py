@@ -74,8 +74,7 @@ class UrEnv(robot_env.RobotEnv):
         action = action.copy()  # ensure that we don't change the action outside of this scope
         pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
         pos_ctrl *= 0.05  # limit maximum change in position
-        # TODO: Add rotational control
-        rot_ctrl *= 0.01
+        rot_ctrl *= 0.1
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
         if self.block_gripper:
@@ -180,7 +179,7 @@ class UrEnv(robot_env.RobotEnv):
 
         # Move end effector into position.
         # TODO: Add default positions to contructor
-        gripper_target = np.array([1, -0.5, 0.4 + self.gripper_extra_height]) + self.sim.data.get_site_xpos('robot0:grip')
+        gripper_target = np.array([1.2, -0.5, 0.4 + self.gripper_extra_height]) + self.sim.data.get_site_xpos('robot0:grip')
         gripper_rotation = np.array([0., 0., 1., 0.])
         self.sim.data.set_mocap_pos('robot0:mocap', gripper_target)
         self.sim.data.set_mocap_quat('robot0:mocap', gripper_rotation)
