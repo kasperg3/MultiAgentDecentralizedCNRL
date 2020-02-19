@@ -1,9 +1,14 @@
 import gym
-import numpy
+import numpy as np
 import tensorflow as tf
 
-
 # Actor Class
+from noise import Noise
+
+# TODO: Maybe make the target separate from the critic/actor
+from replay import Memory
+
+
 class Actor(object):
 
     def __init__(self, sess, state_dim, action_dim, action_bound, learning_rate, tau, batch_size, hidden_size):
@@ -46,8 +51,8 @@ class Actor(object):
 
     # function to create agent network
     def create(self):
-        f1 = 1. / numpy.sqrt(self.hidden_size[0])
-        f2 = 1. / numpy.sqrt(self.hidden_size[1])
+        f1 = 1. / np.sqrt(self.hidden_size[0])
+        f2 = 1. / np.sqrt(self.hidden_size[1])
         f3 = 0.003
         inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
         x = tf.layers.dense(inputs, units=self.hidden_size[0],
@@ -93,7 +98,13 @@ class Actor(object):
     def update(self):
         self.sess.run(self.update_target_weights)
 
+    def load_checkpoint(self):
+        print("...Loading checkpoint...")
+        self.saver.restore(self.sess, self.checkpoint_file)
 
+    def save_checkpoint(self):
+        print("...Saving checkpoint...")
+        self.saver.save(self.sess, self.checkpoint_file)
 # Critic Class
 class Critic(object):
 
@@ -132,8 +143,8 @@ class Critic(object):
 
     # function to create agent network
     def create(self):
-        f1 = 1. / numpy.sqrt(self.hidden_size[0])
-        f2 = 1. / numpy.sqrt(self.hidden_size[1])
+        f1 = 1. / np.sqrt(self.hidden_size[0])
+        f2 = 1. / np.sqrt(self.hidden_size[1])
 
         # state branch
         inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
@@ -141,7 +152,7 @@ class Critic(object):
                             kernel_initializer=tf.initializers.random_uniform(-f1, f1),
                             bias_initializer=tf.initializers.random_uniform(-f1, f1))
         x = tf.layers.batch_normalization(x)
-        #x = tf.nn.relu(x)
+        # x = tf.nn.relu(x)
 
         # action branch
         actions = tf.placeholder(tf.float32, shape=[None, self.action_dim])
@@ -194,24 +205,74 @@ class Critic(object):
             self.actions: actions
         })
 
+    def load_checkpoint(self):
+        print("...Loading checkpoint...")
+        self.saver.restore(self.sess, self.checkpoint_file)
+
+    def save_checkpoint(self):
+        print("...Saving checkpoint...")
+        self.saver.save(self.sess, self.checkpoint_file)
 
 class Agent(object):
 
-    def __init__(self, environment, seed):
+    def __init__(self, args):
+        # Set path to save result
+        self.gym_dir = './' + args['env'] + '_' + args['variation'] + '/gym'
 
-        self.actor
-        self.critic
-        self.noise
+        # Set random seed
+        self.seed = np.random.seed(int(args['seed']))
+        tf.set_random_seed(self.seed)
+
         # Load environment
-        self.env = gym.make(environment)
-        self.env.seed(int(seed))
+        self.env = gym.make(args['env'])
+        self.env.seed(int(args['seed']))
+
+        # Define tf session
+        self.sess = tf.Session()
 
         obs = self.env.reset()
         self.observation_dim = obs['observation'].shape[0]
         self.achieved_goal_dim = obs['achieved_goal'].shape[0]
-        self.desired_goal_dim =  obs['desired_goal'].shape[0]
+        self.desired_goal_dim = obs['desired_goal'].shape[0]
+        assert self.achieved_goal_dim == self.desired_goal_dim
 
-        pass
+        # state size = observation size + goal size
+        self.state_dim = self.observation_dim + self.desired_goal_dim
+        self.action_dim = self.env.action_space.shape[0]
+        self.action_highbound = self.env.action_space.high
+
+        # print parameters
+        print('Parameters:')
+        print('Observation Size=', self.observation_dim)
+        print('Goal Size=', self.desired_goal_dim)
+        print('State Size =', self.state_dim)
+        print('Action Size =', self.action_dim)
+        print('Action Upper Boundary =', self.action_highbound)
+
+        # create actor
+        self.actor = Actor(self.sess, self.state_dim, self.action_dim, self.action_highbound,
+                           float(args['actor_lr']),
+                           float(args['tau']),
+                           int(args['batch_size']),
+                           tuple(args['hidden_sizes']))
+
+        # create critic
+        self.critic = Critic(self.sess, self.state_dim, self.action_dim,
+                             float(args['critic_lr']), float(args['tau']),
+                             float(args['gamma']),
+                             self.actor.n_actor_vars,
+                             tuple(args['hidden_sizes']))
+
+        # noise
+        actor_noise = Noise(mu=np.zeros(self.action_dim))
+
+        # initialize tensorflow savers and writers
+
+        # initialize the target networks
+        self.actor.update()
+        self.critic.update()
+        # initialize Replaybuffer
+        self.replay_memory = Memory(int(args['memory_size']), int(args['seed']))
 
     def learn(self):
         pass
@@ -219,14 +280,21 @@ class Agent(object):
     def test(self):
         pass
 
-    def load_models(self):
-        pass
-
-    def save_models(self):
-        pass
-
     def choose_action(self):
         pass
 
     def remember(self):
         pass
+
+    def save_models(self):
+        self.actor.save_checkpoint()
+        self.critic.save_checkpoint()
+
+    def load_models(self):
+        self.actor.load_checkpoint()
+        self.critic.load_checkpoint()
+
+    def __del__(self):
+        # Do some cleanup
+        self.env.close()
+        self.sess.close()

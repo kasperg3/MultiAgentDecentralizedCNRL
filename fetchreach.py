@@ -6,7 +6,7 @@ import argparse
 import numpy as np
 import tensorflow as tf
 from datetime import datetime
-from agent import Actor, Critic
+from agent import Actor, Critic, Agent
 from replay import Memory
 from noise import Noise
 
@@ -187,6 +187,8 @@ def test(sess, env, args, actor, critic, desired_goal_dim, achieved_goal_dim, ob
 # Main
 def main(args):
 
+    #agent = Agent(args=args)
+
     # Set path to save result
     gym_dir = './' + args['env'] + '_' + args['variation'] + '/gym'
 
@@ -222,7 +224,7 @@ def main(args):
 
         # create actor
         actor = Actor(sess, state_dim, action_dim, action_highbound,
-                      float(args['actor_lr']), float(args['tau']),
+                      float(args['actor_lr']),float(args['tau']),
                       int(args['batch_size']), tuple(args['hidden_sizes']))
 
         # create critic
