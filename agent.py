@@ -1,3 +1,4 @@
+import numpy
 import tensorflow as tf
 import tensorflow.contrib as tc
 
@@ -37,7 +38,7 @@ class Actor(object):
         self.actor_gradients = list(map(lambda x: tf.div(x, self.batch_size), self.unm_actor_gradients))
 
         # optimize using Adam
-        self.optimize = tf.train.AdamOptimizer(self.learning_rate).\
+        self.optimize = tf.train.AdamOptimizer(self.learning_rate). \
             apply_gradients(zip(self.actor_gradients, self.actor_weights))
 
         # count of weights
@@ -45,19 +46,25 @@ class Actor(object):
 
     # function to create agent network
     def create(self):
+        f1 = 1. / numpy.sqrt(self.hidden_size[0])
+        f2 = 1. / numpy.sqrt(self.hidden_size[1])
+        f3 = 0.003
         inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
-        x = tc.layers.layer_norm(inputs, center=True, scale=True, begin_norm_axis=0)
-        x = tf.layers.dense(x, self.hidden_size)
-        x = tc.layers.layer_norm(x, center=True, scale=True)
+        x = tf.layers.dense(inputs, units=self.hidden_size[0],
+                            kernel_initializer=tf.initializers.random_uniform(-f1, f1),
+                            bias_initializer=tf.initializers.random_uniform(-f1, f1))
+        x = tf.layers.batch_normalization(x)
         x = tf.nn.relu(x)
-        x = tf.layers.dense(x, self.hidden_size)
-        x = tc.layers.layer_norm(x, center=True, scale=True)
+        x = tf.layers.dense(x, units=self.hidden_size[1],
+                            kernel_initializer=tf.initializers.random_uniform(-f2, f2),
+                            bias_initializer=tf.initializers.random_uniform(-f2, f2))
+        x = tf.layers.batch_normalization(x)
         x = tf.nn.relu(x)
 
         # activation layer
-        k_init = tf.random_uniform_initializer(minval=-0.003, maxval=0.003)
-        outputs = tf.layers.dense(x, self.action_dim, kernel_initializer=k_init)
-        outputs = tf.nn.tanh(outputs)
+        outputs = tf.layers.dense(x, units=self.action_dim, activation='tanh',
+                                  kernel_initializer=tf.initializers.random_uniform(-f2, f2),
+                                  bias_initializer=tf.initializers.random_uniform(-f2, f2))
 
         # scale output fit action_bound
         scaled_outputs = tf.multiply(outputs, self.action_bound)
@@ -125,25 +132,33 @@ class Critic(object):
 
     # function to create agent network
     def create(self):
+        f1 = 1. / numpy.sqrt(self.hidden_size[0])
+        f2 = 1. / numpy.sqrt(self.hidden_size[1])
+
         # state branch
         inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
-        x = tc.layers.layer_norm(inputs, center=True, scale=True, begin_norm_axis=0)
-        x = tf.layers.dense(x, self.hidden_size)
+        x = tf.layers.dense(inputs, self.hidden_size[0],
+                            kernel_initializer=tf.initializers.random_uniform(-f1, f1),
+                            bias_initializer=tf.initializers.random_uniform(-f1, f1))
         x = tc.layers.layer_norm(x, center=True, scale=True)
-        x = tf.nn.relu(x)
+        #x = tf.nn.relu(x)
 
         # action branch
-        actions = tf.placeholder(tf.float32, shape=[None, self.action_dim])
-
+        actions = tf.layers.dense(self.actions, units=self.fc2_dims,
+                                    activation='relu')
         # merge
         x = tf.concat([x, actions], axis=1)
-        x = tf.layers.dense(x, self.hidden_size)
-        x = tc.layers.layer_norm(x, center=True, scale=True)
+        x = tf.layers.dense(x, self.hidden_size[1],
+                            kernel_initializer=tf.initializers.random_uniform(-f2, f2),
+                            bias_initializer=tf.initializers.random_uniform(-f2, f2))
+        x = tc.layers.batch_normalization(x)
         x = tf.nn.relu(x)
 
         # activation layer
-        k_init = tf.random_uniform_initializer(minval=-0.003, maxval=0.003)
-        outputs = tf.layers.dense(x, 1, kernel_initializer=k_init)
+        f3 = 0.003
+        outputs = tf.layers.dense(x, 1,
+                                  kernel_initializer=tf.initializers.random_uniform(-f3, f3),
+                                  bias_initializer=tf.initializers.random_uniform(-f3, f3))
         return inputs, actions, outputs
 
     # function to train by adding states, actions, and q values
@@ -178,4 +193,3 @@ class Critic(object):
             self.inputs: inputs,
             self.actions: actions
         })
-

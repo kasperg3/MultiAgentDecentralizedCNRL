@@ -228,14 +228,14 @@ def main(args):
         # create actor
         actor = Actor(sess, state_dim, action_dim, action_highbound,
                       float(args['actor_lr']), float(args['tau']),
-                      int(args['batch_size']), int(args['hidden_size']))
+                      int(args['batch_size']), tuple(args['hidden_sizes']))
 
         # create critic
         critic = Critic(sess, state_dim, action_dim,
                         float(args['critic_lr']), float(args['tau']),
                         float(args['gamma']),
                         actor.n_actor_vars,
-                        int(args['hidden_size']))
+                        tuple(args['hidden_sizes']))
 
         # noise
         actor_noise = Noise(mu=np.zeros(action_dim))
@@ -264,9 +264,9 @@ if __name__ == '__main__':
     parser.add_argument('--gamma', help='discount factor reward', default=0.99)
     parser.add_argument('--tau', help='target update tau', default=0.001)
     parser.add_argument('--memory-size', help='size of the replay memory', default=1000000)
-    parser.add_argument('--hidden-size', help='number of nodes in hidden layer', default=256)
+    parser.add_argument('--hidden-sizes', help='number of nodes in hidden layer', default=(400, 300))
     parser.add_argument('--episodes', help='episodes to train', default=2000)
-    parser.add_argument('--episode-length', help='max length of 1 episode', default=1000)
+    parser.add_argument('--episode-length', help='max length of 1 episode', default=50)
 
     # others and defaults
     parser.add_argument('--seed', help='random seed', default=1234)
