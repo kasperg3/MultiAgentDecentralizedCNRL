@@ -1,6 +1,7 @@
 import os, sys, time
 import json
 import gym
+from gym import wrappers
 import argparse
 import numpy as np
 import tensorflow as tf
@@ -218,12 +219,6 @@ def main(args):
         print('State Size =', state_dim)
         print('Action Size =', action_dim)
         print('Action Upper Boundary =', action_highbound)
-
-        # # save to monitor if render
-        # if args['render']:
-        #     env = gym.wrappers.Monitor(env, gym_dir, force=True)
-        # else:
-        #     env = gym.wrappers.Monitor(env, gym_dir, video_callable=False, force=True)
 
         # create actor
         actor = Actor(sess, state_dim, action_dim, action_highbound,

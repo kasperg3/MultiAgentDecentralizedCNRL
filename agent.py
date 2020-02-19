@@ -1,3 +1,4 @@
+import gym
 import numpy
 import tensorflow as tf
 
@@ -192,3 +193,40 @@ class Critic(object):
             self.inputs: inputs,
             self.actions: actions
         })
+
+
+class Agent(object):
+
+    def __init__(self, environment, seed):
+
+        self.actor
+        self.critic
+        self.noise
+        # Load environment
+        self.env = gym.make(environment)
+        self.env.seed(int(seed))
+
+        obs = self.env.reset()
+        self.observation_dim = obs['observation'].shape[0]
+        self.achieved_goal_dim = obs['achieved_goal'].shape[0]
+        self.desired_goal_dim =  obs['desired_goal'].shape[0]
+
+        pass
+
+    def learn(self):
+        pass
+
+    def test(self):
+        pass
+
+    def load_models(self):
+        pass
+
+    def save_models(self):
+        pass
+
+    def choose_action(self):
+        pass
+
+    def remember(self):
+        pass
