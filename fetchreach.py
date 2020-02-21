@@ -8,8 +8,7 @@ import tensorflow as tf
 from datetime import datetime
 from agent import Actor, Critic, Agent
 from replay import Memory
-from noise import Noise
-
+from agent import Noise
 # function to unpack observation from gym environment
 def unpackObs(obs):
     return  obs['achieved_goal'], \
@@ -186,15 +185,64 @@ def test(sess, env, args, actor, critic, desired_goal_dim, achieved_goal_dim, ob
 
 # Main
 def main(args):
-
-    #agent = Agent(args=args)
-
     # Set path to save result
     gym_dir = './' + args['env'] + '_' + args['variation'] + '/gym'
 
     # Set random seed for reproducibility
     np.random.seed(int(args['seed']))
     tf.set_random_seed(int(args['seed']))
+
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+    # Set random seed for reproducibility
+    np.random.seed(int(args['seed']))
+    tf.set_random_seed(int(args['seed']))
+
+    # Load environment
+    env = gym.make(args['env'])
+    env.seed(int(args['seed']))
+
+    sess = tf.Session()
+
+    with sess:
+        agent = Agent(args, sess, env=env)
+        np.random.seed(0)
+
+        score_history = []
+
+        for i in range(args['episodes']):
+            achieved_goal, desired_goal, state, state_prime = unpackObs(env.reset())
+            done = False
+            episode_score = 0
+            for j in range(int(args['episode_length'])):
+                act = agent.choose_action(state=state)
+                new_obs, reward, done, info = env.step(act[0])
+                achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
+
+                # Store data in replay buffer
+                agent.remember(state, state_next, act[0], reward, done)
+                agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
+
+                agent.learn()
+                episode_score += reward
+
+                #Update the next state
+                state = state_next
+
+                # render episode
+                if args['render']:
+                    env.render()
+            score_history.append(episode_score)
+            print('episode ', i, 'score %.2f' % episode_score,
+                  'trailing 100 games avg %.3f' % np.mean(score_history[-100:]))
+            if i % 25 == 0:
+                agent.save_models()
+
+    # close gym
+    env.close()
+
+    return
 
     with tf.Session() as sess:
 
@@ -224,8 +272,10 @@ def main(args):
 
         # create actor
         actor = Actor(sess, state_dim, action_dim, action_highbound,
-                      float(args['actor_lr']),float(args['tau']),
-                      int(args['batch_size']), tuple(args['hidden_sizes']))
+                      float(args['actor_lr']),
+                      float(args['tau']),
+                      int(args['batch_size']),
+                      tuple(args['hidden_sizes']))
 
         # create critic
         critic = Critic(sess, state_dim, action_dim,
@@ -236,7 +286,7 @@ def main(args):
 
         # noise
         actor_noise = Noise(mu=np.zeros(action_dim))
-        
+
         # train the network
         if not args['test']:
             train(sess, env, args, actor, critic, actor_noise, desired_goal_dim, achieved_goal_dim, observation_dim)

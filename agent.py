@@ -1,18 +1,38 @@
 import gym
 import numpy as np
 import tensorflow as tf
+import os
 
 # Actor Class
-from noise import Noise
-
 # TODO: Maybe make the target separate from the critic/actor
 from replay import Memory
 
 
+class Noise:
+    def __init__(self, mu, sigma=0.2, theta=0.15, dt=0.02):
+        self.mu = mu
+        self.theta = 0.15
+        self.sigma = 0.2
+        self.dt = dt
+        self.reset()
+
+    def get_noise(self):
+        # compute noise using Euler-Maruyama method
+        noise = self.noise_lag1 + self.theta * (self.mu - self.noise_lag1) * \
+                self.dt + self.sigma * np.sqrt(self.dt) * np.random.normal(size=self.mu.shape)
+
+        # set for next round
+        self.noise_lag1 = noise
+        return noise
+
+    def reset(self):
+        self.noise_lag1 = np.zeros_like(self.mu)
+
+
 class Actor(object):
 
-    def __init__(self, sess, state_dim, action_dim, action_bound, learning_rate, tau, batch_size, hidden_size):
-        self.sess = sess
+    def __init__(self, session, state_dim, action_dim, action_bound, learning_rate, tau, batch_size, hidden_size, chkpt_dir='tmp/'):
+        self.sess = session
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.action_bound = action_bound
@@ -20,13 +40,15 @@ class Actor(object):
         self.tau = tau
         self.batch_size = batch_size
         self.hidden_size = hidden_size
+        self.name = "actor"
+        self.checkpoint_file = os.path.join(chkpt_dir, 'actor' + '_ddpg.ckpt')
 
         # create actor
-        self.inputs, self.outputs, self.scaled_outputs = self.create()
+        self.inputs, self.outputs, self.scaled_outputs = self.create(self.name)
         self.actor_weights = tf.trainable_variables()
 
         # create target
-        self.target_inputs, self.target_outputs, self.target_scaled_outputs = self.create()
+        self.target_inputs, self.target_outputs, self.target_scaled_outputs = self.create(self.name + 'target')
         self.target_actor_weights = tf.trainable_variables()[len(self.actor_weights):]
 
         # set target weights to be actor weights using Polyak averaging
@@ -50,29 +72,31 @@ class Actor(object):
         self.n_actor_vars = len(self.actor_weights) + len(self.target_actor_weights)
 
     # function to create agent network
-    def create(self):
-        f1 = 1. / np.sqrt(self.hidden_size[0])
-        f2 = 1. / np.sqrt(self.hidden_size[1])
-        f3 = 0.003
-        inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
-        x = tf.layers.dense(inputs, units=self.hidden_size[0],
-                            kernel_initializer=tf.initializers.random_uniform(-f1, f1),
-                            bias_initializer=tf.initializers.random_uniform(-f1, f1))
-        x = tf.layers.batch_normalization(x)
-        x = tf.nn.relu(x)
-        x = tf.layers.dense(x, units=self.hidden_size[1],
-                            kernel_initializer=tf.initializers.random_uniform(-f2, f2),
-                            bias_initializer=tf.initializers.random_uniform(-f2, f2))
-        x = tf.layers.batch_normalization(x)
-        x = tf.nn.relu(x)
+    def create(self, name):
+        with tf.variable_scope(name):
 
-        # activation layer
-        outputs = tf.layers.dense(x, units=self.action_dim, activation='tanh',
-                                  kernel_initializer=tf.initializers.random_uniform(-f2, f2),
-                                  bias_initializer=tf.initializers.random_uniform(-f2, f2))
+            f1 = 1. / np.sqrt(self.hidden_size[0])
+            f2 = 1. / np.sqrt(self.hidden_size[1])
+            f3 = 0.003
+            inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
+            x = tf.layers.dense(inputs, units=self.hidden_size[0],
+                                kernel_initializer=tf.initializers.random_uniform(-f1, f1),
+                                bias_initializer=tf.initializers.random_uniform(-f1, f1))
+            x = tf.layers.batch_normalization(x)
+            x = tf.nn.relu(x)
+            x = tf.layers.dense(x, units=self.hidden_size[1],
+                                kernel_initializer=tf.initializers.random_uniform(-f2, f2),
+                                bias_initializer=tf.initializers.random_uniform(-f2, f2))
+            x = tf.layers.batch_normalization(x)
+            x = tf.nn.relu(x)
 
-        # scale output fit action_bound
-        scaled_outputs = tf.multiply(outputs, self.action_bound)
+            # activation layer
+            outputs = tf.layers.dense(x, units=self.action_dim, activation='tanh',
+                                      kernel_initializer=tf.initializers.random_uniform(-f2, f2),
+                                      bias_initializer=tf.initializers.random_uniform(-f2, f2))
+
+            # scale output fit action_bound
+            scaled_outputs = tf.multiply(outputs, self.action_bound)
         return inputs, outputs, scaled_outputs
 
     # function to train by adding gradient and optimize
@@ -98,31 +122,26 @@ class Actor(object):
     def update(self):
         self.sess.run(self.update_target_weights)
 
-    def load_checkpoint(self):
-        print("...Loading checkpoint...")
-        self.saver.restore(self.sess, self.checkpoint_file)
-
-    def save_checkpoint(self):
-        print("...Saving checkpoint...")
-        self.saver.save(self.sess, self.checkpoint_file)
 # Critic Class
 class Critic(object):
 
-    def __init__(self, sess, state_dim, action_dim, learning_rate, tau, gamma, n_actor_vars, hidden_size):
-        self.sess = sess
+    def __init__(self, session, state_dim, action_dim, learning_rate, tau, gamma, n_actor_vars, hidden_size, chkpt_dir='tmp/'):
+        self.sess = session
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.learning_rate = learning_rate
         self.tau = tau
         self.gamma = gamma
         self.hidden_size = hidden_size
+        self.name = "critic"
+        self.checkpoint_file = os.path.join(chkpt_dir, 'critic' + '_ddpg.ckpt')
 
         # create critic
-        self.inputs, self.actions, self.outputs = self.create()
+        self.inputs, self.actions, self.outputs = self.create(self.name)
         self.critic_weights = tf.trainable_variables()[n_actor_vars:]
 
         # create target
-        self.target_inputs, self.target_actions, self.target_outputs = self.create()
+        self.target_inputs, self.target_actions, self.target_outputs = self.create(self.name + 'target')
         self.target_critic_weights = tf.trainable_variables()[(len(self.critic_weights) + n_actor_vars):]
 
         # set target weights to be actor weights using Polyak averaging
@@ -142,34 +161,36 @@ class Critic(object):
         self.comment_gradients = tf.gradients(self.outputs, self.actions)
 
     # function to create agent network
-    def create(self):
-        f1 = 1. / np.sqrt(self.hidden_size[0])
-        f2 = 1. / np.sqrt(self.hidden_size[1])
+    def create(self, name):
+        with tf.variable_scope(name):
 
-        # state branch
-        inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
-        x = tf.layers.dense(inputs, self.hidden_size[0],
-                            kernel_initializer=tf.initializers.random_uniform(-f1, f1),
-                            bias_initializer=tf.initializers.random_uniform(-f1, f1))
-        x = tf.layers.batch_normalization(x)
-        # x = tf.nn.relu(x)
+            f1 = 1. / np.sqrt(self.hidden_size[0])
+            f2 = 1. / np.sqrt(self.hidden_size[1])
 
-        # action branch
-        actions = tf.placeholder(tf.float32, shape=[None, self.action_dim])
+            # state branch
+            inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
+            x = tf.layers.dense(inputs, self.hidden_size[0],
+                                kernel_initializer=tf.initializers.random_uniform(-f1, f1),
+                                bias_initializer=tf.initializers.random_uniform(-f1, f1))
+            x = tf.layers.batch_normalization(x)
+            # x = tf.nn.relu(x)
 
-        # merge
-        x = tf.concat([x, actions], axis=1)
-        x = tf.layers.dense(x, self.hidden_size[1],
-                            kernel_initializer=tf.initializers.random_uniform(-f2, f2),
-                            bias_initializer=tf.initializers.random_uniform(-f2, f2))
-        x = tf.layers.batch_normalization(x)
-        x = tf.nn.relu(x)
+            # action branch
+            actions = tf.placeholder(tf.float32, shape=[None, self.action_dim])
 
-        # activation layer
-        f3 = 0.003
-        outputs = tf.layers.dense(x, 1,
-                                  kernel_initializer=tf.initializers.random_uniform(-f3, f3),
-                                  bias_initializer=tf.initializers.random_uniform(-f3, f3))
+            # merge
+            x = tf.concat([x, actions], axis=1)
+            x = tf.layers.dense(x, self.hidden_size[1],
+                                kernel_initializer=tf.initializers.random_uniform(-f2, f2),
+                                bias_initializer=tf.initializers.random_uniform(-f2, f2))
+            x = tf.layers.batch_normalization(x)
+            x = tf.nn.relu(x)
+
+            # activation layer
+            f3 = 0.003
+            outputs = tf.layers.dense(x, 1,
+                                      kernel_initializer=tf.initializers.random_uniform(-f3, f3),
+                                      bias_initializer=tf.initializers.random_uniform(-f3, f3))
         return inputs, actions, outputs
 
     # function to train by adding states, actions, and q values
@@ -205,6 +226,112 @@ class Critic(object):
             self.actions: actions
         })
 
+class Agent(object):
+
+    def __init__(self, args, sess, env):
+        # Set path to save result
+        gym_dir = './' + args['env'] + '_' + args['variation'] + '/gym'
+        self.batch_size = int(args['batch_size'])
+
+        # get size of action and state (i.e. output and input for the agent)
+        obs = env.reset()
+        observation_dim = obs['observation'].shape[0]
+        achieved_goal_dim = obs['achieved_goal'].shape[0]
+        desired_goal_dim = obs['desired_goal'].shape[0]
+        assert achieved_goal_dim == desired_goal_dim
+
+        # state size = observation size + goal size
+        state_dim = observation_dim + desired_goal_dim
+        action_dim = env.action_space.shape[0]
+        action_highbound = env.action_space.high
+
+        # print out parameters
+        print('Parameters:')
+        print('Observation Size=', observation_dim)
+        print('Goal Size=', desired_goal_dim)
+        print('State Size =', state_dim)
+        print('Action Size =', action_dim)
+        print('Action Upper Boundary =', action_highbound)
+
+        self.replay_memory = Memory(int(args['memory_size']), int(args['seed']))
+        # create actor
+        self.actor = Actor(sess, state_dim, action_dim, action_highbound,
+                      float(args['actor_lr']), float(args['tau']),
+                      int(args['batch_size']), tuple(args['hidden_sizes']))
+
+        # create critic
+        self.critic = Critic(sess, state_dim, action_dim,
+                        float(args['critic_lr']), float(args['tau']),
+                        float(args['gamma']),
+                        self.actor.n_actor_vars,
+                        tuple(args['hidden_sizes']))
+
+        # noise
+        self.actor_noise = Noise(mu=np.zeros(action_dim))
+        sess.run(tf.global_variables_initializer())
+
+    def learn(self):
+        # start to train when there's enough experience
+        if self.replay_memory.size() > self.batch_size:
+            s_batch, a_batch, r_batch, d_batch, s2_batch = self.replay_memory.sample_batch(self.batch_size)
+
+            # find TD -- temporal difference
+            # actor find target action
+            a2_batch = self.actor.predict_target(s2_batch)
+
+            # critic find target q
+            q2_batch = self.critic.predict_target(s2_batch, a2_batch)
+
+            # add a decay of q to reward if not done
+            r_batch_discounted = []
+            for k in range(self.batch_size):
+                if d_batch[k]:
+                    r_batch_discounted.append(r_batch[k])
+                else:
+                    r_batch_discounted.append(r_batch[k] + self.critic.gamma * q2_batch[k])
+
+            # train critic with state, action, and reward
+            pred_q, _ = self.critic.train(s_batch,
+                                     a_batch,
+                                     np.reshape(r_batch_discounted, (self.batch_size, 1)))
+
+            # actor find action
+            a_outs = self.actor.predict(s_batch)
+
+            # get comment from critic
+            comment_gradients = self.critic.get_comment_gradients(s_batch, a_outs)
+
+            # train actor with state and the comment gradients
+            self.actor.train(s_batch, comment_gradients[0])
+
+            # Update target networks
+            self.actor.update()
+            self.critic.update()
+
+    def test(self):
+
+        pass
+
+    def choose_action(self, state):
+        # predict action and add noise
+        a = self.actor.predict(np.reshape(state, (1, self.actor.state_dim)))
+        a = a + self.actor_noise.get_noise()
+        return a
+
+    def remember(self, state, state_next, action, reward, done):
+        # add normal experience to memory -- i.e. experience w.r.t. desired goal
+        self.replay_memory.add(np.reshape(state, (self.actor.state_dim,)), np.reshape(action, (self.actor.action_dim,)), reward, done,
+                          np.reshape(state_next, (self.actor.state_dim,)))
+
+
+    def rememberHER(self, s_prime, s_prime_next, achieved_goal, info, action, env):
+        # add hindsight experience to memory -- i.e. experience w.r.t achieved goal
+        substitute_goal = achieved_goal.copy()
+        substitute_reward = env.compute_reward(achieved_goal, substitute_goal, info)
+        self.replay_memory.add(np.reshape(s_prime, (self.actor.state_dim,)), np.reshape(action, (self.actor.action_dim,)),
+                          substitute_reward, True, np.reshape(s_prime_next, (self.actor.state_dim,)))
+
+
     def load_checkpoint(self):
         print("...Loading checkpoint...")
         self.saver.restore(self.sess, self.checkpoint_file)
@@ -213,88 +340,3 @@ class Critic(object):
         print("...Saving checkpoint...")
         self.saver.save(self.sess, self.checkpoint_file)
 
-class Agent(object):
-
-    def __init__(self, args):
-        # Set path to save result
-        self.gym_dir = './' + args['env'] + '_' + args['variation'] + '/gym'
-
-        # Set random seed
-        self.seed = np.random.seed(int(args['seed']))
-        tf.set_random_seed(self.seed)
-
-        # Load environment
-        self.env = gym.make(args['env'])
-        self.env.seed(int(args['seed']))
-
-        # Define tf session
-        self.sess = tf.Session()
-
-        obs = self.env.reset()
-        self.observation_dim = obs['observation'].shape[0]
-        self.achieved_goal_dim = obs['achieved_goal'].shape[0]
-        self.desired_goal_dim = obs['desired_goal'].shape[0]
-        assert self.achieved_goal_dim == self.desired_goal_dim
-
-        # state size = observation size + goal size
-        self.state_dim = self.observation_dim + self.desired_goal_dim
-        self.action_dim = self.env.action_space.shape[0]
-        self.action_highbound = self.env.action_space.high
-
-        # print parameters
-        print('Parameters:')
-        print('Observation Size=', self.observation_dim)
-        print('Goal Size=', self.desired_goal_dim)
-        print('State Size =', self.state_dim)
-        print('Action Size =', self.action_dim)
-        print('Action Upper Boundary =', self.action_highbound)
-
-        # create actor
-        self.actor = Actor(self.sess, self.state_dim, self.action_dim, self.action_highbound,
-                           float(args['actor_lr']),
-                           float(args['tau']),
-                           int(args['batch_size']),
-                           tuple(args['hidden_sizes']))
-
-        # create critic
-        self.critic = Critic(self.sess, self.state_dim, self.action_dim,
-                             float(args['critic_lr']), float(args['tau']),
-                             float(args['gamma']),
-                             self.actor.n_actor_vars,
-                             tuple(args['hidden_sizes']))
-
-        # noise
-        actor_noise = Noise(mu=np.zeros(self.action_dim))
-
-        # initialize tensorflow savers and writers
-
-        # initialize the target networks
-        self.actor.update()
-        self.critic.update()
-        # initialize Replaybuffer
-        self.replay_memory = Memory(int(args['memory_size']), int(args['seed']))
-
-    def learn(self):
-        pass
-
-    def test(self):
-        pass
-
-    def choose_action(self):
-        pass
-
-    def remember(self):
-        pass
-
-    def save_models(self):
-        self.actor.save_checkpoint()
-        self.critic.save_checkpoint()
-
-    def load_models(self):
-        self.actor.load_checkpoint()
-        self.critic.load_checkpoint()
-
-    def __del__(self):
-        # Do some cleanup
-        self.env.close()
-        self.sess.close()
