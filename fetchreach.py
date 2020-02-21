@@ -8,7 +8,8 @@ import tensorflow as tf
 from datetime import datetime
 from agent import Actor, Critic, Agent
 from replay import Memory
-from agent import Noise
+from agent import Noiseimport matplotlib.pyplot as plt
+
 # function to unpack observation from gym environment
 def unpackObs(obs):
     return  obs['achieved_goal'], \
@@ -20,12 +21,30 @@ def unpackObs(obs):
 
 # function to train agents
 def train(sess, env, args, actor, critic, actor_noise, desired_goal_dim, achieved_goal_dim, observation_dim):
+    #Plot init stuff
+    reward_list = []
+    episode_list = []
+    max_q_list = []
+    plt.ion()
+    fig = plt.figure()
+    plt.ylabel('Reward')
+    plt.xlabel('Episode')
+    plt.title('Title')  #TODO: dynamically follow the settings that are experimented with
+    p1, = plt.plot(episode_list, max_q_list, color='red', label='max_Q')
+    p2, = plt.plot(episode_list, reward_list, color='blue', label='reward')
+    plt.legend([p1, p2], ["max_Q", "reward"], loc=2)
+    axes = plt.gca()
+    axes.set_xlim([0, 2000])
 
     # Set path to save results
     tensorboard_dir = './' + args['env'] + '_' + args['variation'] + '/train_' + datetime.now().strftime('%Y-%m-%d-%H')
     model_dir = './' + args['env'] + '_' + args['variation'] + '/model'
+    current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+    train_log_dir = 'logs/' + current_time + '/train'
+    #test_log_dir = 'logs/' + current_time + '/test'
 
-    # add summary to tensorboard
+    train_summary_writer = tf.summary.FileWriter(train_log_dir, sess.graph) #session?
+
 
     # initialize variables, create writer and saver
     sess.run(tf.global_variables_initializer())
@@ -51,6 +70,8 @@ def train(sess, env, args, actor, critic, actor_noise, desired_goal_dim, achieve
         achieved_goal, desired_goal, s, s_prime = unpackObs(env.reset())
         episode_reward = 0
         episode_maximum_q = 0
+
+
 
         for j in range(int(args['episode_length'])):
 
@@ -124,15 +145,25 @@ def train(sess, env, args, actor, critic, actor_noise, desired_goal_dim, achieve
                 # print out results
                 print('| Episode: {:d} | Reward: {:d} | Q: {:.4f}'.format(i, int(episode_reward),
                                                                           (episode_maximum_q / float(j))))
+                reward_list.append(episode_reward)
+                episode_list.append(i)
+                max_q_list.append(episode_maximum_q)
+
+                #Plot wrapper
+                plt.plot(episode_list, max_q_list, color='red', label='max_Q')
+                plt.plot(episode_list, reward_list, color='blue', label='reward')
+                plt.show()
+                plt.pause(0.05)
+
                 # save model
                 saver.save(sess, os.path.join(model_dir, args['env'] + '_' + args['variation'] + '.ckpt'))
-
                 break
+        #plt.show()
+
     return
 
 # function to test agents
 def test(sess, env, args, actor, critic, desired_goal_dim, achieved_goal_dim, observation_dim):
-
     # Set path to save results
     tensorboard_dir = './' + args['env'] + '_' + args['variation'] + '/test_' + datetime.now().strftime('%Y-%m-%d-%H')
     model_dir = './' + args['env'] + '_' + args['variation'] + '/model'
@@ -180,6 +211,7 @@ def test(sess, env, args, actor, critic, desired_goal_dim, achieved_goal_dim, ob
             if done or j == int(args['episode_length']):
                 # print out results
                 print('| Episode: {:d} | Reward: {:d}'.format(i, int(episode_reward)))
+
                 break
     return
 
@@ -312,8 +344,8 @@ if __name__ == '__main__':
     parser.add_argument('--tau', help='target update tau', default=0.001)
     parser.add_argument('--memory-size', help='size of the replay memory', default=1000000)
     parser.add_argument('--hidden-sizes', help='number of nodes in hidden layer', default=(400, 300))
-    parser.add_argument('--episodes', help='episodes to train', default=5000)
-    parser.add_argument('--episode-length', help='max length of 1 episode', default=150)
+    parser.add_argument('--episodes', help='episodes to train', default=2000)
+    parser.add_argument('--episode-length', help='max length of 1 episode', default=50)
 
     # others and defaults
     parser.add_argument('--seed', help='random seed', default=1234)
