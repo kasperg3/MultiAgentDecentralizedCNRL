@@ -8,7 +8,8 @@ import tensorflow as tf
 from datetime import datetime
 from agent import Actor, Critic, Agent
 from replay import Memory
-from agent import Noiseimport matplotlib.pyplot as plt
+from agent import Noise
+import matplotlib.pyplot as plt
 
 # function to unpack observation from gym environment
 def unpackObs(obs):
@@ -273,10 +274,9 @@ def main(args):
 
     # close gym
     env.close()
+    sess.close()
 
     return
-
-
 
     with tf.Session() as sess:
 
@@ -347,7 +347,7 @@ if __name__ == '__main__':
     parser.add_argument('--memory-size', help='size of the replay memory', default=1000000)
     parser.add_argument('--hidden-sizes', help='number of nodes in hidden layer', default=(400, 300))
     parser.add_argument('--episodes', help='episodes to train', default=2000)
-    parser.add_argument('--episode-length', help='max length of 1 episode', default=50)
+    parser.add_argument('--episode-length', help='max length of 1 episode', default=150)
 
     # others and defaults
     parser.add_argument('--seed', help='random seed', default=1234)
