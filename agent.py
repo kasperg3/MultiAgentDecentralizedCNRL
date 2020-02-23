@@ -2,9 +2,6 @@ import gym
 import numpy as np
 import tensorflow as tf
 import os
-
-# Actor Class
-# TODO: Maybe make the target separate from the critic/actor
 from replay import Memory
 
 
@@ -44,11 +41,11 @@ class Actor(object):
         self.checkpoint_file = os.path.join(chkpt_dir, 'actor' + '_ddpg.ckpt')
 
         # create actor
-        self.inputs, self.outputs, self.scaled_outputs = self.create(self.name)
+        self.inputs, self.outputs, self.scaled_outputs = self.create()
         self.actor_weights = tf.trainable_variables()
 
         # create target
-        self.target_inputs, self.target_outputs, self.target_scaled_outputs = self.create(self.name + 'target')
+        self.target_inputs, self.target_outputs, self.target_scaled_outputs = self.create()
         self.target_actor_weights = tf.trainable_variables()[len(self.actor_weights):]
 
         # set target weights to be actor weights using Polyak averaging
@@ -72,31 +69,30 @@ class Actor(object):
         self.n_actor_vars = len(self.actor_weights) + len(self.target_actor_weights)
 
     # function to create agent network
-    def create(self, name):
-        with tf.variable_scope(name):
+    def create(self):
 
-            f1 = 1. / np.sqrt(self.hidden_size[0])
-            f2 = 1. / np.sqrt(self.hidden_size[1])
-            f3 = 0.003
-            inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
-            x = tf.layers.dense(inputs, units=self.hidden_size[0],
-                                kernel_initializer=tf.initializers.random_uniform(-f1, f1),
-                                bias_initializer=tf.initializers.random_uniform(-f1, f1))
-            x = tf.layers.batch_normalization(x)
-            x = tf.nn.relu(x)
-            x = tf.layers.dense(x, units=self.hidden_size[1],
-                                kernel_initializer=tf.initializers.random_uniform(-f2, f2),
-                                bias_initializer=tf.initializers.random_uniform(-f2, f2))
-            x = tf.layers.batch_normalization(x)
-            x = tf.nn.relu(x)
+        f1 = 1. / np.sqrt(self.hidden_size[0])
+        f2 = 1. / np.sqrt(self.hidden_size[1])
+        f3 = 0.003
+        inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
+        x = tf.layers.dense(inputs, units=self.hidden_size[0],
+                            kernel_initializer=tf.initializers.random_uniform(-f1, f1),
+                            bias_initializer=tf.initializers.random_uniform(-f1, f1))
+        x = tf.layers.batch_normalization(x)
+        x = tf.nn.relu(x)
+        x = tf.layers.dense(x, units=self.hidden_size[1],
+                            kernel_initializer=tf.initializers.random_uniform(-f2, f2),
+                            bias_initializer=tf.initializers.random_uniform(-f2, f2))
+        x = tf.layers.batch_normalization(x)
+        x = tf.nn.relu(x)
 
-            # activation layer
-            outputs = tf.layers.dense(x, units=self.action_dim, activation='tanh',
-                                      kernel_initializer=tf.initializers.random_uniform(-f2, f2),
-                                      bias_initializer=tf.initializers.random_uniform(-f2, f2))
+        # activation layer
+        outputs = tf.layers.dense(x, units=self.action_dim, activation='tanh',
+                                  kernel_initializer=tf.initializers.random_uniform(-f2, f2),
+                                  bias_initializer=tf.initializers.random_uniform(-f2, f2))
 
-            # scale output fit action_bound
-            scaled_outputs = tf.multiply(outputs, self.action_bound)
+        # scale output fit action_bound
+        scaled_outputs = tf.multiply(outputs, self.action_bound)
         return inputs, outputs, scaled_outputs
 
     # function to train by adding gradient and optimize
@@ -133,15 +129,14 @@ class Critic(object):
         self.tau = tau
         self.gamma = gamma
         self.hidden_size = hidden_size
-        self.name = "critic"
         self.checkpoint_file = os.path.join(chkpt_dir, 'critic' + '_ddpg.ckpt')
 
         # create critic
-        self.inputs, self.actions, self.outputs = self.create(self.name)
+        self.inputs, self.actions, self.outputs = self.create()
         self.critic_weights = tf.trainable_variables()[n_actor_vars:]
 
         # create target
-        self.target_inputs, self.target_actions, self.target_outputs = self.create(self.name + 'target')
+        self.target_inputs, self.target_actions, self.target_outputs = self.create()
         self.target_critic_weights = tf.trainable_variables()[(len(self.critic_weights) + n_actor_vars):]
 
         # set target weights to be actor weights using Polyak averaging
@@ -161,36 +156,35 @@ class Critic(object):
         self.comment_gradients = tf.gradients(self.outputs, self.actions)
 
     # function to create agent network
-    def create(self, name):
-        with tf.variable_scope(name):
+    def create(self):
 
-            f1 = 1. / np.sqrt(self.hidden_size[0])
-            f2 = 1. / np.sqrt(self.hidden_size[1])
+        f1 = 1. / np.sqrt(self.hidden_size[0])
+        f2 = 1. / np.sqrt(self.hidden_size[1])
 
-            # state branch
-            inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
-            x = tf.layers.dense(inputs, self.hidden_size[0],
-                                kernel_initializer=tf.initializers.random_uniform(-f1, f1),
-                                bias_initializer=tf.initializers.random_uniform(-f1, f1))
-            x = tf.layers.batch_normalization(x)
-            # x = tf.nn.relu(x)
+        # state branch
+        inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
+        x = tf.layers.dense(inputs, self.hidden_size[0],
+                            kernel_initializer=tf.initializers.random_uniform(-f1, f1),
+                            bias_initializer=tf.initializers.random_uniform(-f1, f1))
+        x = tf.layers.batch_normalization(x)
+        # x = tf.nn.relu(x)
 
-            # action branch
-            actions = tf.placeholder(tf.float32, shape=[None, self.action_dim])
+        # action branch
+        actions = tf.placeholder(tf.float32, shape=[None, self.action_dim])
 
-            # merge
-            x = tf.concat([x, actions], axis=1)
-            x = tf.layers.dense(x, self.hidden_size[1],
-                                kernel_initializer=tf.initializers.random_uniform(-f2, f2),
-                                bias_initializer=tf.initializers.random_uniform(-f2, f2))
-            x = tf.layers.batch_normalization(x)
-            x = tf.nn.relu(x)
+        # merge
+        x = tf.concat([x, actions], axis=1)
+        x = tf.layers.dense(x, self.hidden_size[1],
+                            kernel_initializer=tf.initializers.random_uniform(-f2, f2),
+                            bias_initializer=tf.initializers.random_uniform(-f2, f2))
+        x = tf.layers.batch_normalization(x)
+        x = tf.nn.relu(x)
 
-            # activation layer
-            f3 = 0.003
-            outputs = tf.layers.dense(x, 1,
-                                      kernel_initializer=tf.initializers.random_uniform(-f3, f3),
-                                      bias_initializer=tf.initializers.random_uniform(-f3, f3))
+        # activation layer
+        f3 = 0.003
+        outputs = tf.layers.dense(x, 1,
+                                  kernel_initializer=tf.initializers.random_uniform(-f3, f3),
+                                  bias_initializer=tf.initializers.random_uniform(-f3, f3))
         return inputs, actions, outputs
 
     # function to train by adding states, actions, and q values
@@ -334,9 +328,9 @@ class Agent(object):
 
     def load_checkpoint(self):
         print("...Loading checkpoint...")
-        self.saver.restore(self.sess, self.checkpoint_file)
+        #self.saver.restore(self.sess, self.checkpoint_file)
 
     def save_checkpoint(self):
         print("...Saving checkpoint...")
-        self.saver.save(self.sess, self.checkpoint_file)
+        #self.saver.save(self.sess, self.checkpoint_file)
 

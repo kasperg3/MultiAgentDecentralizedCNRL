@@ -235,14 +235,16 @@ def main(args):
                     env.render()
             score_history.append(episode_score)
             print('episode ', i, 'score %.2f' % episode_score,
-                  'trailing 100 games avg %.3f' % np.mean(score_history[-100:]))
+                  'trailing ' + '100' + ' games avg %.3f' % np.mean(score_history[-100:]))
             if i % 25 == 0:
-                agent.save_models()
+                agent.save_checkpoint()
 
     # close gym
     env.close()
 
     return
+
+
 
     with tf.Session() as sess:
 
