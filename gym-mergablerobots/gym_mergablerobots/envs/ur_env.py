@@ -10,7 +10,7 @@ def goal_distance(goal_a, goal_b):
 
 
 class UrEnv(robot_env.RobotEnv):
-    """Superclass for all Fetch environments.
+    """Superclass for UR environments.
     """
 
     def __init__(
@@ -43,7 +43,6 @@ class UrEnv(robot_env.RobotEnv):
         self.target_range = target_range
         self.distance_threshold = distance_threshold
         self.reward_type = reward_type
-        # TODO Change actions to x, y, z, quaternion, gripper, such actions = 8
         super(UrEnv, self).__init__(
             model_path=model_path, n_substeps=n_substeps, n_actions=8,
             initial_qpos=initial_qpos)
@@ -73,7 +72,7 @@ class UrEnv(robot_env.RobotEnv):
         assert action.shape == (8,)
         action = action.copy()  # ensure that we don't change the action outside of this scope
         pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
-        pos_ctrl *= 0.05  # limit maximum change in position
+        pos_ctrl *= 0.01  # limit maximum change in position
         rot_ctrl *= 0.1
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
@@ -112,7 +111,7 @@ class UrEnv(robot_env.RobotEnv):
             achieved_goal = grip_pos.copy()
         else:
             achieved_goal = np.squeeze(object_pos.copy())
-        #TODO Add gripper rotation to observation
+
         obs = np.concatenate([
             grip_pos, grip_rot, object_pos.ravel(), object_rel_pos.ravel(), gripper_state, object_rot.ravel(),
             object_velp.ravel(), object_velr.ravel(), grip_velp, gripper_vel,
@@ -180,9 +179,8 @@ class UrEnv(robot_env.RobotEnv):
         self.sim.forward()
 
         # Move end effector into position.
-        # TODO: Add default positions to contructor
-        gripper_target = np.array([1.2, -0.5, 0.4 + self.gripper_extra_height]) + self.sim.data.get_site_xpos('robot0:grip')
-        gripper_rotation = np.array([0., 0., 1., 0.])
+        gripper_target = self.sim.data.get_site_xpos('robot0:grip')
+        gripper_rotation = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
         self.sim.data.set_mocap_pos('robot0:mocap', gripper_target)
         self.sim.data.set_mocap_quat('robot0:mocap', gripper_rotation)
         for _ in range(10):

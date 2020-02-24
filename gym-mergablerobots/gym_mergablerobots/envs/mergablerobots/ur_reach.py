@@ -8,6 +8,12 @@ MODEL_XML_PATH = '/home/nikolaj/master/mergableindustrialrobots/gym-mergablerobo
 class UrReachEnv(UrEnv, utils.EzPickle):
     def __init__(self, reward_type='sparse'):
         initial_qpos = {
+            'robot0:joint1': -2,
+            'robot0:joint2': -2.053,
+            'robot0:joint3': 2.3,
+            'robot0:joint4': -1.8,
+            'robot0:joint5': -1.50,
+            'robot0:joint6': -1.7588
         }
         UrEnv.__init__(
             self, MODEL_XML_PATH, has_object=False, block_gripper=True, n_substeps=20,
@@ -15,3 +21,4 @@ class UrReachEnv(UrEnv, utils.EzPickle):
             obj_range=0.15, target_range=0.15, distance_threshold=0.15,
             initial_qpos=initial_qpos, reward_type=reward_type)
         utils.EzPickle.__init__(self)
+

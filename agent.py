@@ -286,8 +286,8 @@ class Agent(object):
 
             # train critic with state, action, and reward
             pred_q, _ = self.critic.train(s_batch,
-                                     a_batch,
-                                     np.reshape(r_batch_discounted, (self.batch_size, 1)))
+                                          a_batch,
+                                          np.reshape(r_batch_discounted, (self.batch_size, 1)))
 
             # actor find action
             a_outs = self.actor.predict(s_batch)

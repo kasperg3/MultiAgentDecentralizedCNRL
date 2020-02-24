@@ -244,6 +244,23 @@ def main(args):
 
         score_history = []
 
+        tensorboard_dir = './' + args['env'] + '_' + args['variation'] + '/train_' + datetime.now().strftime(
+            '%Y-%m-%d-%H')
+        model_dir = './' + args['env'] + '_' + args['variation'] + '/model'
+        current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+        train_log_dir = 'logs/' + current_time + '/train'
+        train_summary_writer = tf.summary.FileWriter(train_log_dir, sess.graph)  # session?
+
+        # initialize variables, create writer and saver
+        saver = tf.train.Saver()
+        writer = tf.summary.FileWriter(tensorboard_dir, sess.graph)
+
+        try:
+            saver.restore(sess, os.path.join(model_dir, args['env'] + '_' + args['variation'] + '.ckpt'))
+            print('Restore from previous training session')
+        except:
+            print('Start new training session')
+
         for i in range(args['episodes']):
             achieved_goal, desired_goal, state, state_prime = unpackObs(env.reset())
             done = False
@@ -271,6 +288,7 @@ def main(args):
                   'trailing ' + '100' + ' games avg %.3f' % np.mean(score_history[-100:]))
             if i % 25 == 0:
                 agent.save_checkpoint()
+                saver.save(sess, os.path.join(model_dir, args['env'] + '_' + args['variation'] + '.ckpt'))
 
     # close gym
     env.close()
@@ -355,7 +373,9 @@ if __name__ == '__main__':
     parser.add_argument('--test', help='test mode does not do exploration', action='store_true')
     parser.add_argument('--variation', help='model variation name', default='DDPG_HER')
     #parser.set_defaults(env='FetchReach-v1')
+    #parser.set_defaults(env='mergablerobots-v0')
     parser.set_defaults(env='UrReach-v0')
+    #parser.set_defaults(env='FetchPickAndPlace-v1')
     parser.set_defaults(render=False)
     parser.set_defaults(test=False)
 
