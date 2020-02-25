@@ -1,5 +1,7 @@
 import os, sys, time
 import json
+import pickle
+
 import gym
 from gym import wrappers
 import argparse
@@ -46,11 +48,8 @@ def main(args):
         agent = Agent(args, sess, env=env)
         np.random.seed(0)
 
-        score_history = []
-        mean_score_history = []
-
         tensorboard_dir = './' + args['env'] + '_' + args['variation'] + '/train_' + datetime.now().strftime(
-            '%Y-%m-%d-%H')
+            '%Y-%m-%d-%H') + 'seed_' + str(args['seed'])
         model_dir = './' + args['env'] + '_' + args['variation'] + '/model'
         current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
         train_log_dir = 'logs/' + current_time + '/train'
@@ -65,44 +64,55 @@ def main(args):
             print('Restore from previous training session')
         except:
             print('Start new training session')
-
-        for i in range(args['episodes']):
-            achieved_goal, desired_goal, state, state_prime = unpackObs(env.reset())
-            done = False
-            episode_score = 0
-            for j in range(int(args['episode_length'])):
-                act = agent.choose_action(state=state)
-                new_obs, reward, done, info = env.step(act[0])
-                achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
+        epoch_history = []
+        for k in range(args['epochs']):
+            score_history = []
+            for i in range(args['episodes']):
+                achieved_goal, desired_goal, state, state_prime = unpackObs(env.reset())
+                done = False
+                episode_score = 0
+                for j in range(int(args['episode_length'])):
+                    act = agent.choose_action(state=state)
+                    new_obs, reward, done, info = env.step(act[0])
+                    achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
 
                 # Store data in replay buffer
                 agent.remember(state, state_next, act[0], reward, done)
                 agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
 
-                agent.learn()
-                episode_score += reward
+                    agent.learn()
 
-                #Update the next state
-                state = state_next
+                    #Update the next state and add reward to episode_score
+                    episode_score += reward
+                    state = state_next
 
-                # render episode
-                if args['render']:
-                    env.render()
+                    # render episode
+                    if args['render']:
+                        env.render()
 
-            #Save the episode scores
-            score_history.append(episode_score)
-            mean_score_history.append(np.mean(score_history[-100:]))
+                #Save the episode scores
+                score_history.append(episode_score)
+                print('epoch:' + str(k) + ' | episode: ', str(i), ' | score %.2f' % episode_score, )
+            # Take the mean of the scores and normalize it in the epoch and save it
+            epoch_history.append(np.divide(score_history, int(args['episode_length'])))
 
-            print('episode ', i, 'score %.2f' % episode_score,
-                  'trailing ' + '100' + ' games avg %.3f' % np.mean(mean_score_history[len(mean_score_history)-1]))
-            if i % 25 == 0:
-                agent.save_checkpoint()
-                saver.save(sess, os.path.join(model_dir, args['env'] + '_' + args['variation'] + '.ckpt'))
+            #Save model each epoch
+            agent.save_checkpoint()
+            saver.save(sess, os.path.join(model_dir, args['env'] + '_' + args['variation'] + '.ckpt'))
 
-    plt.plot(score_history, color='blue', label='score')
-    plt.plot(mean_score_history, color='red', label='running average score')
+    #plot the mean of the epochs
+    epoch_plot, = plt.plot(range(args['epochs']), np.mean(epoch_history, axis=1), color='blue')
+    std_deviation = np.std(epoch_history, axis=1)
+    plt.fill_between(range(args['epochs']),
+                     np.subtract(np.mean(epoch_history, axis=1), std_deviation),
+                     np.add(np.mean(epoch_history, axis=1), std_deviation), facecolor='blue', alpha=0.1)
+    plt.ylabel('Reward')
+    plt.xlabel('Epoch')
+    plt.legend([args['variation']])
     plt.show()
     plt.pause(0.05)
+
+    pickle.dump(epoch_plot, open("./plot_data/plot_data_" + args['variation'], "wb"))
 
     input("Press to exit")
 
@@ -123,11 +133,12 @@ if __name__ == '__main__':
     parser.add_argument('--tau', help='target update tau', default=0.001)
     parser.add_argument('--memory-size', help='size of the replay memory', default=1000000)
     parser.add_argument('--hidden-sizes', help='number of nodes in hidden layer', default=(400, 300))
-    parser.add_argument('--episodes', help='episodes to train', default=500)
     parser.add_argument('--episode-length', help='max length of 1 episode', default=150)
+    parser.add_argument('--episodes', help='episodes to train', default=20)
+    parser.add_argument('--epochs', help='number of epochs', default=100)
 
     # others and defaults
-    parser.add_argument('--seed', help='random seed', default=1234)
+    parser.add_argument('--seed', help='random seed', default=1235)
     parser.add_argument('--render', help='render the gym env', action='store_true')
     parser.add_argument('--test', help='test mode does not do exploration', action='store_true')
     parser.add_argument('--variation', help='model variation name', default='DDPG_HER')

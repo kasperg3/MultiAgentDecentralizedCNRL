@@ -7,7 +7,7 @@
     <include file="shared.xml"/>
 
     <equality>
-        <weld body1="robot0:mocap" body2="robot0:robotiq_base_link" solimp="0.9 0.95 0.001" solref="0.02 1"/>
+        <weld body1="robot0:mocap" body2="robot0:robotiq_tcp" solimp="0.9 0.95 0.001" solref="0.02 1"/>
     </equality>
 
     <contact>
