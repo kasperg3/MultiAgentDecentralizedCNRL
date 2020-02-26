@@ -74,6 +74,10 @@ def main(args):
                     episode_score = 0
                     for j in range(int(args['episode_length'])):
                         # TODO: Make the agent choose a random action 20% of the time
+                        # if bool(np.random.binomial(1, 0.05)):
+                        #     act = agent.random_action()
+                        # else:
+                        #     act = agent.choose_action(state=state)
                         act = agent.choose_action(state=state)
                         new_obs, reward, done, info = env.step(act[0])
                         achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
@@ -81,7 +85,8 @@ def main(args):
                         # Store data in replay buffer
                         agent.remember(state, state_next, act[0], reward, done)
                         # TODO: make the agent only save HER 80% of the time
-                        #agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
+                        #if bool(np.random.binomial(1, 0.8)):
+                             #agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
 
                         #Update the next state and add reward to episode_score
                         episode_score += reward
@@ -96,6 +101,8 @@ def main(args):
                     score_history.append(episode_score)
                     for t in range(int(args['optimizationsteps'])):
                         agent.learn()
+
+                    # TODO: Do rollout without random actions + noise, to see performance
             # Take the mean of the scores and normalize it in the epoch and save it
             epoch_history.append(np.divide(score_history, int(args['episode_length'])))
 

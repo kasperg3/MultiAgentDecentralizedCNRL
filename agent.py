@@ -25,6 +25,28 @@ class Noise:
     def reset(self):
         self.noise_lag1 = np.zeros_like(self.mu)
 
+# From https://github.com/openai/baselines/blob/master/baselines/ddpg/noise.py
+class OrnsteinUhlenbeckActionNoise():
+    def __init__(self, mu, sigma, theta=.15, dt=1e-2, x0=None):
+        self.theta = theta
+        self.mu = mu
+        self.sigma = sigma
+        self.dt = dt
+        self.x0 = x0
+        self.reset()
+
+    def get_noise(self):
+        x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + self.sigma * np.sqrt(self.dt) * np.random.normal(size=self.mu.shape)
+        self.x_prev = x
+        return x
+
+    def reset(self):
+        self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(self.mu)
+
+    def __repr__(self):
+        return 'OrnsteinUhlenbeckActionNoise(mu={}, sigma={})'.format(self.mu, self.sigma)
+
+
 
 class Actor(object):
 
@@ -88,16 +110,16 @@ class Actor(object):
         x = tf.nn.relu(x)
 
         #Third
-        # x = tf.layers.dense(x, self.hidden_size[2],
-        #                     kernel_initializer=tf.initializers.random_uniform(-f3, f3),
-        #                     bias_initializer=tf.initializers.random_uniform(-f3, f3))
-        # x = tf.layers.batch_normalization(x)
-        # x = tf.nn.relu(x)
+        x = tf.layers.dense(x, self.hidden_size[2],
+                            kernel_initializer=tf.initializers.random_uniform(-f3, f3),
+                            bias_initializer=tf.initializers.random_uniform(-f3, f3))
+        x = tf.layers.batch_normalization(x)
+        x = tf.nn.relu(x)
 
         # activation layer
         outputs = tf.layers.dense(x, units=self.action_dim, activation='tanh',
-                                  kernel_initializer=tf.initializers.random_uniform(-f2, f2),
-                                  bias_initializer=tf.initializers.random_uniform(-f2, f2))
+                                  kernel_initializer=tf.initializers.random_uniform(-f4, f4),
+                                  bias_initializer=tf.initializers.random_uniform(-f4, f4))
 
         # scale output fit action_bound
         scaled_outputs = tf.multiply(outputs, self.action_bound)
@@ -190,12 +212,12 @@ class Critic(object):
         x = tf.layers.batch_normalization(x)
         x = tf.nn.relu(x)
 
-        # #Third
-        # x = tf.layers.dense(x, self.hidden_size[2],
-        #                     kernel_initializer=tf.initializers.random_uniform(-f3, f3),
-        #                     bias_initializer=tf.initializers.random_uniform(-f3, f3))
-        # x = tf.layers.batch_normalization(x)
-        # x = tf.nn.relu(x)
+        #Third
+        x = tf.layers.dense(x, self.hidden_size[2],
+                            kernel_initializer=tf.initializers.random_uniform(-f3, f3),
+                            bias_initializer=tf.initializers.random_uniform(-f3, f3))
+        x = tf.layers.batch_normalization(x)
+        x = tf.nn.relu(x)
 
         # activation layer
         outputs = tf.layers.dense(x, 1,
@@ -277,7 +299,7 @@ class Agent(object):
                         tuple(args['hidden_sizes']))
 
         # noise
-        self.actor_noise = Noise(mu=np.zeros(action_dim))
+        self.actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim), sigma=float(0.2) * np.ones(action_dim))
         sess.run(tf.global_variables_initializer())
 
     def learn(self):
@@ -327,6 +349,9 @@ class Agent(object):
         a = self.actor.predict(np.reshape(state, (1, self.actor.state_dim)))
         a = a + self.actor_noise.get_noise()
         return a
+
+    def random_action(self):
+        return [np.random.uniform(low=-self.actor.action_bound, high=-self.actor.action_bound, size=self.actor.action_dim)]
 
     def remember(self, state, state_next, action, reward, done):
         # add normal experience to memory -- i.e. experience w.r.t. desired goal
