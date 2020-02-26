@@ -88,11 +88,11 @@ class Actor(object):
         x = tf.nn.relu(x)
 
         #Third
-        x = tf.layers.dense(x, self.hidden_size[2],
-                            kernel_initializer=tf.initializers.random_uniform(-f3, f3),
-                            bias_initializer=tf.initializers.random_uniform(-f3, f3))
-        x = tf.layers.batch_normalization(x)
-        x = tf.nn.relu(x)
+        # x = tf.layers.dense(x, self.hidden_size[2],
+        #                     kernel_initializer=tf.initializers.random_uniform(-f3, f3),
+        #                     bias_initializer=tf.initializers.random_uniform(-f3, f3))
+        # x = tf.layers.batch_normalization(x)
+        # x = tf.nn.relu(x)
 
         # activation layer
         outputs = tf.layers.dense(x, units=self.action_dim, activation='tanh',
@@ -190,18 +190,17 @@ class Critic(object):
         x = tf.layers.batch_normalization(x)
         x = tf.nn.relu(x)
 
-        #Third
-        x = tf.layers.dense(x, self.hidden_size[2],
-                            kernel_initializer=tf.initializers.random_uniform(-f3, f3),
-                            bias_initializer=tf.initializers.random_uniform(-f3, f3))
-        x = tf.layers.batch_normalization(x)
-        x = tf.nn.relu(x)
+        # #Third
+        # x = tf.layers.dense(x, self.hidden_size[2],
+        #                     kernel_initializer=tf.initializers.random_uniform(-f3, f3),
+        #                     bias_initializer=tf.initializers.random_uniform(-f3, f3))
+        # x = tf.layers.batch_normalization(x)
+        # x = tf.nn.relu(x)
 
         # activation layer
         outputs = tf.layers.dense(x, 1,
                                   kernel_initializer=tf.initializers.random_uniform(-f4, f4),
-                                  bias_initializer=tf.initializers.random_uniform(-f4, f4),
-                                  kernel_regularizer=tf.keras.regularizers.l2(1))
+                                  bias_initializer=tf.initializers.random_uniform(-f4, f4))
         return inputs, actions, outputs
 
     # function to train by adding states, actions, and q values

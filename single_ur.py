@@ -94,9 +94,8 @@ def main(args):
 
                     #Save the episode scores
                     score_history.append(episode_score)
-                for t in range(int(args['optimizationsteps'])):
-                    agent.learn()
-                #Print a recap of the cycle
+                    for t in range(int(args['optimizationsteps'])):
+                        agent.learn()
             # Take the mean of the scores and normalize it in the epoch and save it
             epoch_history.append(np.divide(score_history, int(args['episode_length'])))
 
@@ -152,7 +151,7 @@ if __name__ == '__main__':
     #parser.set_defaults(env='mergablerobots-v0')
     parser.set_defaults(env='UrReach-v0')
     #parser.set_defaults(env='FetchPickAndPlace-v1')
-    parser.set_defaults(render=True)
+    parser.set_defaults(render=False)
     parser.set_defaults(test=False)
 
     # parse arguments
