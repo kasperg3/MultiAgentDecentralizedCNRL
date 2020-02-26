@@ -141,7 +141,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', help='random seed', default=1235)
     parser.add_argument('--render', help='render the gym env', action='store_true')
     parser.add_argument('--test', help='test mode does not do exploration', action='store_true')
-    parser.add_argument('--variation', help='model variation name', default='DDPG-HER')
+    parser.add_argument('--variation', help='model variation name', default='DDPG_HER')
     #parser.set_defaults(env='FetchReach-v1')
     #parser.set_defaults(env='mergablerobots-v0')
     parser.set_defaults(env='UrReach-v0')
