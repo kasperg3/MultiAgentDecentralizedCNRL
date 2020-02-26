@@ -81,7 +81,7 @@ def main(args):
                         # Store data in replay buffer
                         agent.remember(state, state_next, act[0], reward, done)
                         # TODO: make the agent only save HER 80% of the time
-                        agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
+                        #agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
 
                         #Update the next state and add reward to episode_score
                         episode_score += reward
@@ -130,9 +130,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # training parameters
-    parser.add_argument('--actor-lr', help='actor learning rate', default=0.0001)
+    parser.add_argument('--actor-lr', help='actor learning rate', default=0.001)
     parser.add_argument('--critic-lr', help='critic learning rate', default=0.001)
-    parser.add_argument('--batch-size', help='batch size', default=128)
+    parser.add_argument('--batch-size', help='batch size', default=256)
     parser.add_argument('--gamma', help='discount factor reward', default=0.99)
     parser.add_argument('--tau', help='target update tau', default=0.95)
     parser.add_argument('--memory-size', help='size of the replay memory', default=1000000)
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     parser.add_argument('--optimizationsteps', help='number of optimization steps', default=40)
 
     # others and defaults
-    parser.add_argument('--seed', help='random seed', default=1235)
+    parser.add_argument('--seed', help='random seed', default=1234)
     parser.add_argument('--render', help='render the gym env', action='store_true')
     parser.add_argument('--test', help='test mode does not do exploration', action='store_true')
     parser.add_argument('--variation', help='model variation name', default='DDPG_HER_NEW')
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     #parser.set_defaults(env='mergablerobots-v0')
     parser.set_defaults(env='UrReach-v0')
     #parser.set_defaults(env='FetchPickAndPlace-v1')
-    parser.set_defaults(render=False)
+    parser.set_defaults(render=True)
     parser.set_defaults(test=False)
 
     # parse arguments

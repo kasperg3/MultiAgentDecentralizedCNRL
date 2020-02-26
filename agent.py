@@ -73,7 +73,8 @@ class Actor(object):
 
         f1 = 1. / np.sqrt(self.hidden_size[0])
         f2 = 1. / np.sqrt(self.hidden_size[1])
-        f3 = 0.003
+        f3 = 1. / np.sqrt(self.hidden_size[2])
+        f4 = 0.003
         inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
         x = tf.layers.dense(inputs, units=self.hidden_size[0],
                             kernel_initializer=tf.initializers.random_uniform(-f1, f1),
@@ -83,6 +84,13 @@ class Actor(object):
         x = tf.layers.dense(x, units=self.hidden_size[1],
                             kernel_initializer=tf.initializers.random_uniform(-f2, f2),
                             bias_initializer=tf.initializers.random_uniform(-f2, f2))
+        x = tf.layers.batch_normalization(x)
+        x = tf.nn.relu(x)
+
+        #Third
+        x = tf.layers.dense(x, self.hidden_size[2],
+                            kernel_initializer=tf.initializers.random_uniform(-f3, f3),
+                            bias_initializer=tf.initializers.random_uniform(-f3, f3))
         x = tf.layers.batch_normalization(x)
         x = tf.nn.relu(x)
 
@@ -160,6 +168,8 @@ class Critic(object):
 
         f1 = 1. / np.sqrt(self.hidden_size[0])
         f2 = 1. / np.sqrt(self.hidden_size[1])
+        f3 = 1. / np.sqrt(self.hidden_size[2])
+        f4 = 0.003
 
         # state branch
         inputs = tf.placeholder(tf.float32, shape=[None, self.state_dim])
@@ -180,11 +190,18 @@ class Critic(object):
         x = tf.layers.batch_normalization(x)
         x = tf.nn.relu(x)
 
+        #Third
+        x = tf.layers.dense(x, self.hidden_size[2],
+                            kernel_initializer=tf.initializers.random_uniform(-f3, f3),
+                            bias_initializer=tf.initializers.random_uniform(-f3, f3))
+        x = tf.layers.batch_normalization(x)
+        x = tf.nn.relu(x)
+
         # activation layer
-        f3 = 0.003
         outputs = tf.layers.dense(x, 1,
-                                  kernel_initializer=tf.initializers.random_uniform(-f3, f3),
-                                  bias_initializer=tf.initializers.random_uniform(-f3, f3))
+                                  kernel_initializer=tf.initializers.random_uniform(-f4, f4),
+                                  bias_initializer=tf.initializers.random_uniform(-f4, f4),
+                                  kernel_regularizer=tf.keras.regularizers.l2(1))
         return inputs, actions, outputs
 
     # function to train by adding states, actions, and q values
