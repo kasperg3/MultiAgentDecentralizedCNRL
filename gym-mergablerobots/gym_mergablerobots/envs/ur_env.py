@@ -110,7 +110,7 @@ class UrEnv(robot_env.RobotEnv):
         assert action.shape == (8,)
         action = action.copy()  # ensure that we don't change the action outside of this scope
         pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
-        pos_ctrl *= 0.01  # limit maximum change in position
+        pos_ctrl *= 0.05  # limit maximum change in position
         rot_ctrl *= 0.1
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
