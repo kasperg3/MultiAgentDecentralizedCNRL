@@ -67,32 +67,36 @@ def main(args):
         epoch_history = []
         for k in range(args['epochs']):
             score_history = []
-            for i in range(args['episodes']):
-                achieved_goal, desired_goal, state, state_prime = unpackObs(env.reset())
-                done = False
-                episode_score = 0
-                for j in range(int(args['episode_length'])):
-                    act = agent.choose_action(state=state)
-                    new_obs, reward, done, info = env.step(act[0])
-                    achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
+            for c in range(args['cycles']):
+                for i in range(args['episodes']):
+                    achieved_goal, desired_goal, state, state_prime = unpackObs(env.reset())
+                    done = False
+                    episode_score = 0
+                    for j in range(int(args['episode_length'])):
+                        # TODO: Make the agent choose a random action 20% of the time
+                        act = agent.choose_action(state=state)
+                        new_obs, reward, done, info = env.step(act[0])
+                        achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
 
-                    # Store data in replay buffer
-                    agent.remember(state, state_next, act[0], reward, done)
-                    agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
+                        # Store data in replay buffer
+                        agent.remember(state, state_next, act[0], reward, done)
+                        # TODO: make the agent only save HER 80% of the time
+                        agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
 
+                        #Update the next state and add reward to episode_score
+                        episode_score += reward
+                        state = state_next
+
+                        # render episode
+                        if args['render']:
+                            env.render()
+                    print('epoch: ' + str(k) + '  | cycle: ' + str(c) + ' | episode: ', str(i), ' | episode score %.2f' % episode_score, )
+
+                    #Save the episode scores
+                    score_history.append(episode_score)
+                for t in range(int(args['optimizationsteps'])):
                     agent.learn()
-
-                    #Update the next state and add reward to episode_score
-                    episode_score += reward
-                    state = state_next
-
-                    # render episode
-                    if args['render']:
-                        env.render()
-
-                #Save the episode scores
-                score_history.append(episode_score)
-                print('epoch:' + str(k) + ' | episode: ', str(i), ' | score %.2f' % episode_score, )
+                #Print a recap of the cycle
             # Take the mean of the scores and normalize it in the epoch and save it
             epoch_history.append(np.divide(score_history, int(args['episode_length'])))
 
@@ -128,20 +132,22 @@ if __name__ == '__main__':
     # training parameters
     parser.add_argument('--actor-lr', help='actor learning rate', default=0.0001)
     parser.add_argument('--critic-lr', help='critic learning rate', default=0.001)
-    parser.add_argument('--batch-size', help='batch size', default=64)
+    parser.add_argument('--batch-size', help='batch size', default=128)
     parser.add_argument('--gamma', help='discount factor reward', default=0.99)
-    parser.add_argument('--tau', help='target update tau', default=0.001)
+    parser.add_argument('--tau', help='target update tau', default=0.95)
     parser.add_argument('--memory-size', help='size of the replay memory', default=1000000)
-    parser.add_argument('--hidden-sizes', help='number of nodes in hidden layer', default=(400, 300))
-    parser.add_argument('--episode-length', help='max length of 1 episode', default=150)
-    parser.add_argument('--episodes', help='episodes to train', default=20)
-    parser.add_argument('--epochs', help='number of epochs', default=100)
+    parser.add_argument('--hidden-sizes', help='number of nodes in hidden layer', default=(256, 256, 256))
+    parser.add_argument('--epochs', help='number of epochs', default=50)
+    parser.add_argument('--cycles', help='number of cycles to run in each epoch', default=50)
+    parser.add_argument('--episodes', help='episodes to train in a cycle', default=16)
+    parser.add_argument('--episode-length', help='max length of 1 episode', default=50)
+    parser.add_argument('--optimizationsteps', help='number of optimization steps', default=40)
 
     # others and defaults
     parser.add_argument('--seed', help='random seed', default=1235)
     parser.add_argument('--render', help='render the gym env', action='store_true')
     parser.add_argument('--test', help='test mode does not do exploration', action='store_true')
-    parser.add_argument('--variation', help='model variation name', default='DDPG_HER')
+    parser.add_argument('--variation', help='model variation name', default='DDPG_HER_NEW')
     #parser.set_defaults(env='FetchReach-v1')
     #parser.set_defaults(env='mergablerobots-v0')
     parser.set_defaults(env='UrReach-v0')
