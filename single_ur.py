@@ -76,11 +76,11 @@ def main(args):
                     new_obs, reward, done, info = env.step(act[0])
                     achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
 
-                # Store data in replay buffer
-                agent.remember(state, state_next, act[0], reward, done)
-                agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
+                    # Store data in replay buffer
+                    agent.remember(state, state_next, act[0], reward, done)
+                    agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
 
-                    agent.learn()
+                    #agent.learn()
 
                     #Update the next state and add reward to episode_score
                     episode_score += reward
@@ -141,12 +141,12 @@ if __name__ == '__main__':
     parser.add_argument('--seed', help='random seed', default=1235)
     parser.add_argument('--render', help='render the gym env', action='store_true')
     parser.add_argument('--test', help='test mode does not do exploration', action='store_true')
-    parser.add_argument('--variation', help='model variation name', default='DDPG_HER')
+    parser.add_argument('--variation', help='model variation name', default='DDPG-HER')
     #parser.set_defaults(env='FetchReach-v1')
     #parser.set_defaults(env='mergablerobots-v0')
     parser.set_defaults(env='UrReach-v0')
     #parser.set_defaults(env='FetchPickAndPlace-v1')
-    parser.set_defaults(render=False)
+    parser.set_defaults(render=True)
     parser.set_defaults(test=False)
 
     # parse arguments
