@@ -80,7 +80,7 @@ def main(args):
                     agent.remember(state, state_next, act[0], reward, done)
                     agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
 
-                    #agent.learn()
+                    agent.learn()
 
                     #Update the next state and add reward to episode_score
                     episode_score += reward
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     #parser.set_defaults(env='mergablerobots-v0')
     parser.set_defaults(env='UrReach-v0')
     #parser.set_defaults(env='FetchPickAndPlace-v1')
-    parser.set_defaults(render=True)
+    parser.set_defaults(render=False)
     parser.set_defaults(test=False)
 
     # parse arguments
