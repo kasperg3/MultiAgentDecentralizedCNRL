@@ -151,8 +151,8 @@ class UrEnv(robot_env.RobotEnv):
             achieved_goal = np.squeeze(object_pos.copy())
 
         obs = np.concatenate([
-            grip_pos, grip_rot, object_pos.ravel(), object_rel_pos.ravel(), gripper_state, object_rot.ravel()
-            , grip_velp,
+            grip_pos, grip_rot, object_pos.ravel(), object_rel_pos.ravel(), gripper_state, object_rot.ravel(),
+            object_velp.ravel(), object_velr.ravel(), grip_velp, gripper_vel,
         ])
 
         return {
@@ -219,13 +219,12 @@ class UrEnv(robot_env.RobotEnv):
         self.sim.forward()
 
         # Move end effector into position.
+        gripper_target = self.sim.data.get_site_xpos('robot0:grip')
         gripper_rotation = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
 
         # Place the end effector at the object every other episode
-        if bool(np.random.binomial(1, 0.5)):
+        if bool(np.random.binomial(1, 0.5)) and self.has_object:
             gripper_target = self.sim.data.get_site_xpos('object0')
-        else:
-            gripper_target = self.sim.data.get_site_xpos('robot0:grip')
 
         self.sim.data.set_mocap_pos('robot0:mocap', gripper_target)
         self.sim.data.set_mocap_quat('robot0:mocap', gripper_rotation)

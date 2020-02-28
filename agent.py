@@ -344,8 +344,7 @@ class Agent(object):
 
         pass
 
-    def choose_action(self, state, env, test=False):
-        # predict action and add noise do random action 20% of the time
+    def choose_action(self, state, test=False):
         a = self.actor.predict(np.reshape(state, (1, self.actor.state_dim)))
         if not test:
             a = a + self.actor_noise.get_noise()

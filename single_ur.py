@@ -100,7 +100,7 @@ def main(args):
                         if bool(np.random.binomial(1, 0.2)):
                             act = agent.random_action()
                         else:
-                            act = agent.choose_action(state=state)
+                            act = agent.choose_action(state=state, test=args['test'])
 
                         new_obs, reward, done, info = env.step(act[0])
                         achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
@@ -108,7 +108,7 @@ def main(args):
                         # Store data in replay buffer
                         agent.remember(state, state_next, act[0], reward, done)
                         if bool(np.random.binomial(1, 0.8)):
-                             agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
+                            agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
 
                         #Update the next state and add reward to episode_score
                         episode_score += reward
@@ -123,27 +123,27 @@ def main(args):
                     for t in range(int(args['optimizationsteps'])):
                         agent.learn()
 
-                # TODO: Do rollout without random actions + noise, to see performance
-                test_history = []
-                for _l in range(int(args['rollouts'])):
-                    achieved_goal, desired_goal, state, state_prime = unpackObs(env.reset())
-                    done = False
-                    episode_score = 0
-                    for j in range(int(args['episode_length'])):
-                        act = agent.choose_action(state=state, env=env, test=args['test'])
-                        new_obs, reward, done, info = env.step(act[0])
-                        achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
-                        episode_score += reward
-                        state = state_next
-                    test_history.append(episode_score)
-                print('epoch:' + str(k) + " | score: %.2f | test score: %.2f " % (
-                np.mean(score_history), np.mean(test_history)))
+                    #Print the Episode score
+                    print('epoch:' + str(k) + ' | cycle:' + str(c) + ' | episode:' + str(i) +" | episode score: %.2f" % (episode_score))
 
-                # Save the histories of the epoch, both test and training
-                epoch_test_history.append(test_history)
-                epoch_history.append(score_history)
-            # Take the mean of the scores and normalize it in the epoch and save it
-            epoch_history.append(np.divide(score_history, int(args['episode_length'])))
+            test_history = []
+            for _ in range(int(args['rollouts'])):
+                achieved_goal, desired_goal, state, state_prime = unpackObs(env.reset())
+                done = False
+                episode_score = 0
+                for _ in range(int(args['episode_length'])):
+                    act = agent.choose_action(state=state, env=env, test=args['test'])
+                    new_obs, reward, done, info = env.step(act[0])
+                    achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
+                    episode_score += reward
+                    state = state_next
+                test_history.append(episode_score)
+
+            print('epoch:' + str(k) + " | mean score: %.2f | mean test score: %.2f " %(np.mean(score_history), np.mean(test_history)))
+
+            # Save the histories of the epoch, both test and training
+            epoch_test_history.append(test_history)
+            epoch_history.append(score_history)
 
             #Save model each epoch
             agent.save_checkpoint()
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     parser.add_argument('--critic-lr', help='critic learning rate', default=0.001)
     parser.add_argument('--batch-size', help='batch size', default=256)
     parser.add_argument('--gamma', help='discount factor reward', default=0.99)
-    parser.add_argument('--tau', help='target update tau', default=0.01)
+    parser.add_argument('--tau', help='target update tau', default=0.001)
     parser.add_argument('--memory-size', help='size of the replay memory', default=1000000)
     parser.add_argument('--hidden-sizes', help='number of nodes in hidden layer', default=(256, 256, 256))
     parser.add_argument('--epochs', help='number of epochs', default=50)
