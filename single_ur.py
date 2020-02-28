@@ -77,10 +77,16 @@ def main(args):
         agent = Agent(args, sess, env=env)
         np.random.seed(0)
 
+        tensorboard_dir = './' + args['env'] + '_' + args['variation'] + '/train_' + datetime.now().strftime(
+            '%Y-%m-%d-%H') + 'seed_' + str(args['seed'])
         model_dir = './' + args['env'] + '_' + args['variation'] + '/model'
+        current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+        train_log_dir = 'logs/' + current_time + '/train'
+        train_summary_writer = tf.summary.FileWriter(train_log_dir, sess.graph)  # session?
 
         # initialize variables, create writer and saver
         saver = tf.train.Saver()
+        writer = tf.summary.FileWriter(tensorboard_dir, sess.graph)
 
         try:
             saver.restore(sess, os.path.join(model_dir, args['env'] + '_' + args['variation'] + '.ckpt'))
@@ -132,7 +138,7 @@ def main(args):
                 done = False
                 episode_score = 0
                 for _ in range(int(args['episode_length'])):
-                    act = agent.choose_action(state=state, env=env, test=args['test'])
+                    act = agent.choose_action(state=state, test=bool(args['test']))
                     new_obs, reward, done, info = env.step(act[0])
                     achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
                     episode_score += reward
@@ -190,12 +196,12 @@ if __name__ == '__main__':
     parser.add_argument('--tau', help='target update tau', default=0.001)
     parser.add_argument('--memory-size', help='size of the replay memory', default=1000000)
     parser.add_argument('--hidden-sizes', help='number of nodes in hidden layer', default=(256, 256, 256))
-    parser.add_argument('--epochs', help='number of epochs', default=50)
-    parser.add_argument('--cycles', help='number of cycles to run in each epoch', default=50)
-    parser.add_argument('--episodes', help='episodes to train in a cycle', default=16)
-    parser.add_argument('--episode-length', help='max length of 1 episode', default=100)
-    parser.add_argument('--optimizationsteps', help='number of optimization steps', default=40)
-    parser.add_argument('--rollouts', help='Number of rollouts to run each epoch')
+    parser.add_argument('--epochs', help='number of epochs', default=10)
+    parser.add_argument('--cycles', help='number of cycles to run in each epoch', default=10)
+    parser.add_argument('--episodes', help='episodes to train in a cycle', default=1)
+    parser.add_argument('--episode-length', help='max length of 1 episode', default=10)
+    parser.add_argument('--optimizationsteps', help='number of optimization steps', default=1)
+    parser.add_argument('--rollouts', help='Number of rollouts to run each epoch', default=10)
     # others and defaults
     parser.add_argument('--seed', help='random seed', default=1234)
     parser.add_argument('--render', help='render the gym env', action='store_true')
