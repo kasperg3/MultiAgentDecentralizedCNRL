@@ -22,6 +22,29 @@ def unpackObs(obs):
             np.concatenate((obs['observation'], \
             obs['achieved_goal']))
 
+
+def find_low_high(dataset1, dataset2=None):
+    highest_value = np.amax(dataset1)
+    lowest_value = np.amin(dataset1)
+    if dataset2 is not None:
+        if highest_value < np.amax(dataset2):
+            highest_value = np.amax(dataset2)
+        if lowest_value < np.amax(dataset2):
+            lowest_value = np.amin(dataset2)
+
+    return lowest_value, highest_value
+
+
+def normalize(dataset_1, dataset_2=None):
+    dataset_low, dataset_high = find_low_high(dataset_1, dataset_2)
+    dataset1 = np.divide(np.subtract(dataset_1, dataset_low), np.subtract(dataset_high, dataset_low))
+    dataset2 = dataset_2
+    if dataset_2 is not None:
+        dataset2 = np.divide(np.subtract(dataset_2, dataset_low), np.subtract(dataset_high, dataset_low))
+    return dataset1, dataset2
+
+
+
 # Main
 def main(args):
     # Set path to save result
@@ -65,6 +88,7 @@ def main(args):
         except:
             print('Start new training session')
         epoch_history = []
+        epoch_test_history = []
         for k in range(args['epochs']):
             score_history = []
             for i in range(args['episodes']):
@@ -72,13 +96,17 @@ def main(args):
                 done = False
                 episode_score = 0
                 for j in range(int(args['episode_length'])):
-                    act = agent.choose_action(state=state)
+                    if bool(np.random.binomial(1, 0.7)): # 30% random action
+                        act = agent.choose_action(state=state, env=env, test=True)
+                    else:
+                        act = agent.random_action()
                     new_obs, reward, done, info = env.step(act[0])
                     achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
 
                     # Store data in replay buffer
                     agent.remember(state, state_next, act[0], reward, done)
-                    agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
+                    if bool(np.random.binomial(1, 0.8)):
+                        agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
 
                     agent.learn()
 
@@ -92,27 +120,51 @@ def main(args):
 
                 #Save the episode scores
                 score_history.append(episode_score)
-                print('epoch:' + str(k) + ' | episode: ', str(i), ' | score %.2f' % episode_score, )
-            # Take the mean of the scores and normalize it in the epoch and save it
-            epoch_history.append(np.divide(score_history, int(args['episode_length'])))
+                #print('epoch:' + str(k) + ' | episode: ', str(i), ' | score %.2f' % episode_score, )
+            #Rollouts
+            test_history = []
+            for _l in range(int(args['rollouts'])):
+                achieved_goal, desired_goal, state, state_prime = unpackObs(env.reset())
+                done = False
+                episode_score = 0
+                for j in range(int(args['episode_length'])):
+                    act = agent.choose_action(state=state, env=env, test=args['test'])
+                    new_obs, reward, done, info = env.step(act[0])
+                    achieved_goal, desired_goal, state_next, state_prime_next = unpackObs(new_obs)
+                    episode_score += reward
+                    state = state_next
+                test_history.append(episode_score)
+            print('epoch:' + str(k) + " | score: %.2f | test score: %.2f " % (np.mean(score_history), np.mean(test_history)) )
+
+            #Save the histories of the epoch, both test and training
+            epoch_test_history.append(test_history)
+            epoch_history.append(score_history)
 
             #Save model each epoch
             agent.save_checkpoint()
             saver.save(sess, os.path.join(model_dir, args['env'] + '_' + args['variation'] + '.ckpt'))
 
+    epoch_history_normalized, test_history_normalized = normalize(epoch_history, epoch_test_history)
+
     #plot the mean of the epochs
-    epoch_plot, = plt.plot(range(args['epochs']), np.mean(epoch_history, axis=1), color='blue')
-    std_deviation = np.std(epoch_history, axis=1)
+    epoch_plot, = plt.plot(range(args['epochs']), np.mean(epoch_history_normalized, axis=1), color='blue')
+    test_plot, = plt.plot(range(args['epochs']), np.mean(test_history_normalized, axis=1), color='red')
+    std_deviation = np.std(epoch_history_normalized, axis=1)
+    std_deviation_test = np.std(test_history_normalized)
     plt.fill_between(range(args['epochs']),
-                     np.subtract(np.mean(epoch_history, axis=1), std_deviation),
-                     np.add(np.mean(epoch_history, axis=1), std_deviation), facecolor='blue', alpha=0.1)
+                     np.subtract(np.mean(epoch_history_normalized, axis=1), std_deviation),
+                     np.add(np.mean(epoch_history_normalized, axis=1), std_deviation), facecolor='blue', alpha=0.1)
+    plt.fill_between(range(args['epochs']),
+                     np.subtract(np.mean(test_history_normalized, axis=1), std_deviation_test),
+                     np.add(np.mean(test_history_normalized, axis=1), std_deviation_test), facecolor='red', alpha=0.1)
     plt.ylabel('Reward')
     plt.xlabel('Epoch')
-    plt.legend([args['variation']])
+    plt.legend([epoch_plot, test_plot], [args['variation'], 'Test score'])
     plt.show()
     plt.pause(0.05)
 
-    pickle.dump(epoch_plot, open("./plot_data/plot_data_" + args['variation'], "wb"))
+    pickle.dump(epoch_plot, open("./plot_data/plot_data_" + args['variation'] + 'epoch', "wb"))
+    pickle.dump(test_plot, open("./plot_data/plot_data_" + args['variation'] + 'test', "wb"))
 
     input("Press to exit")
 

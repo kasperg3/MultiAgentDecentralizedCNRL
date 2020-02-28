@@ -306,11 +306,15 @@ class Agent(object):
 
         pass
 
-    def choose_action(self, state):
-        # predict action and add noise
+    def choose_action(self, state, env, test=False):
+        # predict action and add noise do random action 20% of the time
         a = self.actor.predict(np.reshape(state, (1, self.actor.state_dim)))
-        a = a + self.actor_noise.get_noise()
+        if not test:
+            a = a + self.actor_noise.get_noise()
         return a
+
+    def random_action(self):
+        return [np.random.uniform(low=-self.actor.action_bound, high=self.actor.action_bound, size=self.actor.action_dim)]
 
     def remember(self, state, state_next, action, reward, done):
         # add normal experience to memory -- i.e. experience w.r.t. desired goal
