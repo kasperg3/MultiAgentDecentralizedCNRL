@@ -351,7 +351,7 @@ class Agent(object):
         return a
 
     def random_action(self):
-        return [np.random.uniform(low=-self.actor.action_bound, high=-self.actor.action_bound, size=self.actor.action_dim)]
+        return [np.random.uniform(low=-self.actor.action_bound, high=self.actor.action_bound, size=self.actor.action_dim)]
 
     def remember(self, state, state_next, action, reward, done):
         # add normal experience to memory -- i.e. experience w.r.t. desired goal
