@@ -54,9 +54,47 @@ class UrEnv(robot_env.RobotEnv):
         # Compute distance between goal and the achieved goal.
         d = goal_distance(achieved_goal, goal)
         if self.reward_type == 'sparse':
-            return -(d > self.distance_threshold).astype(np.float32)
-        else:
-            return -d
+            reward = -(d > self.distance_threshold).astype(np.float32)
+        elif self.reward_type == 'dense':
+            reward = -d
+        elif self.reward_type == 'dense_reward_shaping':
+
+            R = -d
+            start = self.initial_gripper_xpos[:3]
+            exploit_factor = 1
+            #max_step_length = 0.01 * 20
+
+            if self.action_counter == 0:
+                self.phi_old = (goal_distance(start, goal)) / exploit_factor
+                self.action_counter = 1
+
+            phi_new = d / exploit_factor
+            F = self.phi_old - phi_new
+            self.phi_old = phi_new
+            reward = R + F
+
+        elif self.reward_type == 'sparse_reward_shaping':
+            R = -(d > self.distance_threshold).astype(np.float32)
+            start = self.initial_gripper_xpos[:3]
+            init_object_pos = self.initial_object_xpos
+
+            bestRoute = np.abs(np.linalg.norm(start - init_object_pos)) + np.abs(
+                np.linalg.norm(init_object_pos - goal))  # Euclidean distance
+
+            exploit_factor = 0.5
+            t = bestRoute * exploit_factor  # Heuristic * exploit/(exploit+explore)
+            N = 3  # Number of subgoals
+            ns = 0  # Number of subgoals reached
+            if not self.action_counter:
+                self.phi_old = -((N - ns - 0.5) / N) * t
+            self.action_counter += 1
+            phi_new = -((N - ns - 0.5) / N) * t  # Remaining distance based on subgoals
+            # (0.5 is because you on average are halfway between each subgoal)
+            F = phi_new - self.phi_old  # add gamma
+            self.phi_old = phi_new
+            reward = R + F
+
+        return reward
 
     # RobotEnv methods
     # ----------------------------
@@ -113,8 +151,8 @@ class UrEnv(robot_env.RobotEnv):
             achieved_goal = np.squeeze(object_pos.copy())
 
         obs = np.concatenate([
-            grip_pos, grip_rot, object_pos.ravel(), object_rel_pos.ravel(), gripper_state, object_rot.ravel(),
-            object_velp.ravel(), object_velr.ravel(), grip_velp, gripper_vel,
+            grip_pos, grip_rot, object_pos.ravel(), object_rel_pos.ravel(), gripper_state, object_rot.ravel()
+            , grip_velp,
         ])
 
         return {
@@ -141,7 +179,7 @@ class UrEnv(robot_env.RobotEnv):
 
     def _reset_sim(self):
         self.sim.set_state(self.initial_state)
-
+        self.action_counter = 0
         # Randomize start position of object.
         if self.has_object:
             object_xpos = self.initial_gripper_xpos[:2]
@@ -150,6 +188,7 @@ class UrEnv(robot_env.RobotEnv):
             object_qpos = self.sim.data.get_joint_qpos('object0:joint')
             assert object_qpos.shape == (7,)
             object_qpos[:2] = object_xpos
+            self.initial_object_xpos = object_qpos[:3]
             self.sim.data.set_joint_qpos('object0:joint', object_qpos)
 
         self.sim.forward()
@@ -159,7 +198,8 @@ class UrEnv(robot_env.RobotEnv):
         if self.has_object:
             goal = self.sim.data.get_site_xpos('object0')
             while goal_distance(self.sim.data.get_site_xpos('object0'), goal) < self.distance_threshold:
-                goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-self.target_range, self.target_range, size=3)
+                goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-self.target_range, self.target_range,
+                                                                              size=3)
                 goal += self.target_offset
                 goal[2] = self.height_offset
                 if self.target_in_the_air and self.np_random.uniform() < 0.5:
