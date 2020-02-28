@@ -188,6 +188,7 @@ if __name__ == '__main__':
     parser.add_argument('--episode-length', help='max length of 1 episode', default=150)
     parser.add_argument('--episodes', help='episodes to train', default=20)
     parser.add_argument('--epochs', help='number of epochs', default=100)
+    parser.add_argument('--rollouts', help='Number of rollouts pr epoch', default=10)
 
     # others and defaults
     parser.add_argument('--seed', help='random seed', default=1235)
