@@ -3,10 +3,10 @@ from gym import utils
 from gym_mergablerobots.envs.ur_env import UrEnv
 
 # Ensure we get the path separator correct on windows
-MODEL_XML_PATH = '/home/nikolaj/master/mergableindustrialrobots/gym-mergablerobots/gym_mergablerobots/envs/assets/single_robot.xml'
+MODEL_XML_PATH = '/home/kasper/workspace/mergableindustrialrobots/gym-mergablerobots/gym_mergablerobots/envs/assets/single_robot.xml'
 
 class UrReachEnv(UrEnv, utils.EzPickle):
-    def __init__(self, reward_type='dense'):
+    def __init__(self, reward_type='sparse'):
         initial_qpos = {
             'robot0:joint1': -2,
             'robot0:joint2': -2.053,
