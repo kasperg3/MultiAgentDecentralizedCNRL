@@ -1,6 +1,0 @@
-setup.py
-gym_mergablerobots.egg-info/PKG-INFO
-gym_mergablerobots.egg-info/SOURCES.txt
-gym_mergablerobots.egg-info/dependency_links.txt
-gym_mergablerobots.egg-info/requires.txt
-gym_mergablerobots.egg-info/top_level.txt
