@@ -37,7 +37,7 @@
 	</worldbody>
 
     <actuator>
-		<position ctrllimited="true" ctrlrange="0 0.2" joint="robot0:joint7_l" kp="30000" name="robot0:l_gripper_finger_joint" user="1"/>
-		<position ctrllimited="true" ctrlrange="0 0.2" joint="robot0:joint7_r" kp="30000" name="robot0:r_gripper_finger_joint" user="1"/>
+		<position ctrllimited="true" ctrlrange="0 1" joint="robot0:joint7_l" kp="30000" name="robot0:l_gripper_finger_joint" user="1"/>
+		<position ctrllimited="true" ctrlrange="0 1" joint="robot0:joint7_r" kp="30000" name="robot0:r_gripper_finger_joint" user="1"/>
     </actuator>
 </mujoco>

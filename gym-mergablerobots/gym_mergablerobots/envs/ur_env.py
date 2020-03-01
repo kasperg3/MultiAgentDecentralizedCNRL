@@ -194,6 +194,11 @@ class UrEnv(robot_env.RobotEnv):
             assert object_qpos.shape == (7,)
             object_qpos[:2] = object_xpos
 
+            #open the grippers
+            action = np.concatenate([[0, 0, 0], [0, 0, 0, 0], [-1, -1]])
+            utils.ctrl_set_action(self.sim, action)
+            utils.mocap_set_action(self.sim, action)
+
             # Set object position
             self.initial_object_xpos = object_qpos[:3]
             self.sim.data.set_joint_qpos('object0:joint', object_qpos)
@@ -203,12 +208,12 @@ class UrEnv(robot_env.RobotEnv):
                 initial_grip = np.add(self.initial_object_xpos, [0, 0, 0.045])
                 self.sim.data.set_mocap_quat('robot0:mocap', [0, 0, 1, 0])
                 self.sim.data.set_mocap_pos('robot0:mocap', initial_grip)
-                for _ in range(10):
+                for _ in range(20):
                     self.sim.step()
-                # self.sim.data.set_mocap_quat('robot0:mocap', [0, 0, 1, 0])
-                # self.sim.data.set_mocap_pos('robot0:mocap', np.subtract(initial_grip, [0, 0, 0.03]))
-                # for _ in range(20):
-                #     self.sim.step()
+                self.sim.data.set_mocap_quat('robot0:mocap', [0, 0, 1, 0])
+                self.sim.data.set_mocap_pos('robot0:mocap', np.subtract(initial_grip, [0, 0, 0.03]))
+                for _ in range(20):
+                    self.sim.step()
 
         self.sim.forward()
         return True
