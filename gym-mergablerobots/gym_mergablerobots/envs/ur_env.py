@@ -52,6 +52,7 @@ class UrEnv(robot_env.RobotEnv):
 
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.
+        reward = 0
         d = goal_distance(achieved_goal, goal)
         if self.reward_type == 'sparse':
             reward = -(d > self.distance_threshold).astype(np.float32)
@@ -62,7 +63,7 @@ class UrEnv(robot_env.RobotEnv):
             R = -d
             start = self.initial_gripper_xpos[:3]
             exploit_factor = 1
-            #max_step_length = 0.01 * 20
+            # max_step_length = 0.01 * 20
 
             if self.action_counter == 0:
                 self.phi_old = (goal_distance(start, goal)) / exploit_factor
@@ -93,7 +94,6 @@ class UrEnv(robot_env.RobotEnv):
             F = phi_new - self.phi_old  # add gamma
             self.phi_old = phi_new
             reward = R + F
-
         return reward
 
     # RobotEnv methods
@@ -106,7 +106,7 @@ class UrEnv(robot_env.RobotEnv):
             self.sim.forward()
 
     def _set_action(self, action):
-        #Change action space if number of is changed
+        # Change action space if number of is changed
         assert action.shape == (8,)
         action = action.copy()  # ensure that we don't change the action outside of this scope
         pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
@@ -183,13 +183,32 @@ class UrEnv(robot_env.RobotEnv):
         # Randomize start position of object.
         if self.has_object:
             object_xpos = self.initial_gripper_xpos[:2]
-            while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
+            while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < self.distance_threshold:
                 object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range, self.obj_range, size=2)
+                base_to_object_distance = np.linalg.norm(object_xpos[:2] - self.sim.data.get_site_xpos('robot0:base')[:2])
+                # Make sure the object did not spawn in the robot base
+                if base_to_object_distance < 0.20:
+                    object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range, self.obj_range, size=2)
+
             object_qpos = self.sim.data.get_joint_qpos('object0:joint')
             assert object_qpos.shape == (7,)
             object_qpos[:2] = object_xpos
+
+            # Set object position
             self.initial_object_xpos = object_qpos[:3]
             self.sim.data.set_joint_qpos('object0:joint', object_qpos)
+
+            # Place the end effector at the object every other episode
+            if bool(np.random.binomial(1, 0.5)) and self.has_object:
+                initial_grip = np.add(self.initial_object_xpos, [0, 0, 0.045])
+                self.sim.data.set_mocap_quat('robot0:mocap', [0, 0, 1, 0])
+                self.sim.data.set_mocap_pos('robot0:mocap', initial_grip)
+                for _ in range(10):
+                    self.sim.step()
+                # self.sim.data.set_mocap_quat('robot0:mocap', [0, 0, 1, 0])
+                # self.sim.data.set_mocap_pos('robot0:mocap', np.subtract(initial_grip, [0, 0, 0.03]))
+                # for _ in range(20):
+                #     self.sim.step()
 
         self.sim.forward()
         return True
@@ -222,10 +241,6 @@ class UrEnv(robot_env.RobotEnv):
         gripper_target = self.sim.data.get_site_xpos('robot0:grip')
         gripper_rotation = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
 
-        # Place the end effector at the object every other episode
-        if bool(np.random.binomial(1, 0.5)) and self.has_object:
-            gripper_target = self.sim.data.get_site_xpos('object0')
-
         self.sim.data.set_mocap_pos('robot0:mocap', gripper_target)
         self.sim.data.set_mocap_quat('robot0:mocap', gripper_rotation)
         for _ in range(10):
@@ -238,4 +253,3 @@ class UrEnv(robot_env.RobotEnv):
 
     def render(self, mode='human', width=500, height=500):
         return super(UrEnv, self).render(mode)
-

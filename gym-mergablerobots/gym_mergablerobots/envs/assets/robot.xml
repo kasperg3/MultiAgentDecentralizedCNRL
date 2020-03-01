@@ -10,6 +10,7 @@
             <geom name="robot0:standoff" type="cylinder" euler="0 0 0"  size="0.1 0.035" material="robot:base_mat" class="robot:grey"/>
             <geom name="robot0:base_mesh" type="mesh" pos="0 0 0.035" euler="1.57 0 0" mesh="base" material="robot:base_mat" class="robot:grey"/>
             <body name="robot0:shoulder_link" pos="0 0 0.201">
+                <site name="robot0:base" pos="0 0 0" rgba="0 0 0 0" size="0.02 0.02 0.02"/>
                 <inertial pos="0 0 0" mass="3.7" diaginertia="0.0102675 0.0102675 0.00666" />
                 <geom name="robot0:shoulder_mesh" type="mesh" mesh="shoulder" material="robot:arm_mat" />
                 <joint name="robot0:joint1" axis="0 0 1" limited="false"/>
@@ -47,13 +48,19 @@
                                             <body name="robot0:robotiq_tcp" pos="0 0 0.037" euler="0 0 0">
 
                                                 <body childclass="robot:robotiqGripper" name="robot0:right_finger" pos="-0.005 -0.027 0.0" euler="1.5707 0 -1.5707">
-                                                    <geom name="robot0:robotiq_finger_mesh_r" type="mesh" mesh="robotiq_finger" material="robot:gripper_finger_mat" contype="0" conaffinity="0"/>
-                                                    <joint name='robot0:joint7_r' type='slide' axis='0 0 -1' range='0 .025'/>
+                                                    <inertial diaginertia="0.1 0.1 0.1" mass="4" pos="-0.01 0 0"/>
+                                                    <geom pos="0 0.005 0" size="0.023 0.01 0.005" type="box" name="robot0:robotiq_finger_mesh_r" material="robot:gripper_finger_mat" condim="4" friction="1 0.05 0.01"/>
+                                                    <joint name='robot0:joint7_r' type='slide' axis='0 0 -1' range='0 .03'/>
+                                                    <!--<joint axis="0 1 0" name="robot0:r_gripper_finger_joint" range="0 0.05"></joint>-->
+                                                    <!-- <geom name="robot0:robotiq_finger_mesh_r" type="mesh" mesh="robotiq_finger" material="robot:gripper_finger_mat" contype="0" conaffinity="0"/>-->
                                                 </body>
 
                                                 <body childclass="robot:robotiqGripper" name="robot0:left_finger" pos="0.0025 0.027 0.0" euler="-1.5707 0 1.5707">
-                                                    <geom name="robot0:robotiq_finger_mesh_l" type="mesh" mesh="robotiq_finger" material="robot:gripper_finger_mat"  contype="0" conaffinity="0"/>
-                                                    <joint name='robot0:joint7_l' type='slide' axis='0 0 -1' range='0 .025'/>
+                                                    <inertial diaginertia="0.1 0.1 0.1" mass="4" pos="-0.01 0 0"/>
+                                                    <geom pos="0 0.005 0" size="0.023 0.01 0.005" type="box" name="robot0:robotiq_finger_mesh_l" material="robot:gripper_finger_mat" condim="4" friction="1 0.05 0.01"/>
+                                                    <joint name='robot0:joint7_l' type='slide' axis='0 0 -1' range='0 .03'/>
+<!--                                                    <geom name="robot0:robotiq_finger_mesh_l" type="mesh" mesh="robotiq_finger" material="robot:gripper_finger_mat"  contype="0" conaffinity="0"/>-->
+<!--                                                    <joint name='robot0:joint7_l' type='slide' axis='0 0 -1' range='0 .025'/>-->
                                                 </body>
                                                 <site name="robot0:grip" pos="0 0 0" rgba="0 0 0 0" size="0.02 0.02 0.02"/>
                                             </body>

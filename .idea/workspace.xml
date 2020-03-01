@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="cb4cd8cf-f597-430c-a0b3-f96cc15513ac" name="Default Changelist" comment="More Agent, not done yet">
+      <change afterPath="$PROJECT_DIR$/../.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/gym-mergablerobots.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/libraries/ROS.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/libraries/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/ros.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/assets/robot.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/assets/robot.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/assets/single_robot.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/assets/single_robot.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/mergablerobots/ur_pick_and_place.py" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/mergablerobots/ur_pick_and_place.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/mergablerobots/ur_reach.py" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/mergablerobots/ur_reach.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/ur_env.py" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/ur_env.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../single_ur.py" beforeDir="false" afterPath="$PROJECT_DIR$/../single_ur.py" afterDir="false" />
+    </list>
+    <list id="ed9ac485-5e4f-4a97-9a6f-11949cd75507" name="Default Changlist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$/.." value="DDPG-HER" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+    <option name="UPDATE_TYPE" value="MERGE" />
+  </component>
+  <component name="IgnoredFileRootStore">
+    <option name="generatedRoots">
+      <set>
+        <option value="$PROJECT_DIR$/../.idea" />
+      </set>
+    </option>
+  </component>
+  <component name="ProjectId" id="1Xwwb8I2gysgZF4vQKiWfPoah22" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <OptionsSetting value="false" id="Update" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/.." />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RunManager" selected="Python.single_ur">
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <module name="mergableindustrialrobots" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="ddpg" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="mergableindustrialrobots" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/ddpg.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="ddpg2" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="mergableindustrialrobots" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/.." />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../ddpg.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="true" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="ddpg_tf2" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="mergableindustrialrobots" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/.." />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../ddpg_tf2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="mergableindustrialrobots" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/.." />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="true" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="single_ur" type="PythonConfigurationType" factoryName="Python">
+      <module name="mergableindustrialrobots" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="/usr/bin/python3.6" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/.." />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../single_ur.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest in fetchreach.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="mergableindustrialrobots" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/.." />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/../fetchreach.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.single_ur" />
+      <item itemvalue="Python.ddpg" />
+      <item itemvalue="Python.ddpg_tf2" />
+      <item itemvalue="Python.ddpg2" />
+      <item itemvalue="Python.main" />
+      <item itemvalue="Python tests.pytest in fetchreach.py" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python tests.pytest in fetchreach.py" />
+        <item itemvalue="Python.ddpg2" />
+        <item itemvalue="Python.ddpg_tf2" />
+        <item itemvalue="Python.ddpg" />
+        <item itemvalue="Python.main" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="cb4cd8cf-f597-430c-a0b3-f96cc15513ac" name="Default Changelist" comment="" />
+      <changelist id="ed9ac485-5e4f-4a97-9a6f-11949cd75507" name="Default Changlist" comment="" />
+      <created>1581970533567</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1581970533567</updated>
+      <workItem from="1581970535800" duration="163000" />
+      <workItem from="1581970706810" duration="1179000" />
+      <workItem from="1581972142506" duration="724000" />
+      <workItem from="1581972875609" duration="70000" />
+      <workItem from="1582018462072" duration="30000" />
+      <workItem from="1582018502122" duration="2920000" />
+      <workItem from="1582021984846" duration="1431000" />
+      <workItem from="1582028572473" duration="496000" />
+      <workItem from="1582029207134" duration="2799000" />
+      <workItem from="1582032099440" duration="15000" />
+      <workItem from="1582032952405" duration="3729000" />
+      <workItem from="1582037067055" duration="151000" />
+      <workItem from="1582037288545" duration="12857000" />
+      <workItem from="1582120677443" duration="91000" />
+      <workItem from="1582120777356" duration="12295000" />
+      <workItem from="1582568227242" duration="7852000" />
+      <workItem from="1582661321949" duration="5022000" />
+      <workItem from="1582733190669" duration="7126000" />
+      <workItem from="1582745499466" duration="1499000" />
+      <workItem from="1582747717045" duration="158000" />
+      <workItem from="1582748454371" duration="51000" />
+      <workItem from="1582785753054" duration="4602000" />
+      <workItem from="1582907705320" duration="564000" />
+      <workItem from="1583048285181" duration="10176000" />
+    </task>
+    <task id="LOCAL-00001" summary="Changed README.md">
+      <created>1582031664271</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1582031664271</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Added new ddpg, work in progress">
+      <created>1582059814410</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1582059814410</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Fixed training">
+      <created>1582124963109</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1582124963109</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Added Agent class">
+      <created>1582139489760</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1582139489760</updated>
+    </task>
+    <task id="LOCAL-00005" summary="More Agent, not done yet">
+      <created>1582142586293</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1582142586293</updated>
+    </task>
+    <task id="LOCAL-00006" summary="added random moves and her changes">
+      <created>1582748496613</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1582748496613</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ORDER">
+      <list>
+        <option value="0" />
+        <option value="2" />
+        <option value="3" />
+        <option value="1" />
+      </list>
+    </option>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/DDPG-HER" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+              <option name="COLUMN_ORDER" />
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="origin/DDPG-HER" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Changed README.md" />
+    <MESSAGE value="Added new ddpg, work in progress" />
+    <MESSAGE value="Fixed training" />
+    <MESSAGE value="Added Agent class" />
+    <MESSAGE value="More Agent, not done yet" />
+    <MESSAGE value="added random moves and her changes" />
+    <option name="LAST_COMMIT_MESSAGE" value="added random moves and her changes" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="451" y="211" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1583059123932">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="451" y="211" key="#com.intellij.execution.impl.EditConfigurationsDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583059123932" />
+    <state x="705" y="357" width="566" height="390" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1582049035566">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="705" y="357" width="566" height="390" key="#com.intellij.fileTypes.FileTypeChooser/67.27.1853.1053@67.27.1853.1053" timestamp="1582049035566" />
+    <state x="726" y="301" width="524" height="502" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1582033402444">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="726" y="301" width="524" height="502" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1582033402444" />
+    <state x="404" y="246" width="619" height="695" key="#xdebugger.evaluate" timestamp="1583058189397">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="404" y="246" width="619" height="695" key="#xdebugger.evaluate/67.27.1853.1053@67.27.1853.1053" timestamp="1583058189397" />
+    <state x="262" y="27" width="1346" height="912" key="CommitChangelistDialog2" timestamp="1583065697573">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="262" y="27" width="1346" height="912" key="CommitChangelistDialog2/67.27.1853.1053@67.27.1853.1053" timestamp="1583065697573" />
+    <state x="71" y="27" width="1793" height="986" key="DiffContextDialog" timestamp="1583065697463">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="71" y="27" width="1793" height="986" key="DiffContextDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583065697463" />
+    <state x="776" y="311" width="424" height="484" key="FileChooserDialogImpl" timestamp="1582821902704">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="776" y="311" width="424" height="484" key="FileChooserDialogImpl/67.27.1853.1053@67.27.1853.1053" timestamp="1582821902704" />
+    <state width="1807" height="280" key="GridCell.Tab.0.bottom" timestamp="1583065407185">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state width="1807" height="280" key="GridCell.Tab.0.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1583065407185" />
+    <state width="1807" height="280" key="GridCell.Tab.0.center" timestamp="1583065407183">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state width="1807" height="280" key="GridCell.Tab.0.center/67.27.1853.1053@67.27.1853.1053" timestamp="1583065407183" />
+    <state width="1807" height="280" key="GridCell.Tab.0.left" timestamp="1583065407182">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state width="1807" height="280" key="GridCell.Tab.0.left/67.27.1853.1053@67.27.1853.1053" timestamp="1583065407182" />
+    <state width="1807" height="280" key="GridCell.Tab.0.right" timestamp="1583065407184">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state width="1807" height="280" key="GridCell.Tab.0.right/67.27.1853.1053@67.27.1853.1053" timestamp="1583065407184" />
+    <state width="1807" height="344" key="GridCell.Tab.1.bottom" timestamp="1583058227617">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state width="1807" height="344" key="GridCell.Tab.1.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1583058227617" />
+    <state width="1807" height="344" key="GridCell.Tab.1.center" timestamp="1583058227617">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state width="1807" height="344" key="GridCell.Tab.1.center/67.27.1853.1053@67.27.1853.1053" timestamp="1583058227617" />
+    <state width="1807" height="344" key="GridCell.Tab.1.left" timestamp="1583058227616">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state width="1807" height="344" key="GridCell.Tab.1.left/67.27.1853.1053@67.27.1853.1053" timestamp="1583058227616" />
+    <state width="1807" height="344" key="GridCell.Tab.1.right" timestamp="1583058227617">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state width="1807" height="344" key="GridCell.Tab.1.right/67.27.1853.1053@67.27.1853.1053" timestamp="1583058227617" />
+    <state x="242" y="116" width="1482" height="872" key="MergeDialog" timestamp="1583065815741">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="242" y="116" width="1482" height="872" key="MergeDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583065815741" />
+    <state x="698" y="270" width="580" height="564" key="MultipleFileMergeDialog" timestamp="1583065815746">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="698" y="270" width="580" height="564" key="MultipleFileMergeDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583065815746" />
+    <state x="732" y="214" width="512" height="676" key="RollbackChangesDialog" timestamp="1582033583853">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="732" y="214" width="512" height="676" key="RollbackChangesDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1582033583853" />
+    <state x="482" y="188" key="SettingsEditor" timestamp="1581970727327">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="482" y="188" key="SettingsEditor/67.27.1853.1053@67.27.1853.1053" timestamp="1581970727327" />
+    <state x="751" y="207" width="474" height="691" key="VCS.ChangeListViewerDialog" timestamp="1582787180575">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="751" y="207" width="474" height="691" key="VCS.ChangeListViewerDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1582787180575" />
+    <state x="837" y="468" width="303" height="169" key="VCS.ChangelistChooser" timestamp="1582059880006">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="837" y="468" width="303" height="169" key="VCS.ChangelistChooser/67.27.1853.1053@67.27.1853.1053" timestamp="1582059880006" />
+    <state x="588" y="288" width="800" height="528" key="Vcs.Push.Dialog.v2" timestamp="1582748499629">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="588" y="288" width="800" height="528" key="Vcs.Push.Dialog.v2/67.27.1853.1053@67.27.1853.1053" timestamp="1582748499629" />
+    <state x="167" y="125" width="1653" height="855" key="com.intellij.dvcs.ui.CompareBranchesDialog" timestamp="1583065705853">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="167" y="125" width="1653" height="855" key="com.intellij.dvcs.ui.CompareBranchesDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583065705853" />
+    <state x="649" y="380" key="com.intellij.ide.util.TipDialog" timestamp="1581970538742">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="649" y="380" key="com.intellij.ide.util.TipDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1581970538742" />
+    <state x="703" y="230" width="571" height="645" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1582019457074">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="703" y="230" width="571" height="645" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/67.27.1853.1053@67.27.1853.1053" timestamp="1582019457074" />
+    <state x="761" y="472" width="454" height="160" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1583052436274">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="761" y="472" width="454" height="160" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/67.27.1853.1053@67.27.1853.1053" timestamp="1583052436274" />
+    <state x="696" y="215" width="584" height="674" key="git4idea.branch.GitSmartOperationDialog" timestamp="1583065709971">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="696" y="215" width="584" height="674" key="git4idea.branch.GitSmartOperationDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583065709971" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/mergableindustrialrobots$ddpg.coverage" NAME="ddpg Coverage Results" MODIFIED="1582020931574" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/_$single_ur.coverage" NAME="single_ur Coverage Results" MODIFIED="1583063416172" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
+    <SUITE FILE_PATH="coverage/_$ddpg2.coverage" NAME="ddpg2 Coverage Results" MODIFIED="1582575127042" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
+    <SUITE FILE_PATH="coverage/_$main.coverage" NAME="main Coverage Results" MODIFIED="1583061700549" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
+    <SUITE FILE_PATH="coverage/_$ddpg__1_.coverage" NAME="ddpg (1) Coverage Results" MODIFIED="1582059402635" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
+    <SUITE FILE_PATH="coverage/mergableindustrialrobots$fetchreach.coverage" NAME="fetchreach Coverage Results" MODIFIED="1582023090728" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/_$fetchreach.coverage" NAME="single_ur Coverage Results" MODIFIED="1582577648288" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
+    <SUITE FILE_PATH="coverage/mergableindustrialrobots$pytest_in_fetchreach_py.coverage" NAME="pytest in fetchreach.py Coverage Results" MODIFIED="1581971222448" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/_$pytest_in_fetchreach_py.coverage" NAME="pytest in fetchreach.py Coverage Results" MODIFIED="1582142492618" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
+  </component>
+</project>
