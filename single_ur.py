@@ -113,7 +113,7 @@ def main(args):
 
                         # Store data in replay buffer
                         agent.remember(state, state_next, act[0], reward, done)
-                        if bool(np.random.binomial(1, 0.8)):
+                        if bool(np.random.binomial(1, 0.8)):                    # HER
                             agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
 
                         #Update the next state and add reward to episode_score
@@ -165,17 +165,17 @@ def main(args):
     plt.fill_between(range(args['epochs']),
                      np.subtract(np.mean(epoch_history_normalized, axis=1), std_deviation),
                      np.add(np.mean(epoch_history_normalized, axis=1), std_deviation), facecolor='blue', alpha=0.1)
-    plt.fill_between(range(args['epochs']),
-                     np.subtract(np.mean(test_history_normalized, axis=1), std_deviation_test),
-                     np.add(np.mean(test_history_normalized, axis=1), std_deviation_test), facecolor='red', alpha=0.1)
+    #plt.fill_between(range(args['epochs']),
+    #                 np.subtract(np.mean(test_history_normalized, axis=1), std_deviation_test),
+    #                 np.add(np.mean(test_history_normalized, axis=1), std_deviation_test), facecolor='red', alpha=0.1)
     plt.ylabel('Reward')
     plt.xlabel('Epoch')
     plt.legend([epoch_plot, test_plot], [args['variation'], 'Test score'])
     plt.show()
     plt.pause(0.05)
 
-    pickle.dump(epoch_plot, open("./plot_data/plot_data_" + args['variation'] + 'epoch', "wb"))
-    pickle.dump(test_plot, open("./plot_data/plot_data_" + args['variation'] + 'test', "wb"))
+    pickle.dump(epoch_history, open("./plot_data/plot_data_" + args['variation'] + '_epoch', "wb"))
+    pickle.dump(epoch_test_history, open("./plot_data/plot_data_" + args['variation'] + '_test', "wb"))
 
     input("Press to exit")
 
@@ -196,9 +196,9 @@ if __name__ == '__main__':
     parser.add_argument('--tau', help='target update tau', default=0.001)
     parser.add_argument('--memory-size', help='size of the replay memory', default=1000000)
     parser.add_argument('--hidden-sizes', help='number of nodes in hidden layer', default=(256, 256, 256))
-    parser.add_argument('--epochs', help='number of epochs', default=1)
-    parser.add_argument('--cycles', help='number of cycles to run in each epoch', default=50)
-    parser.add_argument('--episodes', help='episodes to train in a cycle', default=16)
+    parser.add_argument('--epochs', help='number of epochs', default=50)
+    parser.add_argument('--cycles', help='number of cycles to run in each epoch', default=19)
+    parser.add_argument('--episodes', help='episodes to train in a cycle', default=2)
     parser.add_argument('--episode-length', help='max length of 1 episode', default=100)
     parser.add_argument('--optimizationsteps', help='number of optimization steps', default=40)
     parser.add_argument('--rollouts', help='Number of rollouts to run each epoch', default=10)
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     #parser.set_defaults(env='UrPickAndPlace-v0')
     parser.set_defaults(env='UrReach-v0')
     #parser.set_defaults(env='FetchPickAndPlace-v1')
-    parser.set_defaults(render=True)
+    parser.set_defaults(render=False)
     parser.set_defaults(test=False)
 
     # parse arguments
