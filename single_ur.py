@@ -200,7 +200,7 @@ if __name__ == '__main__':
     parser.add_argument('--tau', help='target update tau', default=0.001)
     parser.add_argument('--memory-size', help='size of the replay memory', default=1000000)
     parser.add_argument('--hidden-sizes', help='number of nodes in hidden layer', default=(256, 256, 256))
-    parser.add_argument('--epochs', help='number of epochs', default=50)
+    parser.add_argument('--epochs', help='number of epochs', default=100)
     parser.add_argument('--cycles', help='number of cycles to run in each epoch', default=19)
     parser.add_argument('--episodes', help='episodes to train in a cycle', default=2)
     parser.add_argument('--episode-length', help='max length of 1 episode', default=100)
@@ -210,12 +210,12 @@ if __name__ == '__main__':
     parser.add_argument('--seed', help='random seed', default=1234)
     parser.add_argument('--render', help='render the gym env', action='store_true')
     parser.add_argument('--test', help='test mode does not do exploration', action='store_true')
-    parser.add_argument('--variation', help='model variation name', default='DDPG_HER_sparse')
+    parser.add_argument('--variation', help='model variation name', default='DDPG_HER_sparse_rwdshpng_pnp')
     #parser.set_defaults(env='FetchReach-v1')
     parser.set_defaults(env='UrPickAndPlace-v0')
     #parser.set_defaults(env='UrReach-v0')
     #parser.set_defaults(env='FetchPickAndPlace-v1')
-    parser.set_defaults(render=True)
+    parser.set_defaults(render=False)
     parser.set_defaults(test=False)
 
     # parse arguments

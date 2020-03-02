@@ -54,6 +54,8 @@ class UrEnv(robot_env.RobotEnv):
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.
         reward = 0
+        exploit_factor = 0.8
+        slack = 0.7
         d = goal_distance(achieved_goal, goal)
         if self.reward_type == 'sparse':
             reward = -(d > self.distance_threshold).astype(np.float32)
@@ -63,11 +65,9 @@ class UrEnv(robot_env.RobotEnv):
 
             R = -d
             start = self.initial_gripper_xpos[:3]
-            exploit_factor = 1
             # max_step_length = 0.01 * 20
-
             if self.action_counter == 0:
-                self.phi_old = (goal_distance(start, goal)) / exploit_factor
+                self.phi_old = slack*((goal_distance(start, goal)) / exploit_factor)
                 self.action_counter = 1
 
             phi_new = d / exploit_factor
@@ -82,15 +82,20 @@ class UrEnv(robot_env.RobotEnv):
 
             bestRoute = np.abs(np.linalg.norm(start - init_object_pos)) + np.abs(
                 np.linalg.norm(init_object_pos - goal))  # Euclidean distance
-
-            exploit_factor = 0.5
             t = bestRoute * exploit_factor  # Heuristic * exploit/(exploit+explore)
             N = 3  # Number of subgoals
             ns = 0  # Number of subgoals reached
+            if np.abs(np.linalg.norm(start - init_object_pos)) > self.distance_threshold:
+                ns = 1
+                if self.get_contact_points('object0', 'robot0:robotiq_finger_mesh_l') > 1 and \
+                        self.get_contact_points('object0', 'robot0:robotiq_finger_mesh_r') > 1:       #contact between fingers and object
+                    ns = 2
+                    if np.abs(np.linalg.norm(self.sim.data.get_site_xpos('object0') - self.goal)) < self.distance_threshold:
+                        ns = 3
             if not self.action_counter:
-                self.phi_old = -((N - ns - 0.5) / N) * t
+                self.phi_old = slack*(-((N - ns - 0.5) / N) * t)
             self.action_counter += 1
-            phi_new = -((N - ns - 0.5) / N) * t  # Remaining distance based on subgoals
+            phi_new = slack*(-((N - ns - 0.5) / N) * t)  # Remaining distance based on subgoals
             # (0.5 is because you on average are halfway between each subgoal)
             F = phi_new - self.phi_old  # add gamma
             self.phi_old = phi_new
