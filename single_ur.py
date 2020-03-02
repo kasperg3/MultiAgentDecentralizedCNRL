@@ -13,7 +13,9 @@ from replay import Memory
 from agent import Noise
 import matplotlib.pyplot as plt
 
+
 import gym_mergablerobots
+
 
 
 import tensorflow as tf
@@ -201,7 +203,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', help='number of epochs', default=50)
     parser.add_argument('--cycles', help='number of cycles to run in each epoch', default=19)
     parser.add_argument('--episodes', help='episodes to train in a cycle', default=2)
-    parser.add_argument('--episode-length', help='max length of 1 episode', default=150)
+    parser.add_argument('--episode-length', help='max length of 1 episode', default=100)
     parser.add_argument('--optimizationsteps', help='number of optimization steps', default=40)
     parser.add_argument('--rollouts', help='Number of rollouts to run each epoch', default=10)
     # others and defaults

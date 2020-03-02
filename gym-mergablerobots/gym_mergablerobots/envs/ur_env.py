@@ -2,6 +2,7 @@ import numpy as np
 
 from gym.envs.robotics import rotations, utils, robot_env
 from scipy.spatial.transform import Rotation
+import mujoco_py
 
 
 def goal_distance(goal_a, goal_b):
@@ -176,6 +177,37 @@ class UrEnv(robot_env.RobotEnv):
         site_id = self.sim.model.site_name2id('target0')
         self.sim.model.site_pos[site_id] = self.goal - sites_offset[0]
         self.sim.forward()
+
+    def print_contact_points(self, object1=None, object2=None):
+        for i in range(self.sim.data.ncon):
+            contact = self.sim.data.contact[i]
+
+            # Print contact points between two specific geoms
+            if object1 is not None and object2 is not None:
+                if self.sim.model.geom_id2name(contact.geom1) == object1 or self.sim.model.geom_id2name(contact.geom1) == object2:
+                    if self.sim.model.geom_id2name(contact.geom2) == object1 or self.sim.model.geom_id2name(contact.geom2) == object2:
+                        print('contact', i)
+                        print('dist', contact.dist)
+                        print('geom1', contact.geom1, self.sim.model.geom_id2name(contact.geom1))
+                        print('geom2', contact.geom2, self.sim.model.geom_id2name(contact.geom2))
+            else:
+                print('contact', i)
+                print('dist', contact.dist)
+                print('geom1', contact.geom1, self.sim.model.geom_id2name(contact.geom1))
+                print('geom2', contact.geom2, self.sim.model.geom_id2name(contact.geom2))
+
+    def get_contact_points(self, object1=None, object2=None):
+        contact_points = 0
+        for i in range(self.sim.data.ncon):
+            contact = self.sim.data.contact[i]
+
+            # Print contact points between two specific geoms
+            if object1 is not None and object2 is not None:
+                if self.sim.model.geom_id2name(contact.geom1) == object1 or self.sim.model.geom_id2name(contact.geom1) == object2:
+                    if self.sim.model.geom_id2name(contact.geom2) == object1 or self.sim.model.geom_id2name(contact.geom2) == object2:
+                        contact_points = contact_points + 1
+
+        return contact_points
 
     def _reset_sim(self):
         self.sim.set_state(self.initial_state)
