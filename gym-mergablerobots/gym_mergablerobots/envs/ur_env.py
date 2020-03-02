@@ -80,12 +80,11 @@ class UrEnv(robot_env.RobotEnv):
             start = self.initial_gripper_xpos[:3]
             init_object_pos = self.initial_object_xpos
 
-            bestRoute = np.abs(np.linalg.norm(start - init_object_pos)) + np.abs(
-                np.linalg.norm(init_object_pos - goal))  # Euclidean distance
+            bestRoute = np.linalg.norm(start - init_object_pos) + np.linalg.norm(init_object_pos - goal)  # Euclidean distance
             t = bestRoute * exploit_factor  # Heuristic * exploit/(exploit+explore)
             N = 3  # Number of subgoals
             ns = 0  # Number of subgoals reached
-            if np.abs(np.linalg.norm(start - init_object_pos)) > self.distance_threshold:
+            if np.linalg.norm(self.sim.data.get_site_xpos('robot0:grip') - self.sim.data.get_site_xpos('object0')) < self.distance_threshold:
                 ns = 1
                 if self.get_contact_points('object0', 'robot0:robotiq_finger_mesh_l') > 1 and \
                         self.get_contact_points('object0', 'robot0:robotiq_finger_mesh_r') > 1:       #contact between fingers and object
@@ -94,7 +93,7 @@ class UrEnv(robot_env.RobotEnv):
                         ns = 3
             if not self.action_counter:
                 self.phi_old = slack*(-((N - ns - 0.5) / N) * t)
-            self.action_counter += 1
+                self.action_counter += 1
             phi_new = slack*(-((N - ns - 0.5) / N) * t)  # Remaining distance based on subgoals
             # (0.5 is because you on average are halfway between each subgoal)
             F = phi_new - self.phi_old  # add gamma
