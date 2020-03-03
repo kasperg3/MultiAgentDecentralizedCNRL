@@ -1,6 +1,7 @@
 import numpy as np
 
-from gym.envs.robotics import rotations, utils, robot_env
+from gym.envs.robotics import rotations, utils
+from gym_mergablerobots.envs import  robot_env
 from scipy.spatial.transform import Rotation
 import mujoco_py
 
@@ -240,7 +241,7 @@ class UrEnv(robot_env.RobotEnv):
             self.sim.data.set_joint_qpos('object0:joint', object_qpos)
 
             # Place the end effector at the object every other episode
-            if bool(np.random.binomial(1, 0.5)) and self.has_object:
+            if bool(np.random.binomial(1, 1)) and self.has_object:
                 initial_grip = np.add(self.initial_object_xpos, [0, 0, 0.045])
                 self.sim.data.set_mocap_quat('robot0:mocap', [0, 0, 1, 0])
                 self.sim.data.set_mocap_pos('robot0:mocap', initial_grip)
@@ -269,6 +270,7 @@ class UrEnv(robot_env.RobotEnv):
         return goal.copy()
 
     def _is_success(self, achieved_goal, desired_goal):
+        # Todo: Add different success functions depending on the goal
         d = goal_distance(achieved_goal, desired_goal)
         return (d < self.distance_threshold).astype(np.float32)
 

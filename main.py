@@ -89,11 +89,10 @@ def main(args):
         saver = tf.train.Saver()
         writer = tf.summary.FileWriter(tensorboard_dir, sess.graph)
 
-        try:
-            saver.restore(sess, os.path.join(model_dir, args['env'] + '_' + args['variation'] + '.ckpt'))
-            print('Restore from previous training session: ' + args['variation'])
-        except:
-            print('Start new training session')
+
+        saver.restore(sess, os.path.join(model_dir, args['env'] + '_' + args['variation'] + '.ckpt'))
+        print('Restore from previous training session: ' + args['variation'])
+
         for k in range(args['episodes']):
             test_history = []
 
@@ -141,10 +140,10 @@ if __name__ == '__main__':
     parser.add_argument('--seed', help='random seed', default=1234)
     parser.add_argument('--render', help='render the gym env', action='store_true')
     parser.add_argument('--test', help='test mode does not do exploration', action='store_true')
-    parser.add_argument('--variation', help='model variation name', default='DDPG_reach_dense_reward_shaping')
+    parser.add_argument('--variation', help='model variation name', default='DDPG_HER_dense_trained')
     # parser.set_defaults(env='FetchReach-v1')
-    # parser.set_defaults(env='UrPickAndPlace-v0')
-    parser.set_defaults(env='UrReach-v0')
+    parser.set_defaults(env='UrPickAndPlace-v0')
+    #parser.set_defaults(env='UrReach-v0')
     # parser.set_defaults(env='FetchPickAndPlace-v1')
     parser.set_defaults(render=True)
     parser.set_defaults(test=True)
