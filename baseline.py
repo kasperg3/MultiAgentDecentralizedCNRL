@@ -10,7 +10,7 @@ import gym_mergablerobots
 
 reward_type = 'sparse'
 
-env = gym.make('FetchReach-v1', reward_type=reward_type)
+env = gym.make('UrReach-v1', reward_type=reward_type)
 env = FlattenObservation(FilterObservation(env, ['observation', 'desired_goal']))
 
 # The noise objects for TD3
