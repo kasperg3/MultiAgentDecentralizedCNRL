@@ -1,23 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="cb4cd8cf-f597-430c-a0b3-f96cc15513ac" name="Default Changelist" comment="More Agent, not done yet">
-      <change afterPath="$PROJECT_DIR$/../.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/gym-mergablerobots.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/libraries/ROS.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/libraries/workspace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/ros.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/assets/robot.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/assets/robot.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/assets/single_robot.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/assets/single_robot.xml" afterDir="false" />
+    <list default="true" id="cb4cd8cf-f597-430c-a0b3-f96cc15513ac" name="Default Changelist" comment="Fixed robot not gripping the box when resetting the simulation">
+      <change beforePath="$PROJECT_DIR$/../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/mergablerobots/ur_pick_and_place.py" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/mergablerobots/ur_pick_and_place.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/mergablerobots/ur_reach.py" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/mergablerobots/ur_reach.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/ur_env.py" beforeDir="false" afterPath="$PROJECT_DIR$/../gym-mergablerobots/gym_mergablerobots/envs/ur_env.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../single_ur.py" beforeDir="false" afterPath="$PROJECT_DIR$/../single_ur.py" afterDir="false" />
@@ -64,10 +50,10 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/.." />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../plot_data" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
-  <component name="RunManager" selected="Python.single_ur">
+  <component name="RunManager" selected="Python.main">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="mergableindustrialrobots" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -160,6 +146,9 @@
       <module name="mergableindustrialrobots" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/.." />
       <option name="IS_MODULE_SDK" value="true" />
@@ -197,7 +186,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="pytest in fetchreach.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+    <configuration name="pytest in /home/kasper/workspace/mergableindustrialrobots/fetchreach.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
       <module name="mergableindustrialrobots" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -219,15 +208,15 @@
       <item itemvalue="Python.ddpg_tf2" />
       <item itemvalue="Python.ddpg2" />
       <item itemvalue="Python.main" />
-      <item itemvalue="Python tests.pytest in fetchreach.py" />
+      <item itemvalue="Python tests.pytest in /home/kasper/workspace/mergableindustrialrobots/fetchreach.py" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python tests.pytest in fetchreach.py" />
+        <item itemvalue="Python.main" />
+        <item itemvalue="Python tests.pytest in /home/kasper/workspace/mergableindustrialrobots/fetchreach.py" />
         <item itemvalue="Python.ddpg2" />
         <item itemvalue="Python.ddpg_tf2" />
         <item itemvalue="Python.ddpg" />
-        <item itemvalue="Python.main" />
       </list>
     </recent_temporary>
   </component>
@@ -265,7 +254,9 @@
       <workItem from="1582748454371" duration="51000" />
       <workItem from="1582785753054" duration="4602000" />
       <workItem from="1582907705320" duration="564000" />
-      <workItem from="1583048285181" duration="10176000" />
+      <workItem from="1583048285181" duration="23416000" />
+      <workItem from="1583081318910" duration="1808000" />
+      <workItem from="1583136121519" duration="8231000" />
     </task>
     <task id="LOCAL-00001" summary="Changed README.md">
       <created>1582031664271</created>
@@ -309,7 +300,35 @@
       <option name="project" value="LOCAL" />
       <updated>1582748496613</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="More Agent, not done yet">
+      <created>1583065982320</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1583065982320</updated>
+    </task>
+    <task id="LOCAL-00008" summary="More Agent, not done yet">
+      <created>1583075311814</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1583075311814</updated>
+    </task>
+    <task id="LOCAL-00009" summary="More Agent, not done yet">
+      <created>1583075745692</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1583075745692</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Fixed robot not gripping the box when resetting the simulation">
+      <created>1583078519319</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1583078519319</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -369,9 +388,10 @@
     <MESSAGE value="Added new ddpg, work in progress" />
     <MESSAGE value="Fixed training" />
     <MESSAGE value="Added Agent class" />
-    <MESSAGE value="More Agent, not done yet" />
     <MESSAGE value="added random moves and her changes" />
-    <option name="LAST_COMMIT_MESSAGE" value="added random moves and her changes" />
+    <MESSAGE value="More Agent, not done yet" />
+    <MESSAGE value="Fixed robot not gripping the box when resetting the simulation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed robot not gripping the box when resetting the simulation" />
   </component>
   <component name="WindowStateProjectService">
     <state x="451" y="211" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1583059123932">
@@ -386,62 +406,62 @@
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
     <state x="726" y="301" width="524" height="502" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1582033402444" />
-    <state x="404" y="246" width="619" height="695" key="#xdebugger.evaluate" timestamp="1583058189397">
+    <state x="1301" y="235" width="619" height="695" key="#xdebugger.evaluate" timestamp="1583071780591">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state x="404" y="246" width="619" height="695" key="#xdebugger.evaluate/67.27.1853.1053@67.27.1853.1053" timestamp="1583058189397" />
-    <state x="262" y="27" width="1346" height="912" key="CommitChangelistDialog2" timestamp="1583065697573">
+    <state x="1301" y="235" width="619" height="695" key="#xdebugger.evaluate/67.27.1853.1053@67.27.1853.1053" timestamp="1583071780591" />
+    <state x="262" y="27" width="1346" height="912" key="CommitChangelistDialog2" timestamp="1583179585729">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state x="262" y="27" width="1346" height="912" key="CommitChangelistDialog2/67.27.1853.1053@67.27.1853.1053" timestamp="1583065697573" />
-    <state x="71" y="27" width="1793" height="986" key="DiffContextDialog" timestamp="1583065697463">
+    <state x="262" y="27" width="1346" height="912" key="CommitChangelistDialog2/67.27.1853.1053@67.27.1853.1053" timestamp="1583179585729" />
+    <state x="71" y="27" width="1793" height="986" key="DiffContextDialog" timestamp="1583078511038">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state x="71" y="27" width="1793" height="986" key="DiffContextDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583065697463" />
-    <state x="776" y="311" width="424" height="484" key="FileChooserDialogImpl" timestamp="1582821902704">
+    <state x="71" y="27" width="1793" height="986" key="DiffContextDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583078511038" />
+    <state x="776" y="311" width="424" height="484" key="FileChooserDialogImpl" timestamp="1583217517304">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state x="776" y="311" width="424" height="484" key="FileChooserDialogImpl/67.27.1853.1053@67.27.1853.1053" timestamp="1582821902704" />
-    <state width="1807" height="280" key="GridCell.Tab.0.bottom" timestamp="1583065407185">
+    <state x="776" y="311" width="424" height="484" key="FileChooserDialogImpl/67.27.1853.1053@67.27.1853.1053" timestamp="1583217517304" />
+    <state width="1807" height="216" key="GridCell.Tab.0.bottom" timestamp="1583217741121">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="280" key="GridCell.Tab.0.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1583065407185" />
-    <state width="1807" height="280" key="GridCell.Tab.0.center" timestamp="1583065407183">
+    <state width="1807" height="216" key="GridCell.Tab.0.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1583217741121" />
+    <state width="1807" height="216" key="GridCell.Tab.0.center" timestamp="1583217741121">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="280" key="GridCell.Tab.0.center/67.27.1853.1053@67.27.1853.1053" timestamp="1583065407183" />
-    <state width="1807" height="280" key="GridCell.Tab.0.left" timestamp="1583065407182">
+    <state width="1807" height="216" key="GridCell.Tab.0.center/67.27.1853.1053@67.27.1853.1053" timestamp="1583217741121" />
+    <state width="1807" height="216" key="GridCell.Tab.0.left" timestamp="1583217741120">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="280" key="GridCell.Tab.0.left/67.27.1853.1053@67.27.1853.1053" timestamp="1583065407182" />
-    <state width="1807" height="280" key="GridCell.Tab.0.right" timestamp="1583065407184">
+    <state width="1807" height="216" key="GridCell.Tab.0.left/67.27.1853.1053@67.27.1853.1053" timestamp="1583217741120" />
+    <state width="1807" height="216" key="GridCell.Tab.0.right" timestamp="1583217741121">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="280" key="GridCell.Tab.0.right/67.27.1853.1053@67.27.1853.1053" timestamp="1583065407184" />
-    <state width="1807" height="344" key="GridCell.Tab.1.bottom" timestamp="1583058227617">
+    <state width="1807" height="216" key="GridCell.Tab.0.right/67.27.1853.1053@67.27.1853.1053" timestamp="1583217741121" />
+    <state width="1807" height="344" key="GridCell.Tab.1.bottom" timestamp="1583074293883">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="344" key="GridCell.Tab.1.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1583058227617" />
-    <state width="1807" height="344" key="GridCell.Tab.1.center" timestamp="1583058227617">
+    <state width="1807" height="344" key="GridCell.Tab.1.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1583074293883" />
+    <state width="1807" height="344" key="GridCell.Tab.1.center" timestamp="1583074293883">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="344" key="GridCell.Tab.1.center/67.27.1853.1053@67.27.1853.1053" timestamp="1583058227617" />
-    <state width="1807" height="344" key="GridCell.Tab.1.left" timestamp="1583058227616">
+    <state width="1807" height="344" key="GridCell.Tab.1.center/67.27.1853.1053@67.27.1853.1053" timestamp="1583074293883" />
+    <state width="1807" height="344" key="GridCell.Tab.1.left" timestamp="1583074293882">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="344" key="GridCell.Tab.1.left/67.27.1853.1053@67.27.1853.1053" timestamp="1583058227616" />
-    <state width="1807" height="344" key="GridCell.Tab.1.right" timestamp="1583058227617">
+    <state width="1807" height="344" key="GridCell.Tab.1.left/67.27.1853.1053@67.27.1853.1053" timestamp="1583074293882" />
+    <state width="1807" height="344" key="GridCell.Tab.1.right" timestamp="1583074293883">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="344" key="GridCell.Tab.1.right/67.27.1853.1053@67.27.1853.1053" timestamp="1583058227617" />
-    <state x="242" y="116" width="1482" height="872" key="MergeDialog" timestamp="1583065815741">
+    <state width="1807" height="344" key="GridCell.Tab.1.right/67.27.1853.1053@67.27.1853.1053" timestamp="1583074293883" />
+    <state x="242" y="116" width="1482" height="872" key="MergeDialog" timestamp="1583163396573">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state x="242" y="116" width="1482" height="872" key="MergeDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583065815741" />
-    <state x="698" y="270" width="580" height="564" key="MultipleFileMergeDialog" timestamp="1583065815746">
+    <state x="242" y="116" width="1482" height="872" key="MergeDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583163396573" />
+    <state x="698" y="270" width="580" height="564" key="MultipleFileMergeDialog" timestamp="1583163397533">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state x="698" y="270" width="580" height="564" key="MultipleFileMergeDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583065815746" />
+    <state x="698" y="270" width="580" height="564" key="MultipleFileMergeDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583163397533" />
     <state x="732" y="214" width="512" height="676" key="RollbackChangesDialog" timestamp="1582033583853">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
@@ -450,18 +470,18 @@
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
     <state x="482" y="188" key="SettingsEditor/67.27.1853.1053@67.27.1853.1053" timestamp="1581970727327" />
-    <state x="751" y="207" width="474" height="691" key="VCS.ChangeListViewerDialog" timestamp="1582787180575">
+    <state x="751" y="207" width="474" height="691" key="VCS.ChangeListViewerDialog" timestamp="1583069837395">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state x="751" y="207" width="474" height="691" key="VCS.ChangeListViewerDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1582787180575" />
+    <state x="751" y="207" width="474" height="691" key="VCS.ChangeListViewerDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1583069837395" />
     <state x="837" y="468" width="303" height="169" key="VCS.ChangelistChooser" timestamp="1582059880006">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
     <state x="837" y="468" width="303" height="169" key="VCS.ChangelistChooser/67.27.1853.1053@67.27.1853.1053" timestamp="1582059880006" />
-    <state x="588" y="288" width="800" height="528" key="Vcs.Push.Dialog.v2" timestamp="1582748499629">
+    <state x="588" y="288" width="800" height="528" key="Vcs.Push.Dialog.v2" timestamp="1583078522263">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state x="588" y="288" width="800" height="528" key="Vcs.Push.Dialog.v2/67.27.1853.1053@67.27.1853.1053" timestamp="1582748499629" />
+    <state x="588" y="288" width="800" height="528" key="Vcs.Push.Dialog.v2/67.27.1853.1053@67.27.1853.1053" timestamp="1583078522263" />
     <state x="167" y="125" width="1653" height="855" key="com.intellij.dvcs.ui.CompareBranchesDialog" timestamp="1583065705853">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
@@ -485,9 +505,9 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/mergableindustrialrobots$ddpg.coverage" NAME="ddpg Coverage Results" MODIFIED="1582020931574" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/_$single_ur.coverage" NAME="single_ur Coverage Results" MODIFIED="1583063416172" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
+    <SUITE FILE_PATH="coverage/_$single_ur.coverage" NAME="single_ur Coverage Results" MODIFIED="1583178783870" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
     <SUITE FILE_PATH="coverage/_$ddpg2.coverage" NAME="ddpg2 Coverage Results" MODIFIED="1582575127042" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
-    <SUITE FILE_PATH="coverage/_$main.coverage" NAME="main Coverage Results" MODIFIED="1583061700549" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
+    <SUITE FILE_PATH="coverage/_$main.coverage" NAME="main Coverage Results" MODIFIED="1583217741114" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
     <SUITE FILE_PATH="coverage/_$ddpg__1_.coverage" NAME="ddpg (1) Coverage Results" MODIFIED="1582059402635" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />
     <SUITE FILE_PATH="coverage/mergableindustrialrobots$fetchreach.coverage" NAME="fetchreach Coverage Results" MODIFIED="1582023090728" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/_$fetchreach.coverage" NAME="single_ur Coverage Results" MODIFIED="1582577648288" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.." />

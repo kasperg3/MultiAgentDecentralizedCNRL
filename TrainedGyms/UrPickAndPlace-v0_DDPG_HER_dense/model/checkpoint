@@ -1,0 +1,2 @@
+model_checkpoint_path: "UrPickAndPlace-v0_DDPG_HER_dense.ckpt"
+all_model_checkpoint_paths: "UrPickAndPlace-v0_DDPG_HER_dense.ckpt"
