@@ -13,25 +13,24 @@ from replay import Memory
 from agent import Noise
 import matplotlib.pyplot as plt
 
-
 import gym_mergablerobots
 
-
-
 import tensorflow as tf
+
 tf.get_logger().warning('test')
 # WARNING:tensorflow:test
 tf.get_logger().setLevel('ERROR')
 tf.get_logger().warning('test')
 
+
 # function to unpack observation from gym environment
 def unpackObs(obs):
-    return  obs['achieved_goal'], \
-            obs['desired_goal'],\
-            np.concatenate((obs['observation'], \
-            obs['desired_goal'])), \
-            np.concatenate((obs['observation'], \
-            obs['achieved_goal']))
+    return obs['achieved_goal'], \
+           obs['desired_goal'], \
+           np.concatenate((obs['observation'], \
+                           obs['desired_goal'])), \
+           np.concatenate((obs['observation'], \
+                           obs['achieved_goal']))
 
 
 def find_low_high(dataset1, dataset2=None):
@@ -53,7 +52,6 @@ def normalize(dataset_1, dataset_2=None):
     if dataset_2 is not None:
         dataset2 = np.divide(np.subtract(dataset_2, dataset_low), np.subtract(dataset_high, dataset_low))
     return dataset1, dataset2
-
 
 
 # Main
@@ -121,7 +119,7 @@ def main(args):
                         if bool(np.random.binomial(1, 0.8)):                    # HER
                             agent.rememberHER(state_prime, state_prime_next, achieved_goal, info, act[0], env)
 
-                        #Update the next state and add reward to episode_score
+                        # Update the next state and add reward to episode_score
                         episode_score += reward
                         state = state_next
 
@@ -129,7 +127,7 @@ def main(args):
                         if args['render']:
                             env.render()
 
-                    #Save the episode scores
+                    # Save the episode scores
                     score_history.append(episode_score)
                     for t in range(int(args['optimizationsteps'])):
                         agent.learn()
@@ -156,13 +154,13 @@ def main(args):
             epoch_test_history.append(test_history)
             epoch_history.append(score_history)
 
-            #Save model each epoch
+            # Save model each epoch
             agent.save_checkpoint()
             saver.save(sess, os.path.join(model_dir, args['env'] + '_' + args['variation'] + '.ckpt'))
 
     epoch_history_normalized, test_history_normalized = normalize(epoch_history, epoch_test_history)
 
-    #plot the mean of the epochs
+    # plot the mean of the epochs
     epoch_plot, = plt.plot(range(args['epochs']), np.mean(epoch_history_normalized, axis=1), color='blue')
     test_plot, = plt.plot(range(args['epochs']), np.mean(test_history_normalized, axis=1), color='red')
     std_deviation = np.std(epoch_history_normalized, axis=1)
@@ -170,7 +168,7 @@ def main(args):
     plt.fill_between(range(args['epochs']),
                      np.subtract(np.mean(epoch_history_normalized, axis=1), std_deviation),
                      np.add(np.mean(epoch_history_normalized, axis=1), std_deviation), facecolor='blue', alpha=0.1)
-    #plt.fill_between(range(args['epochs']),
+    # plt.fill_between(range(args['epochs']),
     #                 np.subtract(np.mean(test_history_normalized, axis=1), std_deviation_test),
     #                 np.add(np.mean(test_history_normalized, axis=1), std_deviation_test), facecolor='red', alpha=0.1)
     plt.ylabel('Reward')
@@ -195,26 +193,26 @@ if __name__ == '__main__':
     # training parameters
     parser.add_argument('--actor-lr', help='actor learning rate', default=0.0001)
     parser.add_argument('--critic-lr', help='critic learning rate', default=0.001)
-    parser.add_argument('--batch-size', help='batch size', default=256)
-    parser.add_argument('--gamma', help='discount factor reward', default=0.99)
-    parser.add_argument('--tau', help='target update tau', default=0.001)
+    parser.add_argument('--batch-size', help='batch size', default=128)
+    parser.add_argument('--gamma', help='discount factor reward', default=0.95)
+    parser.add_argument('--tau', help='target update tau', default=0.05)
     parser.add_argument('--memory-size', help='size of the replay memory', default=1000000)
     parser.add_argument('--hidden-sizes', help='number of nodes in hidden layer', default=(256, 256, 256))
-    parser.add_argument('--epochs', help='number of epochs', default=100)
+    parser.add_argument('--epochs', help='number of epochs', default=5000)
     parser.add_argument('--cycles', help='number of cycles to run in each epoch', default=19)
     parser.add_argument('--episodes', help='episodes to train in a cycle', default=2)
     parser.add_argument('--episode-length', help='max length of 1 episode', default=100)
     parser.add_argument('--optimizationsteps', help='number of optimization steps', default=40)
     parser.add_argument('--rollouts', help='Number of rollouts to run each epoch', default=10)
     # others and defaults
-    parser.add_argument('--seed', help='random seed', default=1234)
+    parser.add_argument('--seed', help='random seed', default=11111111)
     parser.add_argument('--render', help='render the gym env', action='store_true')
     parser.add_argument('--test', help='test mode does not do exploration', action='store_true')
-    parser.add_argument('--variation', help='model variation name', default='DDPG_HER_sparse_rwdshpng_pnp')
-    #parser.set_defaults(env='FetchReach-v1')
+    parser.add_argument('--variation', help='model variation name', default='DDPG_HER_dense')
+    # parser.set_defaults(env='FetchReach-v1')
     parser.set_defaults(env='UrPickAndPlace-v0')
-    #parser.set_defaults(env='UrReach-v0')
-    #parser.set_defaults(env='FetchPickAndPlace-v1')
+    # parser.set_defaults(env='UrReach-v0')
+    # parser.set_defaults(env='FetchPickAndPlace-v1')
     parser.set_defaults(render=False)
     parser.set_defaults(test=False)
 
