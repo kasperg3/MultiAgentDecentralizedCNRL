@@ -5,7 +5,11 @@ import utils
 import gym
 import numpy as np
 import torch
+import TD3
+import DDPG
+import OurDDPG
 
+import gym_mergablerobots
 # Runs policy for X episodes and returns average reward
 # A fixed seed is used for the eval environment
 from gym.wrappers import FlattenObservation, FilterObservation
@@ -92,11 +96,11 @@ if __name__ == "__main__":
 		kwargs["policy_noise"] = args.policy_noise * max_action
 		kwargs["noise_clip"] = args.noise_clip * max_action
 		kwargs["policy_freq"] = args.policy_freq
-		policy = cadDrawings.TD3.TD3(**kwargs)
+		policy = TD3.TD3(**kwargs)
 	elif args.policy == "OurDDPG":
-		policy = cadDrawings.TD3.DDPG.DDPG(**kwargs)
+		policy = TD3.DDPG.DDPG(**kwargs)
 	elif args.policy == "DDPG":
-		policy = cadDrawings.TD3.DDPG.DDPG(**kwargs)
+		policy = TD3.DDPG.DDPG(**kwargs)
 
 	if args.load_model != "":
 		policy_file = file_name if args.load_model == "default" else args.load_model
