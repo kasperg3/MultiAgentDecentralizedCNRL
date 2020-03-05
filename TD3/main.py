@@ -130,9 +130,8 @@ if __name__ == "__main__":
 			).clip(-max_action, max_action)
 
 		# Perform action
-		next_state, reward, done, _ = env.step(action)
+		next_state, reward, done, info = env.step(action)
 		done_bool = float(done) if episode_timesteps < env.spec.max_episode_steps else 0
-
 		# Store data in replay buffer
 		replay_buffer.add(state, action, next_state, reward, done_bool)
 
@@ -143,7 +142,8 @@ if __name__ == "__main__":
 		if t >= args.start_timesteps:
 			policy.train(replay_buffer, args.batch_size)
 
-		if done: 
+		# If the episode is done or the agent reaches a terminal state or info['is_success']
+		if done:
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
 			print(f"Total T: {t+1} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}")
 			# Reset environment
