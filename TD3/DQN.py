@@ -98,3 +98,11 @@ class DQN(object):
     def train(self, replay_buffer, batch_size):
         pass
 
+    def save(self, filename):
+        torch.save(self.policy_net, filename + "policy")
+        torch.save(self.target_net, filename + "target")
+
+    def load(self, filename):
+        self.policy_net.load_state_dict(torch.load(filename + "policy"))
+        self.target_net.load_state_dict(torch.load(filename + "target"))
+
