@@ -43,7 +43,6 @@ class DualUrEnv(robot_env.RobotEnv):
         self.target_range = target_range
         self.distance_threshold = distance_threshold
         self.reward_type = reward_type
-        # TODO Change actions to x, y, z, quaternion, gripper, such actions = 16
         super(DualUrEnv, self).__init__(
             model_path=model_path, n_substeps=n_substeps, n_actions=16,
             initial_qpos=initial_qpos)
@@ -77,7 +76,6 @@ class DualUrEnv(robot_env.RobotEnv):
         robot0_pos_ctrl, robot0_rot_ctrl, robot0_gripper_ctrl = action[:3], action[3:6], action[7]
         robot1_pos_ctrl, robot1_rot_ctrl, robot1_gripper_ctrl = action[8:11], action[11:14], action[15]
 
-        # TODO: Add rotational control
         max_change_pos = 0.05
         max_change_rot = 0.0001
         robot0_pos_ctrl *= max_change_pos  # limit maximum change in position
@@ -186,7 +184,6 @@ class DualUrEnv(robot_env.RobotEnv):
         self.sim.forward()
 
         # Move end effector into position.
-        # TODO: Add default positions to contructor
         robot0_gripper_target = np.array([0.8, 0.3, 0.4 + self.gripper_extra_height]) + self.sim.data.get_site_xpos('robot0:grip')
         robot0_gripper_rotation = np.array([0., 0., 1., 0.])
         robot1_gripper_target = np.array([0.8, 0.3, 0.4 + self.gripper_extra_height]) + self.sim.data.get_site_xpos('robot1:grip')

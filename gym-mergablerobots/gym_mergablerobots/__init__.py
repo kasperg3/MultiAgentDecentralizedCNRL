@@ -19,3 +19,10 @@ for reward_type in ['sparse', 'dense']:
         kwargs=kwargs,
         max_episode_steps=70,
     )
+
+    register(
+        id='UrBinPicking{}-v0'.format(suffix),
+        entry_point='gym_mergablerobots.envs:UrBinPicking',
+        kwargs=kwargs,
+        max_episode_steps=50,
+    )

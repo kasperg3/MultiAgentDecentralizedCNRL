@@ -41,7 +41,7 @@ if __name__ == "__main__":
 	
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
-	parser.add_argument("--env", default="UrPickAndPlace-v0")          	# OpenAI gym environment name
+	parser.add_argument("--env", default="UrBinPicking-v0")          	# OpenAI gym environment name
 	parser.add_argument("--seed", default=0, type=int)              # Sets Gym, PyTorch and Numpy seeds
 	parser.add_argument("--start_timesteps", default=25e3, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
@@ -56,7 +56,9 @@ if __name__ == "__main__":
 	parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 	parser.add_argument("--render", action="store_true")            # Render the Training
+	parser.set_defaults(load_model='')
 	parser.set_defaults(render=False)
+	parser.set_defaults(save_model=True)
 	args = parser.parse_args()
 
 	file_name = f"{args.policy}_{args.env}_{args.seed}"
@@ -70,7 +72,7 @@ if __name__ == "__main__":
 	if args.save_model and not os.path.exists("./models"):
 		os.makedirs("./models")
 
-	env = gym.make(args.env, reward_type='dense')
+	env = gym.make(args.env, reward_type='reach')
 	env = FlattenObservation(FilterObservation(env, ['observation', 'desired_goal']))
 
 	# Set seeds
@@ -90,6 +92,11 @@ if __name__ == "__main__":
 		"tau": args.tau,
 	}
 
+	print("---------------------------------------")
+	print(f"Environment Details: state dim: {kwargs['state_dim']}, action dim: {kwargs['action_dim']}, max action: {kwargs['max_action']}")
+	print("---------------------------------------")
+
+
 	# Initialize policy
 	if args.policy == "TD3":
 		# Target policy smoothing is scaled wrt the action scale
@@ -104,7 +111,14 @@ if __name__ == "__main__":
 
 	if args.load_model != "":
 		policy_file = file_name if args.load_model == "default" else args.load_model
+		print("---------------------------------------")
+		print(f"Loading existing model from: ./models/{policy_file}")
+		print("---------------------------------------")
 		policy.load(f"./models/{policy_file}")
+	else:
+		print("---------------------------------------")
+		print(f"Creating new training session")
+		print("---------------------------------------")
 
 	replay_buffer = utils.ReplayBuffer(state_dim, action_dim)
 	
@@ -117,7 +131,10 @@ if __name__ == "__main__":
 	episode_num = 0
 
 	for t in range(int(args.max_timesteps)):
-		
+
+		if args.render == True:
+			env.render()
+
 		episode_timesteps += 1
 
 		# Select action randomly or according to policy
@@ -125,9 +142,8 @@ if __name__ == "__main__":
 			action = env.action_space.sample()
 		else:
 			action = (
-				policy.select_action(np.array(state))
-				+ np.random.normal(0, max_action * args.expl_noise, size=action_dim)
-			).clip(-max_action, max_action)
+					policy.select_action(np.array(state)) +
+					np.random.normal(0, max_action * args.expl_noise, size=action_dim)).clip(-max_action, max_action)
 
 		# Perform action
 		next_state, reward, done, info = env.step(action)
@@ -150,10 +166,12 @@ if __name__ == "__main__":
 			state, done = env.reset(), False
 			episode_reward = 0
 			episode_timesteps = 0
-			episode_num += 1 
+			episode_num += 1
 
 		# Evaluate episode
 		if (t + 1) % args.eval_freq == 0:
 			evaluations.append(eval_policy(policy, args.env, args.seed))
-			np.save(f"./results/{file_name}", evaluations)
-			if args.save_model: policy.save(f"./models/{file_name}")
+			np.save(f"./results/{file_name}_test", evaluations)
+			np.save(f"./results/{file_name}_train", episode_reward)
+			if args.save_model:
+				policy.save(f"./models/{file_name}")
