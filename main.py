@@ -36,20 +36,18 @@ def main(args):
     elif args.policy == "DDPG":
         policy = TD3.DDPG.DDPG(**kwargs)
 
-    file_name = f"{args.policy}_{args.env}_{args.seed}"
-
-    if args.load_model != "":
-        policy_file = file_name if args.load_model == "default" else args.load_model
-        print("---------------------------------------")
-        print(f"Loading existing model from: ./models/{policy_file}")
-        print("---------------------------------------")
-        policy.load(f"./models/{policy_file}")
+    policy_file = f"{args.policy}_{args.env}_{args.seed}"
+    print("---------------------------------------")
+    print(f"Loading existing model from: ./models/{policy_file}")
+    print("---------------------------------------")
+    policy.load(f"./TD3/models/{policy_file}")
 
     for _ in range(100):
         state, done = env.reset(), False
         while not done:
             action = policy.select_action(np.array(state))
             state, reward, done, info = env.step(action)
+            env.render()
 
 
 if __name__ == "__main__":
@@ -59,9 +57,8 @@ if __name__ == "__main__":
     parser.add_argument("--seed", default=0, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # Max time steps to run environment
     parser.add_argument("--episodes", default=100, type=int)
-    parser.add_argument("--reward_type", default='reach', type=int)
+    parser.add_argument("--reward_type", default='reach')
     parser.add_argument("--render", action="store_true")  # Render the Training
-    parser.add_argument("")
     parser.set_defaults(render=True)
     args = parser.parse_args()
 
