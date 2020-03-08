@@ -1,108 +1,102 @@
-# TODO: Add DQN with pythorch
-import math
-
-import torch
-import random
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from torch import nn, optim
+import torch as T
+import torch.nn as nn
 import torch.nn.functional as F
-import utils
+import torch.optim as optim
+import numpy as np
 
-# https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
-class network(nn.Module):
-    def __init__(self,
-                 state_dim,
-                 action_dim):
-        """
-        Arguments:
-            state_dim: number of input.
-            action_dim: number of action-value to output, one-to-one correspondence to action.
-        """
+class DeepQNetwork(nn.Module):
+    def __init__(self, ALPHA, input_dims, fc1_dims, fc2_dims,
+                 n_actions):
+        super(DeepQNetwork, self).__init__()
+        self.input_dims = input_dims
+        self.fc1_dims = fc1_dims
+        self.fc2_dims = fc2_dims
+        self.n_actions = n_actions
+        self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
+        self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
+        self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
+        self.optimizer = optim.Adam(self.parameters(), lr=ALPHA)
+        self.loss = nn.MSELoss()
+        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cuda:1')
+        self.to(self.device)
 
-        super(network, self).__init__()
-        self.l1 = nn.Linear(state_dim, 256)
-        self.l2 = nn.Linear(256, 256)
-        self.l3 = nn.Linear(256, action_dim)
+    def forward(self, observation):
+        state = T.Tensor(observation).to(self.device)
+        #observation = observation.view(-1)
+        x = F.relu(self.fc1(state))
+        x = F.relu(self.fc2(x))
+        actions = self.fc3(x)
+        return actions
 
-    def forward(self, state):
-        a = F.relu(self.l1(state))
-        a = F.relu(self.l2(a))
-        return F.relu(self.l3(a))
+class Agent(object):
+    def __init__(self, gamma, epsilon, alpha, input_dims, batch_size, n_actions,
+                 max_mem_size=100000, eps_end=0.01, eps_dec=0.996):
+        self.GAMMA = gamma
+        self.EPSILON = epsilon
+        self.EPS_MIN = eps_end
+        self.EPS_DEC = eps_dec
+        self.ALPHA = alpha
+        self.action_space = [i for i in range(n_actions)]
+        self.n_actions = n_actions
+        self.mem_size = max_mem_size
+        self.batch_size = batch_size
+        self.mem_cntr = 0
+        self.Q_eval = DeepQNetwork(alpha, n_actions=self.n_actions, input_dims=input_dims, fc1_dims=256, fc2_dims=256)
+        self.state_memory = np.zeros((self.mem_size, *input_dims))
+        self.new_state_memory = np.zeros((self.mem_size, *input_dims))
+        self.action_memory = np.zeros((self.mem_size, self.n_actions), dtype=np.uint8)
+        self.reward_memory = np.zeros(self.mem_size)
+        self.terminal_memory = np.zeros(self.mem_size, dtype=np.uint8)
 
+    def storeTransition(self, state, action, reward, state_, terminal):
+        index = self.mem_cntr % self.mem_size
+        self.state_memory[index] = state
+        actions = np.zeros(self.n_actions)
+        actions[action] = 1.0
+        self.action_memory[index] = actions
+        self.reward_memory[index] = reward
+        self.new_state_memory[index] = state_
+        self.terminal_memory[index] = 1 - terminal
+        self.mem_cntr += 1
 
-class DQN(object):
-
-    def __init__(self,
-                 state_dim,
-                 action_dim,
-                 gamma=0.99,
-                 eps_start=0.9,
-                 eps_end=0.05,
-                 eps_decay=200,
-                 target_update=10):
-        """
-        Initialize a deep Q-learning network as described in
-        https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNature14236Paper.pdf
-        Arguments:
-            state_dim: number of input.
-            action_dim: number of action-value to output, one-to-one correspondence to action.
-            batch_size: the number of batches to sample for training
-            gamma: reward decay
-            eps_start: epsilon greedy at the start of training
-            eps_end: epsilon greedy at the end of training
-            eps_decay: the rate of decay
-            target_update:
-        """
-        self.state_dim = state_dim
-        self.action_dim = action_dim
-        self.gamma = gamma
-        self.eps_start = eps_start
-        self.eps_decay = eps_decay
-        self.eps_end = eps_end
-        self.target_update = target_update
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        self.policy_net = network(self.state_dim, self.action_dim).to(self.device)
-        self.target_net = network(self.state_dim, self.action_dim).to(self.device)
-        self.target_net.load_state_dict(self.policy_net.state_dict())
-        self.target_net.eval()
-
-        self.optimizer = optim.RMSprop(self.policy_net.parameters())
-
-        self.steps_done = 0
-
-    def select_action(self, state):
-        """
-        select_action - will select an action accordingly to an epsilon greedy policy. Simply put,
-        we’ll sometimes use our model for choosing the action, and sometimes we’ll just sample one uniformly.
-        The probability of choosing a random action will start at EPS_START and will decay exponentially towards
-        EPS_END. EPS_DECAY controls the rate of the decay.
-        Arguments:
-            state: The input of the network
-        """
-        sample = random.random()
-        eps_threshold = self.eps_end+(self.eps_start - self.eps_end)*math.exp(-1. * self.steps_done / self.eps_decay)
-        self.steps_done += 1
-        if sample > eps_threshold:
-            with torch.no_grad():
-                # t.max(1) will return largest column value of each row.
-                # second column on max result is index of where max element was
-                # found, so we pick action with the larger expected reward.
-                return self.policy_net(state).max(1)[1].view(1, 1)
+    def select_action(self, observation):
+        rand = np.random.random()
+        actions = self.Q_eval.forward(observation)
+        if rand > self.EPSILON:
+            action = T.argmax(actions).item()
         else:
-            return torch.tensor([[random.randrange(self.action_dim)]], device=self.device, dtype=torch.long)
+            action = np.random.choice(self.action_space)
+        return action
 
-    def train(self, replay_buffer, batch_size):
-        pass
+    def learn(self):
+        if self.mem_cntr > self.batch_size:
+            self.Q_eval.optimizer.zero_grad()
 
-    def save(self, filename):
-        torch.save(self.policy_net, filename + "policy")
-        torch.save(self.target_net, filename + "target")
+            max_mem = self.mem_cntr if self.mem_cntr < self.mem_size \
+                                    else self.mem_size
 
-    def load(self, filename):
-        self.policy_net.load_state_dict(torch.load(filename + "policy"))
-        self.target_net.load_state_dict(torch.load(filename + "target"))
+            batch = np.random.choice(max_mem, self.batch_size)
+            state_batch = self.state_memory[batch]
+            action_batch = self.action_memory[batch]
+            action_values = np.array(self.action_space, dtype=np.int32)
+            action_indices = np.dot(action_batch, action_values)
+            reward_batch = self.reward_memory[batch]
+            new_state_batch = self.new_state_memory[batch]
+            terminal_batch = self.terminal_memory[batch]
 
+            reward_batch = T.Tensor(reward_batch).to(self.Q_eval.device)
+            terminal_batch = T.Tensor(terminal_batch).to(self.Q_eval.device)
+
+            q_eval = self.Q_eval.forward(state_batch).to(self.Q_eval.device)
+            #q_target = self.Q_eval.forward(state_batch).to(self.Q_eval.device)
+            q_target = q_eval.clone()
+            q_next = self.Q_eval.forward(new_state_batch).to(self.Q_eval.device)
+
+            batch_index = np.arange(self.batch_size, dtype=np.int32)
+            q_target[batch_index, action_indices] = reward_batch + self.GAMMA*T.max(q_next, dim=1)[0]*terminal_batch
+
+            self.EPSILON = self.EPSILON*self.EPS_DEC if self.EPSILON > self.EPS_MIN else self.EPS_MIN
+
+            loss = self.Q_eval.loss(q_target, q_eval).to(self.Q_eval.device)
+            loss.backward()
+            self.Q_eval.optimizer.step()

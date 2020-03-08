@@ -24,5 +24,5 @@ for reward_type in ['sparse', 'dense']:
         id='UrBinPicking{}-v0'.format(suffix),
         entry_point='gym_mergablerobots.envs:UrBinPicking',
         kwargs=kwargs,
-        max_episode_steps=50,
+        max_episode_steps=70,
     )
