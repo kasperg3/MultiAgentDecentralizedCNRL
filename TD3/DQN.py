@@ -29,7 +29,7 @@ class DeepQNetwork(nn.Module):
         return actions
 
 class Agent(object):
-    def __init__(self, gamma, epsilon, alpha, input_dims, batch_size, n_actions,
+    def __init__(self, gamma, epsilon, alpha, input_dims, batch_size, n_actions, replace,
                  max_mem_size=100000, eps_end=0.01, eps_dec=0.996):
         self.GAMMA = gamma
         self.EPSILON = epsilon
@@ -41,62 +41,61 @@ class Agent(object):
         self.mem_size = max_mem_size
         self.batch_size = batch_size
         self.mem_cntr = 0
+        self.memory = []
+        self.steps = 0
+        self.learn_step_counter = 0
+        self.replace_target_cnt = replace
         self.Q_eval = DeepQNetwork(alpha, n_actions=self.n_actions, input_dims=input_dims, fc1_dims=256, fc2_dims=256)
-        self.state_memory = np.zeros((self.mem_size, *input_dims))
-        self.new_state_memory = np.zeros((self.mem_size, *input_dims))
-        self.action_memory = np.zeros((self.mem_size, self.n_actions), dtype=np.uint8)
-        self.reward_memory = np.zeros(self.mem_size)
-        self.terminal_memory = np.zeros(self.mem_size, dtype=np.uint8)
+        self.Q_next = DeepQNetwork(alpha, n_actions=self.n_actions, input_dims=input_dims, fc1_dims=256, fc2_dims=256)
 
-    def storeTransition(self, state, action, reward, state_, terminal):
-        index = self.mem_cntr % self.mem_size
-        self.state_memory[index] = state
-        actions = np.zeros(self.n_actions)
-        actions[action] = 1.0
-        self.action_memory[index] = actions
-        self.reward_memory[index] = reward
-        self.new_state_memory[index] = state_
-        self.terminal_memory[index] = 1 - terminal
+    def storeTransition(self, state, action, reward, state_):
+        if self.mem_cntr < self.mem_size:
+            self.memory.append([state, action, reward, state_])
+        else:
+            self.memory[self.mem_cntr%self.mem_size] = [state, action, reward, state_]
         self.mem_cntr += 1
 
-    def select_action(self, observation):
+    def chooseAction(self, observation):
         rand = np.random.random()
         actions = self.Q_eval.forward(observation)
-        if rand > self.EPSILON:
-            action = T.argmax(actions).item()
+        if rand < 1 - self.EPSILON:
+            action = T.argmax(actions[1]).item()
         else:
             action = np.random.choice(self.action_space)
+        self.steps += 1
         return action
 
-    def learn(self):
-        if self.mem_cntr > self.batch_size:
-            self.Q_eval.optimizer.zero_grad()
+    def learn(self, batch_size):
+        self.Q_eval.optimizer.zero_grad()
+        if self.replace_target_cnt is not None and \
+           self.learn_step_counter % self.replace_target_cnt == 0:
+            self.Q_next.load_state_dict(self.Q_eval.state_dict())
 
-            max_mem = self.mem_cntr if self.mem_cntr < self.mem_size \
-                                    else self.mem_size
+        if self.mem_cntr+batch_size < self.mem_size:
+            memStart = int(np.random.choice(range(self.mem_cntr)))
+        else:
+            memStart = int(np.random.choice(range(self.mem_size-batch_size-1)))
+        miniBatch=self.memory[memStart:memStart+batch_size]
+        memory = np.array(miniBatch)
 
-            batch = np.random.choice(max_mem, self.batch_size)
-            state_batch = self.state_memory[batch]
-            action_batch = self.action_memory[batch]
-            action_values = np.array(self.action_space, dtype=np.int32)
-            action_indices = np.dot(action_batch, action_values)
-            reward_batch = self.reward_memory[batch]
-            new_state_batch = self.new_state_memory[batch]
-            terminal_batch = self.terminal_memory[batch]
+        # convert to list because memory is an array of numpy objects
+        Qpred = self.Q_eval.forward(list(memory[:,0][:])).to(self.Q_eval.device)
+        Qnext = self.Q_next.forward(list(memory[:,3][:])).to(self.Q_eval.device)
 
-            reward_batch = T.Tensor(reward_batch).to(self.Q_eval.device)
-            terminal_batch = T.Tensor(terminal_batch).to(self.Q_eval.device)
+        maxA = T.argmax(Qnext, dim=1).to(self.Q_eval.device)
+        rewards = T.Tensor(list(memory[:,2])).to(self.Q_eval.device)
+        Qtarget = Qpred.clone()
+        indices = np.arange(batch_size)
+        Qtarget[indices,maxA] = rewards + self.GAMMA*T.max(Qnext[1])
 
-            q_eval = self.Q_eval.forward(state_batch).to(self.Q_eval.device)
-            #q_target = self.Q_eval.forward(state_batch).to(self.Q_eval.device)
-            q_target = q_eval.clone()
-            q_next = self.Q_eval.forward(new_state_batch).to(self.Q_eval.device)
+        if self.steps > 500:
+            if self.EPSILON - 1e-4 > self.EPS_MIN:
+                self.EPSILON -= 1e-4
+            else:
+                self.EPSILON = self.EPS_MIN
 
-            batch_index = np.arange(self.batch_size, dtype=np.int32)
-            q_target[batch_index, action_indices] = reward_batch + self.GAMMA*T.max(q_next, dim=1)[0]*terminal_batch
-
-            self.EPSILON = self.EPSILON*self.EPS_DEC if self.EPSILON > self.EPS_MIN else self.EPS_MIN
-
-            loss = self.Q_eval.loss(q_target, q_eval).to(self.Q_eval.device)
-            loss.backward()
-            self.Q_eval.optimizer.step()
+        #Qpred.requires_grad_()
+        loss = self.Q_eval.loss(Qtarget, Qpred).to(self.Q_eval.device)
+        loss.backward()
+        self.Q_eval.optimizer.step()
+        self.learn_step_counter += 1
