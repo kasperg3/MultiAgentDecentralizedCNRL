@@ -52,6 +52,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
     # ----------------------------
 
     def _step_callback(self):
+        # Lock gripper open in reach
         if self.reward_type == 'reach':
             self.sim.data.set_joint_qpos('robot0:joint7_l', -0.008)
             self.sim.data.set_joint_qpos('robot0:joint7_r', -0.008)
@@ -89,26 +90,61 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         box_rel_pos = box_pos - grip_pos
         box_rot = rotations.mat2euler(self.sim.data.get_site_xmat('box'))
 
-        if self.reward_type == 'orient':
-            # Set gripper state and velocity for orient where it's possible to move the gripper
-            gripper_state = robot_qpos[-2:]
-            gripper_vel = robot_qvel[-2:] * dt  # change to a scalar if the gripper is made symmetric
-
         achieved_goal = grip_pos.copy()
 
         # The relative position to the goal
         goal_rel_pos = self.goal - achieved_goal
 
-        obs = np.concatenate([
-            grip_pos,
-            grip_rot,
-            grip_velp,
-            grip_velr,
-            box_pos.ravel(),
-            box_rel_pos.ravel(),
-            box_rot.ravel(),
-            goal_rel_pos,
-        ])
+        obs = None
+        if self.reward_type == 'reach':
+            obs = np.concatenate([
+                grip_pos,
+                grip_rot,
+                grip_velp,
+                grip_velr,
+                box_pos.ravel(),
+                box_rel_pos.ravel(),
+                box_rot.ravel(),
+                goal_rel_pos,
+            ])
+        elif self.reward_type == 'orient':
+            # Set gripper state and velocity for orient where it's possible to move the gripper
+            gripper_state = robot_qpos[-2:]
+            gripper_vel = robot_qvel[-2:] * dt  # change to a scalar if the gripper is made symmetric
+            # Object position
+            object0_pos = self.sim.data.get_site_xpos('object0')
+            object1_pos = self.sim.data.get_site_xpos('object1')
+            object2_pos = self.sim.data.get_site_xpos('object2')
+
+            # Object rotation
+            object0_rot_cart = self.sim.data.get_site_xmat('object0')
+            object1_rot_cart = self.sim.data.get_site_xmat('object1')
+            object2_rot_cart = self.sim.data.get_site_xmat('object2')
+            object0_rot = Rotation.as_quat(object0_rot_cart)
+            object1_rot = Rotation.as_quat(object1_rot_cart)
+            object2_rot = Rotation.as_quat(object2_rot_cart)
+
+            # relative object pos
+
+            obs = np.concatenate([
+                grip_pos,
+                grip_rot,
+                grip_velp,
+                grip_velr,
+                box_pos.ravel(),
+                box_rel_pos.ravel(),
+                box_rot.ravel(),
+                object0_pos,
+                object0_rot,
+                object1_pos,
+                object1_rot,
+                object2_pos,
+                object2_rot,
+            ])
+        elif self.reward_type == 'lift':
+            pass
+        else:
+            raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift')
 
         return {
             'observation': obs.copy(),
@@ -179,18 +215,37 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # Set object position
             self.initial_box_xpos = box_qpos[:3]
             self.sim.data.set_joint_qpos('box:joint', box_qpos)
+        elif self.reward_type == 'orient':
+            # Start the simulation just over the box(same space as reach goal)
+
+            pass
+        elif self.reward_type == 'lift':
+            # Start the simulation at a closed grasp
+            pass
+        elif self.reward_type == 'place':
+            # Start the simulation over the box with the
+            pass
+        else:
+            raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
+
         self.sim.forward()
         return True
 
     def _sample_goal(self):
         if self.reward_type == 'reach':
-            target_y_range = 0.10   # The length of the box
-            target_x_range = 0.15   # The width of the box
-            target_height = 0.05    # The height of the box
+            target_y_range = 0.10  # The length of the box
+            target_x_range = 0.15  # The width of the box
+            target_height = 0.05  # The height of the box
             goal = self.sim.data.get_site_xpos('box')[:3] + [
                 float(self.np_random.uniform(-target_x_range, target_x_range)),
                 float(self.np_random.uniform(-target_y_range, target_y_range)),
                 target_height]
+        elif self.reward_type == 'orient':
+            pass
+        elif self.reward_type == 'lift':
+            pass
+        elif self.reward_type == 'place':
+            pass
         else:
             target_range = 0.2
             goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-target_range, target_range, size=3)
@@ -219,7 +274,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         # Extract information for sampling goals.
         self.initial_gripper_xpos = self.sim.data.get_site_xpos('robot0:grip').copy()
         self.initial_box_xpos = self.sim.data.get_site_xpos('box').copy()
-
 
     def render(self, mode='human', width=500, height=500):
         return super(UrBinPickingEnv, self).render(mode)

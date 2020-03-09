@@ -16,7 +16,7 @@ from gym.wrappers import FlattenObservation, FilterObservation
 
 
 def eval_policy(policy, env_name, seed, eval_episodes=10):
-	eval_env = gym.make(env_name, reward_type='dense')
+	eval_env = gym.make(env_name, reward_type='reach')
 	eval_env = FlattenObservation(FilterObservation(eval_env, ['observation', 'desired_goal']))
 
 	eval_env.seed(seed + 100)
@@ -38,7 +38,7 @@ def eval_policy(policy, env_name, seed, eval_episodes=10):
 
 
 if __name__ == "__main__":
-	
+
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
 	parser.add_argument("--env", default="UrBinPicking-v0")          	# OpenAI gym environment name
