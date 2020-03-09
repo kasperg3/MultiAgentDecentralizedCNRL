@@ -63,8 +63,10 @@ class UrEnv(robot_env.RobotEnv):
             reward = -(d > self.distance_threshold).astype(np.float32)
         elif self.reward_type == 'dense':
             reward = -d
-        elif self.reward_type == 'dense_reward_shaping':
+        elif self.reward_type == 'composite_reward':
+            pass
 
+        elif self.reward_type == 'dense_reward_shaping':
             R = -d
             start = self.initial_gripper_xpos[:3]
             # max_step_length = 0.01 * 20
@@ -76,7 +78,6 @@ class UrEnv(robot_env.RobotEnv):
             F = self.phi_old - phi_new
             self.phi_old = phi_new
             reward = R + F
-
         elif self.reward_type == 'sparse_reward_shaping':
             R = -(d > self.distance_threshold).astype(np.float32)
             start = self.initial_gripper_xpos[:3]
@@ -138,28 +139,49 @@ class UrEnv(robot_env.RobotEnv):
         grip_velp = self.sim.data.get_site_xvelp('robot0:grip') * dt
         robot_qpos, robot_qvel = utils.robot_get_obs(self.sim)
         if self.has_object:
-            object_pos = self.sim.data.get_site_xpos('object0')
+            object0_pos = self.sim.data.get_site_xpos('object0')
+            object1_pos = self.sim.data.get_site_xpos('object1')
             # rotations
-            object_rot = rotations.mat2euler(self.sim.data.get_site_xmat('object0'))
+            object0_rot = rotations.mat2euler(self.sim.data.get_site_xmat('object0'))
+            object1_rot = rotations.mat2euler(self.sim.data.get_site_xmat('object1'))
             # velocities
-            object_velp = self.sim.data.get_site_xvelp('object0') * dt
-            object_velr = self.sim.data.get_site_xvelr('object0') * dt
+            object0_velp = self.sim.data.get_site_xvelp('object0') * dt
+            object1_velp = self.sim.data.get_site_xvelp('object1') * dt
             # gripper state
-            object_rel_pos = object_pos - grip_pos
-            object_velp -= grip_velp
+            object0_rel_pos = object0_pos - grip_pos
+            object0_velp -= grip_velp
+            object1_rel_pos = object1_pos - grip_pos
+            object1_velp -= grip_velp
+
+            # relative potition from object1 to goal
+            object1_to_goal_pos = object1_pos - self.goal
         else:
-            object_pos = object_rot = object_velp = object_velr = object_rel_pos = np.zeros(0)
+            object0_pos = object0_rot = object0_velp = object0_velr = object0_rel_pos = np.zeros(0)
+            object1_pos = object1_rot = object1_velp = object1_velr = object1_rel_pos = np.zeros(0)
+            object1_to_goal_pos = np.zeros(0)
         gripper_state = robot_qpos[-2:]
         gripper_vel = robot_qvel[-2:] * dt  # change to a scalar if the gripper is made symmetric
 
         if not self.has_object:
             achieved_goal = grip_pos.copy()
         else:
-            achieved_goal = np.squeeze(object_pos.copy())
+            achieved_goal = np.squeeze(object0_pos.copy())
 
         obs = np.concatenate([
-            grip_pos, grip_rot, object_pos.ravel(), object_rel_pos.ravel(), gripper_state, object_rot.ravel(),
-            object_velp.ravel(), object_velr.ravel(), grip_velp, gripper_vel,
+            grip_pos,
+            grip_rot,
+            gripper_state,
+            object0_pos.ravel(),
+            object0_rel_pos.ravel(),
+            object0_rot.ravel(),
+            object0_velp.ravel(),
+            object1_pos.ravel(),
+            object1_rel_pos.ravel(),
+            object1_rot.ravel(),
+            object1_velp.ravel(),
+            object1_to_goal_pos.ravel(),
+            grip_velp,
+            gripper_vel,
         ])
 
         return {
@@ -228,21 +250,28 @@ class UrEnv(robot_env.RobotEnv):
                 if base_to_object_distance < 0.20:
                     object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range, self.obj_range, size=2)
 
-            object_qpos = self.sim.data.get_joint_qpos('object0:joint')
-            assert object_qpos.shape == (7,)
-            object_qpos[:2] = object_xpos
+            # Set object 0 initial position
+            object0_qpos = self.sim.data.get_joint_qpos('object0:joint')
+            object0_qpos[:2] = object_xpos
 
-            #open the grippers
+            # Place object 1 within object range of object0
+            object1_qpos = self.sim.data.get_joint_qpos('object1:joint')
+            object1_xpos = object_xpos + self.np_random.uniform(-self.obj_range, self.obj_range, size=2)
+            object1_qpos[:2] = object1_xpos
+
+            # Set object positions
+            self.initial_object_xpos = object0_qpos[:3]
+            self.sim.data.set_joint_qpos('object0:joint', object0_qpos)
+            self.initial_object_xpos = object1_qpos[:3]
+            self.sim.data.set_joint_qpos('object1:joint', object1_qpos)
+
+            # open the grippers
             action = np.concatenate([[0, 0, 0], [0, 0, 0, 0], [-1, -1]])
             utils.ctrl_set_action(self.sim, action)
             utils.mocap_set_action(self.sim, action)
 
-            # Set object position
-            self.initial_object_xpos = object_qpos[:3]
-            self.sim.data.set_joint_qpos('object0:joint', object_qpos)
-
             # Place the end effector at the object every other episode
-            if bool(np.random.binomial(1, 1)) and self.has_object:
+            if bool(np.random.binomial(1, 0.5)) and self.has_object:
                 initial_grip = np.add(self.initial_object_xpos, [0, 0, 0.045])
                 self.sim.data.set_mocap_quat('robot0:mocap', [0, 0, 1, 0])
                 self.sim.data.set_mocap_pos('robot0:mocap', initial_grip)
@@ -257,7 +286,7 @@ class UrEnv(robot_env.RobotEnv):
         return True
 
     def _sample_goal(self):
-        if self.has_object:
+        if self.has_object and self.reward_type is not 'composite_reward':
             goal = self.sim.data.get_site_xpos('object0')
             while goal_distance(self.sim.data.get_site_xpos('object0'), goal) < self.distance_threshold:
                 goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-self.target_range, self.target_range,
@@ -266,6 +295,8 @@ class UrEnv(robot_env.RobotEnv):
                 goal[2] = self.height_offset
                 if self.target_in_the_air and self.np_random.uniform() < 0.5:
                     goal[2] += self.np_random.uniform(0, 0.45)
+        elif self.has_object and self.reward_type == 'composite_reward':
+            goal = self.sim.data.get_site_xpos('object0') + [0, 0, 0.025]
         else:
             goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-self.target_range, self.target_range, size=3)
         return goal.copy()

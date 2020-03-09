@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
-	parser.add_argument("--env", default="UrBinPicking-v0")          	# OpenAI gym environment name
+	parser.add_argument("--env", default="UrPickAndPlace-v0")      	# OpenAI gym environment name
 	parser.add_argument("--seed", default=0, type=int)              # Sets Gym, PyTorch and Numpy seeds
 	parser.add_argument("--start_timesteps", default=25e3, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 	parser.add_argument("--render", action="store_true")            # Render the Training
 	parser.set_defaults(load_model='')
-	parser.set_defaults(render=False)
+	parser.set_defaults(render=True)
 	parser.set_defaults(save_model=True)
 	args = parser.parse_args()
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 	if args.save_model and not os.path.exists("./models"):
 		os.makedirs("./models")
 
-	env = gym.make(args.env, reward_type='reach')
+	env = gym.make(args.env, reward_type='composite_reward')
 	env = FlattenObservation(FilterObservation(env, ['observation', 'desired_goal']))
 
 	# Set seeds
