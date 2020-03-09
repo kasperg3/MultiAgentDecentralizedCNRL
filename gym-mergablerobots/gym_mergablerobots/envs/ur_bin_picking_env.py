@@ -96,6 +96,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
         achieved_goal = grip_pos.copy()
 
+        # The relative position to the goal
+        goal_rel_pos = self.goal - achieved_goal
+
         obs = np.concatenate([
             grip_pos,
             grip_rot,
@@ -104,6 +107,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             box_pos.ravel(),
             box_rel_pos.ravel(),
             box_rot.ravel(),
+            goal_rel_pos,
         ])
 
         return {

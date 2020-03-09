@@ -99,3 +99,6 @@ class Agent(object):
         loss.backward()
         self.Q_eval.optimizer.step()
         self.learn_step_counter += 1
+
+    if __name__ == "__main__":
+        pass
