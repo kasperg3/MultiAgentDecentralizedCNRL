@@ -53,6 +53,32 @@ class UrEnv(robot_env.RobotEnv):
     # GoalEnv methods
     # ----------------------------
 
+    def is_grasped(self, b_z):
+        # TODO: calibrate this threshold
+        return (b_z > 0.025).astype(np.bool)
+
+    def is_stacked(self,  object0, object1):
+        # In the paper the threshold used for stacking is half the size of reaching, this will also be used here
+        # The paper distinguish between the orientation, but in out case we use a symmetric object
+        cube_threshold = [0.01, 0.01, 0.01]
+        if abs(object0[0] - object1[0]) < cube_threshold[0] and \
+           abs(object0[1] - object1[1]) < cube_threshold[1] and \
+           abs(object0[2] - object1[2]) < cube_threshold[2]:
+            return True
+        else:
+            return False
+
+
+    def is_reached(self, object, gripper):
+        # TODO: calibrate this threshold
+        cube_threshold = [0.020, 0.020, 0.020]
+        if abs(object[0] - gripper[0]) < cube_threshold[0] and \
+           abs(object[1] - gripper[1]) < cube_threshold[1] and \
+           abs(object[2] - gripper[2]) < cube_threshold[2]:
+            return True
+        else:
+            return False
+
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.
         reward = 0
@@ -64,7 +90,37 @@ class UrEnv(robot_env.RobotEnv):
         elif self.reward_type == 'dense':
             reward = -d
         elif self.reward_type == 'composite_reward':
-            pass
+            # Set the goal to follow object0
+            self.goal = self.sim.data.get_site_xpos('object0') + [0, 0, 0.030]
+
+            # Calculate the different metrics
+            # b_z   : height of brick 1 above table
+            # s_B1  : XYZ pos of the site located in the center of brick1
+            # s_B2  : XYZ pos of the site located just over brick0
+            # s_P   : XYZ pos of the pinch site in the gripper, the position where the fingers meet
+            # w1    : weights used in the reaching reward function
+            # w2    : weights used in the stack reward function
+            s_B1 = self.sim.data.get_site_xpos('object1')  # The object to grasp
+            s_B2 = self.goal  # The position where object1 will lay once stacked
+            b_z = s_B1[2] - 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
+            s_P = self.sim.data.get_site_xpos('robot0:grip')
+            w1 = 1.125  # TODO: Tune these
+            w2 = 1.3  #
+
+            # if the blocks are stacked return the maximum reward
+            if self.is_stacked(s_B1, s_B2):
+                print("STACKED MOTHERFUCKER")
+                return 1
+            # If the blocks are not stacked but the block is grasped
+            elif not self.is_stacked(s_B1, s_B2) and self.is_grasped(b_z):
+                value = 1 - np.square(np.tanh(np.linalg.norm(s_B1*w2 - s_B2*2)))
+                return 0.25 + 0.25*value
+            # if the blocks are not stacked or grasped but is reached
+            elif not(self.is_stacked(s_B1, s_B2) or self.is_grasped(b_z)) and self.is_reached(s_B1, s_P):
+                return 0.125
+            else:  # otherwise
+                value = 1 - np.square(np.tanh(np.linalg.norm(w1 * s_B1 - 2*s_P)))
+                return 0.125*value
 
         elif self.reward_type == 'dense_reward_shaping':
             R = -d
@@ -154,11 +210,11 @@ class UrEnv(robot_env.RobotEnv):
             object1_velp -= grip_velp
 
             # relative potition from object1 to goal
-            object1_to_goal_pos = object1_pos - self.goal
+            object1_rel_to_goal = object1_pos - self.goal
         else:
             object0_pos = object0_rot = object0_velp = object0_velr = object0_rel_pos = np.zeros(0)
             object1_pos = object1_rot = object1_velp = object1_velr = object1_rel_pos = np.zeros(0)
-            object1_to_goal_pos = np.zeros(0)
+            object1_rel_to_goal = np.zeros(0)
         gripper_state = robot_qpos[-2:]
         gripper_vel = robot_qvel[-2:] * dt  # change to a scalar if the gripper is made symmetric
 
@@ -173,13 +229,9 @@ class UrEnv(robot_env.RobotEnv):
             gripper_state,
             object0_pos.ravel(),
             object0_rel_pos.ravel(),
-            object0_rot.ravel(),
-            object0_velp.ravel(),
             object1_pos.ravel(),
             object1_rel_pos.ravel(),
-            object1_rot.ravel(),
-            object1_velp.ravel(),
-            object1_to_goal_pos.ravel(),
+            object1_rel_to_goal.ravel(),
             grip_velp,
             gripper_vel,
         ])
@@ -296,7 +348,7 @@ class UrEnv(robot_env.RobotEnv):
                 if self.target_in_the_air and self.np_random.uniform() < 0.5:
                     goal[2] += self.np_random.uniform(0, 0.45)
         elif self.has_object and self.reward_type == 'composite_reward':
-            goal = self.sim.data.get_site_xpos('object0') + [0, 0, 0.025]
+            goal = self.sim.data.get_site_xpos('object0') + [0, 0, 0.030]
         else:
             goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-self.target_range, self.target_range, size=3)
         return goal.copy()
@@ -304,7 +356,12 @@ class UrEnv(robot_env.RobotEnv):
     def _is_success(self, achieved_goal, desired_goal):
         # Todo: Add different success functions depending on the goal
         d = goal_distance(achieved_goal, desired_goal)
-        return (d < self.distance_threshold).astype(np.float32)
+        result = (d < self.distance_threshold).astype(np.float32)
+
+        if(self.reward_type is 'composite_reward'):
+            result = ((self.sim.data.get_site_xpos('object0') - 0.414) < 0.04).astype(np.float32)
+
+        return result
 
     def _env_setup(self, initial_qpos):
         for name, value in initial_qpos.items():

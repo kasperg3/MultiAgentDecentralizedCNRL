@@ -10,7 +10,7 @@ for reward_type in ['sparse', 'dense']:
         id='UrPickAndPlace{}-v0'.format(suffix),
         entry_point='gym_mergablerobots.envs:URPickAndPlaceEnv',
         kwargs=kwargs,
-        max_episode_steps=70,
+        max_episode_steps=150,
     )
 
     register(

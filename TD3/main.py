@@ -1,5 +1,7 @@
 import argparse
 import os
+import time
+from collections import deque
 
 import utils
 import gym
@@ -15,8 +17,8 @@ import gym_mergablerobots
 from gym.wrappers import FlattenObservation, FilterObservation
 
 
-def eval_policy(policy, env_name, seed, eval_episodes=10):
-	eval_env = gym.make(env_name, reward_type='reach')
+def eval_policy(policy, reward_type, env_name, seed, eval_episodes=10):
+	eval_env = gym.make(env_name, reward_type=str(reward_type))
 	eval_env = FlattenObservation(FilterObservation(eval_env, ['observation', 'desired_goal']))
 
 	eval_env.seed(seed + 100)
@@ -41,11 +43,12 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
-	parser.add_argument("--env", default="UrBinPicking-v0")      	# OpenAI gym environment name
-	parser.add_argument("--seed", default=0, type=int)              # Sets Gym, PyTorch and Numpy seeds
+	parser.add_argument("--env", default="UrPickAndPlace-v0")      	# OpenAI gym environment name
+	parser.add_argument("--reward", default="composite_reward")      	# reward type
+	parser.add_argument("--seed", default=1234, type=int)              # Sets Gym, PyTorch and Numpy seeds
 	parser.add_argument("--start_timesteps", default=25e3, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
-	parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
+	parser.add_argument("--max_timesteps", default=8e6, type=int)   # Max time steps to run environment
 	parser.add_argument("--expl_noise", default=0.1)                # Std of Gaussian exploration noise
 	parser.add_argument("--batch_size", default=256, type=int)      # Batch size for both actor and critic
 	parser.add_argument("--discount", default=0.99)                 # Discount factor
@@ -56,8 +59,8 @@ if __name__ == "__main__":
 	parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 	parser.add_argument("--render", action="store_true")            # Render the Training
-	parser.set_defaults(load_model='')
-	parser.set_defaults(render=True)
+	parser.set_defaults(load_model='')  							# Set to "default" if you want to load default model
+	parser.set_defaults(render=False)
 	parser.set_defaults(save_model=True)
 	args = parser.parse_args()
 
@@ -72,16 +75,16 @@ if __name__ == "__main__":
 	if args.save_model and not os.path.exists("./models"):
 		os.makedirs("./models")
 
-	env = gym.make(args.env, reward_type='reach')
+	env = gym.make(args.env, reward_type=args.reward)
 	env = FlattenObservation(FilterObservation(env, ['observation', 'desired_goal']))
 
 	# Set seeds
 	env.seed(args.seed)
 	torch.manual_seed(args.seed)
 	np.random.seed(args.seed)
-	
+
 	state_dim = env.observation_space.shape[0]
-	action_dim = env.action_space.shape[0] 
+	action_dim = env.action_space.shape[0]
 	max_action = float(env.action_space.high[0])
 
 	kwargs = {
@@ -123,12 +126,16 @@ if __name__ == "__main__":
 	replay_buffer = utils.ReplayBuffer(state_dim, action_dim)
 	
 	# Evaluate untrained policy
-	evaluations = [eval_policy(policy, args.env, args.seed)]
+	evaluations = [eval_policy(policy, args.reward, args.env, args.seed)]
 
 	state, done = env.reset(), False
 	episode_reward = 0
 	episode_timesteps = 0
 	episode_num = 0
+
+	# reset timer and init time queue
+	episode_real_time = time.time()
+	episode_time_buffer = deque([], maxlen=10)
 
 	for t in range(int(args.max_timesteps)):
 
@@ -160,18 +167,27 @@ if __name__ == "__main__":
 
 		# If the episode is done or the agent reaches a terminal state or info['is_success']
 		if done:
+			episode_time_buffer.append(time.time() - episode_real_time)
+			est_time_left = ((sum(episode_time_buffer)/episode_time_buffer.maxlen)/150) * (args.max_timesteps - t)
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
-			print(f"Total T: {t+1} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}")
+			print(  f"Total T: {t+1} | "
+					f"Episode Num: {episode_num+1} | "
+				   	f"Episode T: {episode_timesteps} | "
+				   	f"Reward: {episode_reward:.3f} | "
+				   	f"Episode time: {time.time() - episode_real_time:.2f} [seconds] | "
+				   	f"Estimated time left: {est_time_left/60:.2f} [minutes]")
 			# Reset environment
 			state, done = env.reset(), False
 			episode_reward = 0
 			episode_timesteps = 0
 			episode_num += 1
+			episode_real_time = time.time()
 
 		# Evaluate episode
 		if (t + 1) % args.eval_freq == 0:
-			evaluations.append(eval_policy(policy, args.env, args.seed))
+			evaluations.append(eval_policy(policy, args.reward, args.env, args.seed))
 			np.save(f"./results/{file_name}_test", evaluations)
 			np.save(f"./results/{file_name}_train", episode_reward)
 			if args.save_model:
 				policy.save(f"./models/{file_name}")
+			episode_real_time = time.time()

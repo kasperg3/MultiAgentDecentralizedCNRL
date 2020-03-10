@@ -30,7 +30,7 @@ def main(args):
 
     # Initialize policy
     if args.policy == "TD3":
-        policy = TD3.TD3(**kwargs)
+        policy = TD3(**kwargs)
     elif args.policy == "OurDDPG":
         policy = TD3.DDPG.DDPG(**kwargs)
     elif args.policy == "DDPG":
@@ -53,11 +53,11 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--policy", default="TD3")  # Policy name (TD3, DDPG or OurDDPG)
-    parser.add_argument("--env", default="UrBinPicking-v0")  # OpenAI gym environment name
+    parser.add_argument("--env", default="UrPickAndPlace-v0")  # OpenAI gym environment name
     parser.add_argument("--seed", default=0, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # Max time steps to run environment
     parser.add_argument("--episodes", default=100, type=int)
-    parser.add_argument("--reward_type", default='reach')
+    parser.add_argument("--reward_type", default='composite_reward')
     parser.add_argument("--render", action="store_true")  # Render the Training
     parser.set_defaults(render=True)
     args = parser.parse_args()
