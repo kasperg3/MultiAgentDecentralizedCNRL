@@ -16,8 +16,8 @@
         <material name="robot:arm_mat" shininess="0.03" specular="0.4" reflectance="0"/>
         <material name="robot:base_mat" shininess="0.03" specular="0.4" reflectance="0"/>
 
-        <!-- UR5 specififc meshes-->
         <mesh file="table.stl" />
+        <!-- UR5 specififc meshes-->
         <mesh file="base.stl" />
         <mesh file="standoff.stl" />
         <mesh file="shoulder.stl" />
@@ -29,6 +29,37 @@
         <mesh file="robotiq_coupler.stl" />
         <mesh file="robotiq_gripper.stl" />
         <mesh file="robotiq_finger.stl" />
+
+        <!-- new UR meshes -->
+        <!-- arm models -->
+        <mesh file="link0.stl"/>
+        <mesh file="link1.stl"/>
+        <mesh file="link1_cap.stl" />
+        <mesh file="link1_connector.stl" />
+        <mesh file="link2.stl" />
+        <mesh file="link2_tube.stl" />
+        <mesh file="link2_cap.stl" />
+        <mesh file="link2_connector.stl" />
+        <mesh file="link3a.stl" />
+        <mesh file="link3a_connector.stl" />
+        <mesh file="link3_tube.stl" />
+        <mesh file="link3_cap.stl" />
+        <mesh file="link3b.stl" />
+        <mesh file="link3b_connector.stl" />
+        <mesh file="link3b_connector2.stl"/>
+        <mesh file="link4.stl" />
+        <mesh file="link4_cap.stl" />
+        <mesh file="link4_connector.stl" />
+        <mesh file="link5.stl" />
+        <mesh file="link5_cap.stl" />
+        <mesh file="link5_connector.stl" />
+        <mesh file="link6.stl" />
+        <mesh file="link6_connector.stl" />
+
+        <material name="silver" specular="1" shininess="0.5" reflectance="1" emission="0.25" rgba="0.82 0.82 0.82 1"/>
+        <material name="grey" specular="1" shininess="0.5" reflectance="1" emission="0.1" rgba="0.5 0.5 0.5 1"/>
+        <material name="blue" specular="1" shininess="0.5" reflectance="1" emission="0" rgba="0.678 0.847 0.902 1"/>
+        <material name="black" specular="1" shininess="0.5" reflectance="1" emission="0" rgba="0.2 0.2 0.2 1"/>
 
         <material name="Light" specular="0" shininess="0.6" reflectance="0.9" rgba="0.5 0.5 1 1" emission="0.7"/>
     </asset>
