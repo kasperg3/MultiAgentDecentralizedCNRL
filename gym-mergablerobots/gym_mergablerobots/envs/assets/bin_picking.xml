@@ -21,7 +21,7 @@
 		</body>
 
         <!--Include the UR robot-->
-        <include file="robot0.xml"/>
+        <include file="robot2.xml"/>
 
 		<body pos="0.4 1.2 0.2" name="table0">
 			<geom size="0.4 1.2 0.2" type="box" name="table0" mass="2000" material="table_mat"/>
