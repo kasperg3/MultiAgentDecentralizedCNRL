@@ -97,6 +97,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
         obs = None
         if self.reward_type == 'reach':
+            # Update the goal to follow the box
+            self.goal = self.sim.data.get_site_xpos('box')[:3] + self.box_offset
             obs = np.concatenate([
                 grip_pos,
                 grip_rot,
@@ -233,13 +235,15 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
     def _sample_goal(self):
         if self.reward_type == 'reach':
-            target_y_range = 0.10  # The length of the box
-            target_x_range = 0.15  # The width of the box
+            target_y_range = 0.08  # The length of the box
+            target_x_range = 0.125  # The width of the box
             target_height = 0.05  # The height of the box
-            goal = self.sim.data.get_site_xpos('box')[:3] + [
+            self.box_offset = [
                 float(self.np_random.uniform(-target_x_range, target_x_range)),
                 float(self.np_random.uniform(-target_y_range, target_y_range)),
                 target_height]
+            goal = self.sim.data.get_site_xpos('box')[:3] + self.box_offset
+
         elif self.reward_type == 'orient':
             pass
         elif self.reward_type == 'lift':
