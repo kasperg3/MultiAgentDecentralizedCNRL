@@ -45,15 +45,19 @@ class UrBinPickingEnv(robot_env.RobotEnv):
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.
         d = goal_distance(achieved_goal, goal)
-        reward = float(-d)
-        return reward
 
+        if self.reward_type == 'reach':
+            return float(-d)
+        elif self.reward_type == 'orient':
+            pass
+        elif self.reward_type == 'lift':
+            pass
     # RobotEnv methods
     # ----------------------------
 
     def _step_callback(self):
         # Lock gripper open in reach
-        if self.reward_type == 'reach':
+        if self.reward_type == 'reach' or self.reward_type == 'orient':
             self.sim.data.set_joint_qpos('robot0:joint7_l', -0.008)
             self.sim.data.set_joint_qpos('robot0:joint7_r', -0.008)
             self.sim.forward()
@@ -222,7 +226,17 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
             pass
         elif self.reward_type == 'lift':
-            # Start the simulation at a closed grasp
+            box_xpos = self.initial_box_xpos[:2] + self.np_random.uniform(-self.box_range, self.box_range, size=2)
+            box_qpos = self.sim.data.get_joint_qpos('box:joint')
+            assert box_qpos.shape == (7,)
+            box_qpos[:2] = box_xpos
+            # Set object position
+            self.initial_box_xpos = box_qpos[:3]
+            self.sim.data.set_joint_qpos('box:joint', box_qpos)
+
+            self.sim.data.set_joint_qpos('object0')
+
+            # Start the simulation with the object between the fingers
             pass
         elif self.reward_type == 'place':
             # Start the simulation over the box with the

@@ -30,7 +30,7 @@ def main(args):
 
     # Initialize policy
     if args.policy == "TD3":
-        policy = TD3(**kwargs)
+        policy = TD3.TD3(**kwargs)
     elif args.policy == "OurDDPG":
         policy = TD3.DDPG.DDPG(**kwargs)
     elif args.policy == "DDPG":
