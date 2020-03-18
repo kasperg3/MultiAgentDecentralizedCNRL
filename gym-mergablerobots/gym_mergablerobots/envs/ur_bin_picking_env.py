@@ -12,16 +12,8 @@ def goal_distance(goal_a, goal_b):
     assert goal_a.shape == goal_b.shape
     return np.linalg.norm(goal_a - goal_b, axis=-1)
 
-def angle_between(v1, v2):
-    """ Returns the angle in radians between vectors 'v1' and 'v2'::
 
-            >>> angle_between((1, 0, 0), (0, 1, 0))
-            1.5707963267948966
-            >>> angle_between((1, 0, 0), (1, 0, 0))
-            0.0
-            >>> angle_between((1, 0, 0), (-1, 0, 0))
-            3.141592653589793
-    """
+def angle_between(v1, v2):
     v1_u = unit_vector(v1)
     v2_u = unit_vector(v2)
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
@@ -188,9 +180,22 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         goal_rel_pos = self.goal - achieved_goal
 
         obs = None
-        if self.reward_type == 'reach' or self.reward_type == 'orient':
+        if self.reward_type == 'reach':
             # Update the goal to follow the box
             self.goal = self.sim.data.get_site_xpos('box')[:3] + self.box_offset
+            obs = np.concatenate([
+                grip_pos,
+                grip_rot,
+                grip_velp,
+                grip_velr,
+                box_pos.ravel(),
+                box_rel_pos.ravel(),
+                box_rot.ravel(),
+                goal_rel_pos,
+            ])
+        elif self.reward_type == 'orient':
+            # Update the goal to follow the box
+            self.goal = self.sim.data.get_site_xpos('object0')[:3]
             obs = np.concatenate([
                 grip_pos,
                 grip_rot,
@@ -301,16 +306,13 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             target_height = 0.05  # The height of the box
 
             # sample a positional init within the box
-            self.box_offset = [
+            gripper_offset = [
                 float(self.np_random.uniform(-target_x_range, target_x_range)),
                 float(self.np_random.uniform(-target_y_range, target_y_range)),
                 target_height]
 
             # sample the initial gripper rot
-
-            # TODO: make sure the sampled orientation is valid
             rot_grip = Rotation.random().as_matrix()
-            #rot_grip = self.sim.data.get_site_xmat('robot0:grip')
 
             rot_box = self.sim.data.get_site_xmat('box')
             rot_gb = np.matmul(rot_grip.transpose(), rot_box)
@@ -327,14 +329,14 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 alpha = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
             # rotate gripper into position
             #move overbox
-            overbox_pos = box_qpos[:3]+self.box_offset
+            overbox_pos = box_qpos[:3]+gripper_offset
             overbox_pos[2] = overbox_pos[2]+0.1
             self.sim.data.set_mocap_pos('robot0:mocap', overbox_pos)
             self.sim.data.set_mocap_quat('robot0:mocap', rotations.mat2quat(rot_grip))
             for _ in range(10):
                 self.sim.step()
             # go down to box 1
-            self.sim.data.set_mocap_pos('robot0:mocap', box_qpos[:3]+self.box_offset)
+            self.sim.data.set_mocap_pos('robot0:mocap', box_qpos[:3]+gripper_offset)
             for _ in range(10):
                 self.sim.step()
             print('alpha: ', math.degrees(alpha))
@@ -374,17 +376,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             goal = self.sim.data.get_site_xpos('box')[:3] + self.box_offset
 
         elif self.reward_type == 'orient':
-            target_y_range = 0.08  # The length of the box
-            target_x_range = 0.125  # The width of the box
-            target_height = 0.05  # The height of the box
-            self.box_offset = [
-                float(self.np_random.uniform(-target_x_range, target_x_range)),
-                float(self.np_random.uniform(-target_y_range, target_y_range)),
-                target_height]
             #TODO Make this such that the closest object is chosen
             goal = self.sim.data.get_site_xpos('object1')[:3]
         elif self.reward_type == 'lift':
-            pass
+            goal = self.sim.data.get_site_xpos('object1')[:3] + [0, 0, 0.05]
         elif self.reward_type == 'place':
             pass
         else:
