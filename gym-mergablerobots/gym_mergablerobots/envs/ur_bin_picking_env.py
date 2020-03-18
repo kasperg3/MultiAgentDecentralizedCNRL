@@ -279,26 +279,24 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
         return contact_points
 
+    def sample_box_position(self):
+        box_xpos = self.initial_box_xpos[:2] + self.np_random.uniform(-self.box_range, self.box_range, size=2)
+        box_qpos = self.sim.data.get_joint_qpos('box:joint')
+        assert box_qpos.shape == (7,)
+        box_qpos[:2] = box_xpos
+        # Set box position
+        self.initial_box_xpos = box_qpos[:3]
+        self.sim.data.set_joint_qpos('box:joint', box_qpos)
+
+
     def _reset_sim(self):
         self.sim.set_state(self.initial_state)
         self.episode_steps = 0
         # Randomize start position of object.
         if self.reward_type == 'reach':
-            box_xpos = self.initial_box_xpos[:2] + self.np_random.uniform(-self.box_range, self.box_range, size=2)
-            box_qpos = self.sim.data.get_joint_qpos('box:joint')
-            assert box_qpos.shape == (7,)
-            box_qpos[:2] = box_xpos
-            # Set object position
-            self.initial_box_xpos = box_qpos[:3]
-            self.sim.data.set_joint_qpos('box:joint', box_qpos)
+            self.sample_box_position()
         elif self.reward_type == 'orient':
-            #Randomize box
-            box_xpos = self.initial_box_xpos[:2] + self.np_random.uniform(-self.box_range, self.box_range, size=2)
-            box_qpos = self.sim.data.get_joint_qpos('box:joint')
-            assert box_qpos.shape == (7,)
-            box_qpos[:2] = box_xpos
-            self.initial_box_xpos = box_qpos[:3]
-            self.sim.data.set_joint_qpos('box:joint', box_qpos)
+            self.sample_box_position()
 
             # Start the simulation just over the box(same space as reach goal)
             target_y_range = 0.05  # The length of the box
@@ -329,6 +327,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 alpha = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
             # rotate gripper into position
             #move overbox
+            box_qpos = self.sim.data.get_joint_qpos('box:joint')
             overbox_pos = box_qpos[:3]+gripper_offset
             overbox_pos[2] = overbox_pos[2]+0.1
             self.sim.data.set_mocap_pos('robot0:mocap', overbox_pos)
@@ -339,20 +338,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             self.sim.data.set_mocap_pos('robot0:mocap', box_qpos[:3]+gripper_offset)
             for _ in range(10):
                 self.sim.step()
-            print('alpha: ', math.degrees(alpha))
-
 
         elif self.reward_type == 'lift':
-            box_xpos = self.initial_box_xpos[:2] + self.np_random.uniform(-self.box_range, self.box_range, size=2)
-            box_qpos = self.sim.data.get_joint_qpos('box:joint')
-            assert box_qpos.shape == (7,)
-            box_qpos[:2] = box_xpos
-            # Set object position
-            self.initial_box_xpos = box_qpos[:3]
-            self.sim.data.set_joint_qpos('box:joint', box_qpos)
-
+            self.sample_box_position()
             self.sim.data.set_joint_qpos('object0')
-
             # Start the simulation with the object between the fingers
             pass
         elif self.reward_type == 'place':
