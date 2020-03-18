@@ -66,6 +66,7 @@ class RobotEnv(gym.GoalEnv):
         done = False
         info = {
             'is_success': self._is_success(obs['achieved_goal'], self.goal),
+            'is_failed': self._is_failed(),
         }
         reward = self.compute_reward(obs['achieved_goal'], self.goal, info)
         return obs, reward, done, info
@@ -141,6 +142,9 @@ class RobotEnv(gym.GoalEnv):
         raise NotImplementedError()
 
     def _is_collision(self):
+        raise  NotImplementedError()
+
+    def _is_failed(self):
         raise  NotImplementedError()
 
     def _sample_goal(self):

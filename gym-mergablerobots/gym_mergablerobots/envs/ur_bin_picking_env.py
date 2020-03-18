@@ -389,13 +389,28 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
     def _is_success(self, achieved_goal, desired_goal):
         # Todo: Add different success criteria depending on the goal
+        result = False
         if self.reward_type == 'reach':
             d = goal_distance(self.sim.data.get_site_xpos('robot0:grip'), desired_goal)
-        else:
-            d = goal_distance(achieved_goal, desired_goal)
-        if (d < self.success_threshold).astype(np.float32):
-            print('SUCCESS')
-        return (d < self.success_threshold).astype(np.float32)
+            if (d < self.success_threshold).astype(np.float32):
+                print('SUCCESS')
+            result = (d < self.success_threshold).astype(np.float32)
+        elif self.reward_type == 'orient':
+            pass
+        elif self.reward_type == 'lift':
+            pass
+        return result
+
+    def _is_failed(self):
+        # TODO: implement terminate states depending on the goal
+        result = False
+        if self.reward_type == 'reach':
+            pass
+        elif self.reward_type == 'orient':
+            pass
+        elif self.reward_type == 'lift':
+            pass
+        return result
 
     def _is_collision(self):
         #Todo: make less dirty?
