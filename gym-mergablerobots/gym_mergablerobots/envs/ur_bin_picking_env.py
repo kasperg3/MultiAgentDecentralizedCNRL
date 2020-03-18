@@ -1,5 +1,7 @@
-import numpy as np
+import random
 
+import numpy as np
+import math
 from gym.envs.robotics import rotations, utils
 from gym_mergablerobots.envs import robot_env
 from scipy.spatial.transform import Rotation
@@ -10,6 +12,23 @@ def goal_distance(goal_a, goal_b):
     assert goal_a.shape == goal_b.shape
     return np.linalg.norm(goal_a - goal_b, axis=-1)
 
+def angle_between(v1, v2):
+    """ Returns the angle in radians between vectors 'v1' and 'v2'::
+
+            >>> angle_between((1, 0, 0), (0, 1, 0))
+            1.5707963267948966
+            >>> angle_between((1, 0, 0), (1, 0, 0))
+            0.0
+            >>> angle_between((1, 0, 0), (-1, 0, 0))
+            3.141592653589793
+    """
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+def unit_vector(vector):
+    """ Returns the unit vector of the vector.  """
+    return vector / np.linalg.norm(vector)
 
 class UrBinPickingEnv(robot_env.RobotEnv):
     """Superclass for UR environments.
@@ -31,9 +50,47 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             initial_qpos (dict): a dictionary of joint names and values that define the initial configuration
             reward_type ('sparse' or 'dense'): the reward type, i.e. sparse or dense
         """
+        self.episode_steps = 0
         self.reward_type = reward_type
         self.box_range = box_range
         self.success_threshold = success_threshold
+        self.collision_array = ['robot0:standoff robot0:forearm_mesh',
+                                'robot0:standoff robot0:wrist1_mesh',
+                                'robot0:standoff robot0:wrist2_mesh',
+                                'robot0:standoff robot0:wrist3_mesh',
+                                'robot0:standoff robot0:robotiq_coupler_mesh',
+                                'robot0:standoff robot0:robotiq_base_mesh',
+                                'robot0:standoff robot0:robotiq_finger_mesh_r',
+                                'robot0:standoff robot0:robotiq_finger_mesh_l',
+                                'robot0:base_mesh robot0:forearm_mesh',
+                                'robot0:base_mesh robot0:wrist1_mesh',
+                                'robot0:base_mesh robot0:wrist2_mesh',
+                                'robot0:base_mesh robot0:wrist3_mesh',
+                                'robot0:base_mesh robot0:robotiq_coupler_mesh',
+                                'robot0:base_mesh robot0:robotiq_base_mesh',
+                                'robot0:base_mesh robot0:robotiq_finger_mesh_r',
+                                'robot0:base_mesh robot0:robotiq_finger_mesh_l',
+                                'robot0:shoulder_mesh robot0:forearm_mesh',
+                                'robot0:shoulder_mesh robot0:wrist1_mesh',
+                                'robot0:shoulder_mesh robot0:wrist2_mesh',
+                                'robot0:shoulder_mesh robot0:wrist3_mesh',
+                                'robot0:shoulder_mesh robot0:robotiq_coupler_mesh',
+                                'robot0:shoulder_mesh robot0:robotiq_base_mesh',
+                                'robot0:shoulder_mesh robot0:robotiq_finger_mesh_r',
+                                'robot0:shoulder_mesh robot0:robotiq_finger_mesh_l',
+                                'robot0:upperarm_mesh robot0:wrist2_mesh',
+                                'robot0:upperarm_mesh robot0:wrist3_mesh',
+                                'robot0:upperarm_mesh robot0:robotiq_coupler_mesh',
+                                'robot0:upperarm_mesh robot0:robotiq_base_mesh',
+                                'robot0:upperarm_mesh robot0:robotiq_finger_mesh_r',
+                                'robot0:upperarm_mesh robot0:robotiq_finger_mesh_l',
+                                'robot0:forearm_mesh robot0:shoulder_mesh',
+                                'robot0:forearm_mesh robot0:wrist3_mesh',
+                                'robot0:forearm_mesh robot0:robotiq_coupler_mesh',
+                                'robot0:forearm_mesh robot0:robotiq_base_mesh',
+                                'robot0:forearm_mesh robot0:robotiq_finger_mesh_r',
+                                'robot0:forearm_mesh robot0:robotiq_finger_mesh_l',
+        ]
 
         super(UrBinPickingEnv, self).__init__(
             model_path=model_path, n_substeps=n_substeps, n_actions=8,
@@ -44,8 +101,42 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.
-        d = goal_distance(achieved_goal, goal)
-        reward = float(-d)
+        if self.reward_type == 'reach':
+            d = goal_distance(achieved_goal, goal)
+            reward = float(-d)
+        if self.reward_type == 'orient':
+            # #angular component
+            w_d = 0.75
+            w_theta = 0.5
+            success_angle_z = math.radians(10)
+            success_angle_y = math.radians(10)
+            success_angle_x = math.radians(10)
+            alpha = 0.4
+
+            body_id1 = self.sim.model.body_name2id('robot0:left_finger')
+            body_id2 = self.sim.model.body_name2id('robot0:right_finger')
+
+            finger_left = self.sim.data.body_xpos[body_id1]
+            finger_right = self.sim.data.body_xpos[body_id2]
+
+            orient_line = finger_left - finger_right
+            theta_x = angle_between(orient_line, (1, 0, 0))
+            theta_y = angle_between(orient_line, (0, 1, 0))
+            theta_z = angle_between(orient_line, (0, 0, 1))
+            angle_45 = math.radians(45)
+            angle_90 = math.radians(90)
+            r_theta = 1 - (0.5*(min(theta_x, theta_y)/angle_45)+theta_z/angle_90)**alpha
+            gamma_t = 1 - (self.episode_steps / self.spec.max_episode_steps)**alpha
+            r_d = 1 - (goal_distance(achieved_goal, goal))**alpha
+            if goal_distance(achieved_goal, goal) < self.success_threshold and theta_z < success_angle_z and theta_y < success_angle_y\
+                    and theta_x < success_angle_x:
+                #TODO: change '5' if reward gaming!
+                reward = gamma_t*5
+            else:
+                reward = gamma_t*(w_theta*r_theta + w_d*r_d) #rtheta
+
+        if self.reward_type == 'lift':
+            pass
         return reward
 
     # RobotEnv methods
@@ -57,6 +148,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             self.sim.data.set_joint_qpos('robot0:joint7_l', -0.008)
             self.sim.data.set_joint_qpos('robot0:joint7_r', -0.008)
             self.sim.forward()
+        self.episode_steps += 1
 
     def _set_action(self, action):
         # Change action space if number of is changed
@@ -96,7 +188,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         goal_rel_pos = self.goal - achieved_goal
 
         obs = None
-        if self.reward_type == 'reach':
+        if self.reward_type == 'reach' or self.reward_type == 'orient':
             # Update the goal to follow the box
             self.goal = self.sim.data.get_site_xpos('box')[:3] + self.box_offset
             obs = np.concatenate([
@@ -109,25 +201,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 box_rot.ravel(),
                 goal_rel_pos,
             ])
-        elif self.reward_type == 'orient':
-            # Set gripper state and velocity for orient where it's possible to move the gripper
-            gripper_state = robot_qpos[-2:]
-            gripper_vel = robot_qvel[-2:] * dt  # change to a scalar if the gripper is made symmetric
-            # Object position
-            object0_pos = self.sim.data.get_site_xpos('object0')
-            object1_pos = self.sim.data.get_site_xpos('object1')
-            object2_pos = self.sim.data.get_site_xpos('object2')
-
-            # Object rotation
-            object0_rot_cart = self.sim.data.get_site_xmat('object0')
-            object1_rot_cart = self.sim.data.get_site_xmat('object1')
-            object2_rot_cart = self.sim.data.get_site_xmat('object2')
-            object0_rot = Rotation.as_quat(object0_rot_cart)
-            object1_rot = Rotation.as_quat(object1_rot_cart)
-            object2_rot = Rotation.as_quat(object2_rot_cart)
-
-            # relative object pos
-
+        elif self.reward_type == 'lift':
+            # TODO: Change achieved goal to object position
+            pass
+        else:
             obs = np.concatenate([
                 grip_pos,
                 grip_rot,
@@ -136,16 +213,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 box_pos.ravel(),
                 box_rel_pos.ravel(),
                 box_rot.ravel(),
-                object0_pos,
-                object0_rot,
-                object1_pos,
-                object1_rot,
-                object2_pos,
-                object2_rot,
+                goal_rel_pos,
             ])
-        elif self.reward_type == 'lift':
-            pass
-        else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift')
 
         return {
@@ -207,7 +276,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
     def _reset_sim(self):
         self.sim.set_state(self.initial_state)
-        self.action_counter = 0
+        self.episode_steps = 0
         # Randomize start position of object.
         if self.reward_type == 'reach':
             box_xpos = self.initial_box_xpos[:2] + self.np_random.uniform(-self.box_range, self.box_range, size=2)
@@ -218,9 +287,59 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             self.initial_box_xpos = box_qpos[:3]
             self.sim.data.set_joint_qpos('box:joint', box_qpos)
         elif self.reward_type == 'orient':
-            # Start the simulation just over the box(same space as reach goal)
+            #Randomize box
+            box_xpos = self.initial_box_xpos[:2] + self.np_random.uniform(-self.box_range, self.box_range, size=2)
+            box_qpos = self.sim.data.get_joint_qpos('box:joint')
+            assert box_qpos.shape == (7,)
+            box_qpos[:2] = box_xpos
+            self.initial_box_xpos = box_qpos[:3]
+            self.sim.data.set_joint_qpos('box:joint', box_qpos)
 
-            pass
+            # Start the simulation just over the box(same space as reach goal)
+            target_y_range = 0.05  # The length of the box
+            target_x_range = 0.1  # The width of the box
+            target_height = 0.05  # The height of the box
+
+            # sample a positional init within the box
+            self.box_offset = [
+                float(self.np_random.uniform(-target_x_range, target_x_range)),
+                float(self.np_random.uniform(-target_y_range, target_y_range)),
+                target_height]
+
+            # sample the initial gripper rot
+
+            # TODO: make sure the sampled orientation is valid
+            rot_grip = Rotation.random().as_matrix()
+            #rot_grip = self.sim.data.get_site_xmat('robot0:grip')
+
+            rot_box = self.sim.data.get_site_xmat('box')
+            rot_gb = np.matmul(rot_grip.transpose(), rot_box)
+            p_box = np.array([0, 0, -1])
+            p_g = np.matmul(rot_gb, p_box)
+            alpha = np.arccos(p_g[2]/np.sqrt(p_g[0]**2 + p_g[1]**2 + p_g[2]**2))
+
+            while math.degrees(alpha) > 40:
+                rot_grip = Rotation.random().as_matrix()
+                rot_box = self.sim.data.get_site_xmat('box')
+                rot_gb = np.matmul(rot_grip.transpose(), rot_box)
+                p_box = np.array([0, 0, -1])
+                p_g = np.matmul(rot_gb, p_box)
+                alpha = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
+            # rotate gripper into position
+            #move overbox
+            overbox_pos = box_qpos[:3]+self.box_offset
+            overbox_pos[2] = overbox_pos[2]+0.1
+            self.sim.data.set_mocap_pos('robot0:mocap', overbox_pos)
+            self.sim.data.set_mocap_quat('robot0:mocap', rotations.mat2quat(rot_grip))
+            for _ in range(10):
+                self.sim.step()
+            # go down to box 1
+            self.sim.data.set_mocap_pos('robot0:mocap', box_qpos[:3]+self.box_offset)
+            for _ in range(10):
+                self.sim.step()
+            print('alpha: ', math.degrees(alpha))
+
+
         elif self.reward_type == 'lift':
             # Start the simulation at a closed grasp
             pass
@@ -245,7 +364,15 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             goal = self.sim.data.get_site_xpos('box')[:3] + self.box_offset
 
         elif self.reward_type == 'orient':
-            pass
+            target_y_range = 0.08  # The length of the box
+            target_x_range = 0.125  # The width of the box
+            target_height = 0.05  # The height of the box
+            self.box_offset = [
+                float(self.np_random.uniform(-target_x_range, target_x_range)),
+                float(self.np_random.uniform(-target_y_range, target_y_range)),
+                target_height]
+            #TODO Make this such that the closest object is chosen
+            goal = self.sim.data.get_site_xpos('object1')[:3]
         elif self.reward_type == 'lift':
             pass
         elif self.reward_type == 'place':
@@ -257,8 +384,29 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
     def _is_success(self, achieved_goal, desired_goal):
         # Todo: Add different success criteria depending on the goal
-        d = goal_distance(achieved_goal, desired_goal)
+        if self.reward_type == 'reach':
+            d = goal_distance(self.sim.data.get_site_xpos('robot0:grip'), desired_goal)
+        else:
+            d = goal_distance(achieved_goal, desired_goal)
+        if (d < self.success_threshold).astype(np.float32):
+            print('SUCCESS')
         return (d < self.success_threshold).astype(np.float32)
+
+    def _is_collision(self):
+        #Todo: make less dirty?
+        for i in range(self.sim.data.ncon):
+            contact = self.sim.data.contact[i]
+            if 'robot0' in self.sim.model.geom_id2name(contact.geom1) or 'robot0' in self.sim.model.geom_id2name(contact.geom2):
+                # print('Rob in collision')
+                # print('contact:', i)
+                # print('distance:', contact.dist)
+                # print('geom1:', contact.geom1, self.sim.model.geom_id2name(contact.geom1))
+                # print('geom2:', contact.geom2, self.sim.model.geom_id2name(contact.geom2))
+                # print('contact position:', contact.pos)
+                if 'object' not in self.sim.model.geom_id2name(contact.geom1) or 'object' not in self.sim.model.geom_id2name(contact.geom2):
+                    #print('Collission with non object')
+                    return True
+        return False
 
     def _env_setup(self, initial_qpos):
         for name, value in initial_qpos.items():

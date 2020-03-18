@@ -43,12 +43,12 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
-	parser.add_argument("--env", default="UrPickAndPlace-v0")      	# OpenAI gym environment name
-	parser.add_argument("--reward", default="composite_reward")      	# reward type
-	parser.add_argument("--seed", default=1234, type=int)              # Sets Gym, PyTorch and Numpy seeds
+	parser.add_argument("--env", default="UrBinPicking-v0")      	# OpenAI gym environment name
+	parser.add_argument("--reward", default="orient")      			# reward type
+	parser.add_argument("--seed", default=1234, type=int)           # Sets Gym, PyTorch and Numpy seeds
 	parser.add_argument("--start_timesteps", default=25e3, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
-	parser.add_argument("--max_timesteps", default=8e6, type=int)   # Max time steps to run environment
+	parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
 	parser.add_argument("--expl_noise", default=0.1)                # Std of Gaussian exploration noise
 	parser.add_argument("--batch_size", default=256, type=int)      # Batch size for both actor and critic
 	parser.add_argument("--discount", default=0.99)                 # Discount factor
@@ -166,7 +166,7 @@ if __name__ == "__main__":
 			policy.train(replay_buffer, args.batch_size)
 
 		# If the episode is done or the agent reaches a terminal state or info['is_success']
-		if done:
+		if done or info['is_success']:
 			episode_time_buffer.append(time.time() - episode_real_time)
 			est_time_left = ((sum(episode_time_buffer)/episode_time_buffer.maxlen)/150) * (args.max_timesteps - t)
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True

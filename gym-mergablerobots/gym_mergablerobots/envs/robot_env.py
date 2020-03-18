@@ -140,6 +140,9 @@ class RobotEnv(gym.GoalEnv):
         """
         raise NotImplementedError()
 
+    def _is_collision(self):
+        raise  NotImplementedError()
+
     def _sample_goal(self):
         """Samples a new goal and returns it.
         """
