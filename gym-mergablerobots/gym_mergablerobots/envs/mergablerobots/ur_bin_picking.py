@@ -24,5 +24,5 @@ class UrBinPicking(UrBinPickingEnv, utils.EzPickle):
             initial_qpos=initial_qpos,
             reward_type=reward_type,
             box_range=0.15,
-            success_threshold=0.05)
+            success_threshold=0.02)
         utils.EzPickle.__init__(self)
