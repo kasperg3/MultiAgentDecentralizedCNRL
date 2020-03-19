@@ -9,7 +9,6 @@ MODEL_XML_PATH = ROOT_DIR[:-15] + '/assets/bin_picking.xml'
 class UrBinPicking(UrBinPickingEnv, utils.EzPickle):
     def __init__(self, reward_type='reach'):
         initial_qpos = {
-            # TODO: Create a new initial qpos
             'robot0:joint1': -0,
             'robot0:joint2': -0.2,
             'robot0:joint3': 2,
@@ -24,5 +23,6 @@ class UrBinPicking(UrBinPickingEnv, utils.EzPickle):
             initial_qpos=initial_qpos,
             reward_type=reward_type,
             box_range=0.15,
-            success_threshold=0.02)
+            success_threshold=0.02,
+            lift_threshold=0.12)
         utils.EzPickle.__init__(self)

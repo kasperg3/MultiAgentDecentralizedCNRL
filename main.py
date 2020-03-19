@@ -43,21 +43,22 @@ def main(args):
     policy.load(f"./TD3/models/{policy_file}")
 
     for _ in range(100):
-        state, done = env.reset(), False
-        while not done:
+        state, done, is_success = env.reset(), False, False
+        while not done and not is_success:
             action = policy.select_action(np.array(state))
             state, reward, done, info = env.step(action)
+            is_success = info['is_success']
             env.render()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--policy", default="TD3")  # Policy name (TD3, DDPG or OurDDPG)
-    parser.add_argument("--env", default="UrPickAndPlace-v0")  # OpenAI gym environment name
-    parser.add_argument("--seed", default=0, type=int)  # Sets Gym, PyTorch and Numpy seeds
+    parser.add_argument("--env", default="UrBinPicking-v0")  # OpenAI gym environment name
+    parser.add_argument("--seed", default=1234, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # Max time steps to run environment
     parser.add_argument("--episodes", default=100, type=int)
-    parser.add_argument("--reward_type", default='composite_reward')
+    parser.add_argument("--reward_type", default='reach')
     parser.add_argument("--render", action="store_true")  # Render the Training
     parser.set_defaults(render=True)
     args = parser.parse_args()

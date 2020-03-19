@@ -32,20 +32,23 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                  initial_qpos,
                  reward_type,
                  box_range,
-                 success_threshold):
+                 success_threshold,
+                 lift_threshold):
 
         """Initializes a new Ur environment.
 
-        Args:
-            model_path (string): path to the environments XML file
-            n_substeps (int): number of substeps the simulation runs on every call to step
-            initial_qpos (dict): a dictionary of joint names and values that define the initial configuration
-            reward_type ('sparse' or 'dense'): the reward type, i.e. sparse or dense
+        Args: model_path (string): path to the environments XML file n_substeps (int): number of substeps the
+        simulation runs on every call to step initial_qpos (dict): a dictionary of joint names and values that define
+        the initial configuration reward_type ('sparse' or 'dense'): the reward type, i.e. sparse or dense
+        success_threshold: used for reach, which describes how close to the goal it is to return success
+        lift_threshold: used for lift, and determines how high the object should be lifted from the box in order to
+            return success
         """
         self.episode_steps = 0
         self.reward_type = reward_type
         self.box_range = box_range
         self.success_threshold = success_threshold
+        self.lift_threshold = lift_threshold
         self.collision_array = ['robot0:standoff robot0:forearm_mesh',
                                 'robot0:standoff robot0:wrist1_mesh',
                                 'robot0:standoff robot0:wrist2_mesh',
@@ -95,7 +98,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         # Compute distance between goal and the achieved goal.
         if self.reward_type == 'reach':
             d = goal_distance(achieved_goal, goal)
-            reward = float(-d)
+            penalty_weight = 1
+            box_move_penalty = np.abs(np.linalg.norm(self.sim.data.get_site_xvelp('box')) * penalty_weight)
+            reward = float(-(d + box_move_penalty * d))
         if self.reward_type == 'orient':
             # #angular component
             w_d = 0.75
@@ -122,13 +127,14 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             r_d = 1 - (goal_distance(achieved_goal, goal))**alpha
             if goal_distance(achieved_goal, goal) < self.success_threshold and theta_z < success_angle_z and theta_y < success_angle_y\
                     and theta_x < success_angle_x:
-                #TODO: change '5' if reward gaming!
+                # TODO: change '5' if reward gaming!
                 reward = gamma_t*5
             else:
-                reward = gamma_t*(w_theta*r_theta + w_d*r_d) #rtheta
-
+                reward = gamma_t*(w_theta*r_theta + w_d*r_d)  # rtheta
         if self.reward_type == 'lift':
-            pass
+            # TODO: LIFT compute lift reward
+            # penalty of box movement
+            reward = 0
         return reward
 
     # RobotEnv methods
@@ -176,11 +182,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
         achieved_goal = grip_pos.copy()
 
-        # The relative position to the goal
-        goal_rel_pos = self.goal - achieved_goal
-
         obs = None
         if self.reward_type == 'reach':
+            # The relative position to the goal
+            goal_rel_pos = self.goal - achieved_goal
             # Update the goal to follow the box
             self.goal = self.sim.data.get_site_xpos('box')[:3] + self.box_offset
             obs = np.concatenate([
@@ -194,6 +199,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 goal_rel_pos,
             ])
         elif self.reward_type == 'orient':
+            # The relative position to the goal
+            goal_rel_pos = self.goal - achieved_goal
             # Update the goal to follow the box
             self.goal = self.sim.data.get_site_xpos('object0')[:3]
             obs = np.concatenate([
@@ -207,9 +214,27 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 goal_rel_pos,
             ])
         elif self.reward_type == 'lift':
-            # TODO: Change achieved goal to object position
-            pass
+            # The goal should be static and is x height from the box
+            # The relative position is between object and goal position
+            object_height = self.sim.data.get_site_xpos('object0')[2]
+            goal_rel_height = self.goal - object_height
+
+            # Override achieved_goal to fit with the one dimentional goal of lift(the height of the object)
+            achieved_goal = object_height
+
+            obs = np.concatenate([
+                grip_pos,
+                grip_rot,
+                grip_velp,
+                grip_velr,
+                box_pos.ravel(),
+                box_rel_pos.ravel(),
+                box_rot.ravel(),
+                goal_rel_height,
+            ])
         else:
+            # The relative position to the goal
+            goal_rel_pos = self.goal - achieved_goal
             obs = np.concatenate([
                 grip_pos,
                 grip_rot,
@@ -241,7 +266,13 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         # Visualize target.
         sites_offset = (self.sim.data.site_xpos - self.sim.model.site_pos).copy()
         site_id = self.sim.model.site_name2id('target0')
-        self.sim.model.site_pos[site_id] = self.goal - sites_offset[0]
+        if self.reward_type == 'lift':
+            # Lift only has a height goal, so we set the visualization target to the box xy pos and the goal height
+            visualized_goal = self.sim.data.get_site_xpos('box').copy()
+            visualized_goal[2] = self.goal
+            self.sim.model.site_pos[site_id] = visualized_goal - sites_offset[0]
+        else:
+            self.sim.model.site_pos[site_id] = self.goal - sites_offset[0]
         self.sim.forward()
 
     def print_contact_points(self, object1=None, object2=None):
@@ -288,6 +319,11 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         self.initial_box_xpos = box_qpos[:3]
         self.sim.data.set_joint_qpos('box:joint', box_qpos)
 
+    def sample_point(self, x_range, y_range, z_range):
+        return [
+                float(self.np_random.uniform(-x_range, x_range)),
+                float(self.np_random.uniform(-y_range, y_range)),
+                float(z_range)]
 
     def _reset_sim(self):
         self.sim.set_state(self.initial_state)
@@ -341,8 +377,17 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
         elif self.reward_type == 'lift':
             self.sample_box_position()
-            self.sim.data.set_joint_qpos('object0')
+            self.sim.data.get_site_xpos('object0')
             # Start the simulation with the object between the fingers
+            # sample a position within the box
+            object_offset = self.sample_point(0.1, 0.05, -0.03)
+            box_qpos = self.sim.data.get_joint_qpos('box:joint')
+            object_qpos = self.sim.data.get_joint_qpos('object0:joint')
+            object_qpos[:3] = box_qpos[:3] + object_offset
+            self.sim.data.set_joint_qpos('object0:joint', object_qpos)
+
+            # TODO: LIFT Set the gripper at the object
+            # Use what niko is doing with testing orient
             pass
         elif self.reward_type == 'place':
             # Start the simulation over the box with the
@@ -368,16 +413,15 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             #TODO Make this such that the closest object is chosen
             goal = self.sim.data.get_site_xpos('object1')[:3]
         elif self.reward_type == 'lift':
-            goal = self.sim.data.get_site_xpos('object1')[:3] + [0, 0, 0.05]
+            # The goal is the z height lift_threshold over the box
+            goal = self.sim.data.get_site_xpos('object0')[2] + self.lift_threshold
         elif self.reward_type == 'place':
             pass
         else:
-            target_range = 0.2
-            goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-target_range, target_range, size=3)
+            raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
         return goal.ravel().copy()
 
     def _is_success(self, achieved_goal, desired_goal):
-        # Todo: Add different success criteria depending on the goal
         result = False
         if self.reward_type == 'reach':
             d = goal_distance(self.sim.data.get_site_xpos('robot0:grip'), desired_goal)
@@ -387,7 +431,12 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         elif self.reward_type == 'orient':
             pass
         elif self.reward_type == 'lift':
-            pass
+            # A lift is successful if the object has been lifted lift_threshold over the box
+            object_height = self.sim.data.get_site_xpos('object0')[2]
+            box_height = self.sim.data.get_site_xpos('box')[2]
+            if np.abs(object_height - box_height) > self.lift_threshold:
+                print('SUCCESS')
+            result = (np.abs(object_height - box_height) > self.lift_threshold)
         return result
 
     def _is_failed(self):
