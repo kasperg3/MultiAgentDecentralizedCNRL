@@ -2,8 +2,8 @@ import os
 from gym import utils
 from gym_mergablerobots.envs.ur_bin_picking_env import UrBinPickingEnv
 
-# Ensure we get the path separator correct on windows
-MODEL_XML_PATH = '/home/kagro/workspace/mergableindustrialrobots/gym-mergablerobots/gym_mergablerobots/envs/assets/bin_picking.xml'
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__)) # This is your Project Root
+MODEL_XML_PATH = ROOT_DIR[:-15] + '/assets/bin_picking.xml'
 
 
 class UrBinPicking(UrBinPickingEnv, utils.EzPickle):

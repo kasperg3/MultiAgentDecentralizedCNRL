@@ -3,7 +3,8 @@ from gym import utils
 from gym_mergablerobots.envs.ur_env import UrEnv
 
 # Ensure we get the path separator correct on windows
-MODEL_XML_PATH = '/home/kasper/workspace/mergableindustrialrobots/gym-mergablerobots/gym_mergablerobots/envs/assets/single_robot.xml'
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__)) # This is your Project Root
+MODEL_XML_PATH = ROOT_DIR[:-15] + '/assets/single_robot.xml'
 
 
 class URPickAndPlaceEnv(UrEnv, utils.EzPickle):
