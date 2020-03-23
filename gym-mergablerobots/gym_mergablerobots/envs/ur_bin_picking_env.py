@@ -312,12 +312,12 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
     def sample_box_position(self):
         box_xpos = self.initial_box_xpos[:2] + self.np_random.uniform(-self.box_range, self.box_range, size=2)
-        box_qpos = self.sim.data.get_joint_qpos('box:joint')
-        assert box_qpos.shape == (7,)
-        box_qpos[:2] = box_xpos
+        self.box_qpos = self.sim.data.get_joint_qpos('box:joint')
+        assert self.box_qpos.shape == (7,)
+        self.box_qpos[:2] = box_xpos
         # Set box position
-        self.initial_box_xpos = box_qpos[:3]
-        self.sim.data.set_joint_qpos('box:joint', box_qpos)
+        self.initial_box_xpos = self.box_qpos[:3]
+        self.sim.data.set_joint_qpos('box:joint', self.box_qpos)
 
     def sample_point(self, x_range, y_range, z_range):
         return [
@@ -332,8 +332,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         if self.reward_type == 'reach':
             self.sample_box_position()
         elif self.reward_type == 'orient':
-            self.sample_box_position()
-
             # Start the simulation just over the box(same space as reach goal)
             target_y_range = 0.05  # The length of the box
             target_x_range = 0.1  # The width of the box
@@ -345,33 +343,55 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 float(self.np_random.uniform(-target_y_range, target_y_range)),
                 target_height]
 
+            #Randomize box
+            self.sample_box_position()
+
+            #random object spawn (z-rot and xyz)
+            object_qpos = self.sim.data.get_joint_qpos('object0:joint')
+            object_offset = [
+                float(self.np_random.uniform(-target_x_range, target_x_range)),
+                float(self.np_random.uniform(-target_y_range, target_y_range)),
+                target_height]
+            object_z_angle = float(self.np_random.uniform(-np.pi, np.pi))
+            object_qpos_euler = rotations.quat2euler(object_qpos[3:])
+            object_qpos_euler[2] = object_z_angle
+            object_qpos[3:] = rotations.euler2quat(object_qpos_euler)
+            object_qpos[:3] = self.box_qpos[:3]+object_offset
+
+            #for test or perfect alignment
+            quat_test_grip = np.array([0, 0, 1, 0])
+            euler_test_grip = rotations.quat2euler(quat_test_grip)
+            euler_test_grip[2] = -object_z_angle                    # Negative because the z-axis is opposite
+            quat_test_grip = rotations.euler2quat(euler_test_grip)
+
             # sample the initial gripper rot
             rot_grip = Rotation.random().as_matrix()
-
             rot_box = self.sim.data.get_site_xmat('box')
             rot_gb = np.matmul(rot_grip.transpose(), rot_box)
             p_box = np.array([0, 0, -1])
             p_g = np.matmul(rot_gb, p_box)
-            alpha = np.arccos(p_g[2]/np.sqrt(p_g[0]**2 + p_g[1]**2 + p_g[2]**2))
+            alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
 
-            while math.degrees(alpha) > 40:
+            while math.degrees(alpha_z) > 10:
                 rot_grip = Rotation.random().as_matrix()
-                rot_box = self.sim.data.get_site_xmat('box')
                 rot_gb = np.matmul(rot_grip.transpose(), rot_box)
-                p_box = np.array([0, 0, -1])
                 p_g = np.matmul(rot_gb, p_box)
-                alpha = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
+                alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
+
             # rotate gripper into position
             #move overbox
-            box_qpos = self.sim.data.get_joint_qpos('box:joint')
-            overbox_pos = box_qpos[:3]+gripper_offset
+            overbox_pos = self.box_qpos[:3]+gripper_offset
             overbox_pos[2] = overbox_pos[2]+0.1
-            self.sim.data.set_mocap_pos('robot0:mocap', overbox_pos)
+            self.sim.data.set_mocap_pos('robot0:mocap', overbox_pos)                   #This is the real one
             self.sim.data.set_mocap_quat('robot0:mocap', rotations.mat2quat(rot_grip))
+            grip_test_pos = object_qpos[:3] + [0, 0, 0.1]
+            #self.sim.data.set_mocap_pos('robot0:mocap', grip_test_pos)                #this is test or perfect alignment
+            #self.sim.data.set_mocap_quat('robot0:mocap', quat_test_grip)
             for _ in range(10):
                 self.sim.step()
             # go down to box 1
-            self.sim.data.set_mocap_pos('robot0:mocap', box_qpos[:3]+gripper_offset)
+            self.sim.data.set_mocap_pos('robot0:mocap', self.box_qpos[:3]+gripper_offset)   #real
+            #self.sim.data.set_mocap_pos('robot0:mocap', object_qpos[:3])              #test
             for _ in range(10):
                 self.sim.step()
 
@@ -394,7 +414,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             pass
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
-
         self.sim.forward()
         return True
 
@@ -411,7 +430,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
         elif self.reward_type == 'orient':
             #TODO Make this such that the closest object is chosen
-            goal = self.sim.data.get_site_xpos('object1')[:3]
+            goal = self.sim.data.get_site_xpos('object0')[:3]
         elif self.reward_type == 'lift':
             # The goal is the z height lift_threshold over the box
             goal = self.sim.data.get_site_xpos('object0')[2] + self.lift_threshold
@@ -422,6 +441,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         return goal.ravel().copy()
 
     def _is_success(self, achieved_goal, desired_goal):
+        # Todo: Add different success criteria depending on the goal
         result = False
         if self.reward_type == 'reach':
             d = goal_distance(self.sim.data.get_site_xpos('robot0:grip'), desired_goal)
@@ -429,7 +449,26 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 print('SUCCESS')
             result = (d < self.success_threshold).astype(np.float32)
         elif self.reward_type == 'orient':
-            pass
+            success_angle_z = math.radians(10)
+            success_angle_y = math.radians(10)
+            success_angle_x = math.radians(10)
+
+            body_id1 = self.sim.model.body_name2id('robot0:left_finger')
+            body_id2 = self.sim.model.body_name2id('robot0:right_finger')
+
+            finger_left = self.sim.data.body_xpos[body_id1]
+            finger_right = self.sim.data.body_xpos[body_id2]
+
+            orient_line = finger_left - finger_right
+            theta_x = angle_between(orient_line, (1, 0, 0))
+            theta_y = angle_between(orient_line, (0, 1, 0))
+            theta_z = angle_between(orient_line, (0, 0, 1))
+
+            if goal_distance(achieved_goal, desired_goal) < self.success_threshold and theta_z < success_angle_z and theta_y < success_angle_y\
+                    and theta_x < success_angle_x:
+                #print('SUCCESS ORIENT')
+                result = True
+
         elif self.reward_type == 'lift':
             # A lift is successful if the object has been lifted lift_threshold over the box
             object_height = self.sim.data.get_site_xpos('object0')[2]
