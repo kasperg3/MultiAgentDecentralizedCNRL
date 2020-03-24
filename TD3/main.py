@@ -65,7 +65,7 @@ if __name__ == "__main__":
 	parser.set_defaults(save_model=True)
 	args = parser.parse_args()
 
-	file_name = f"{args.policy}_{args.env}_{args.seed}"
+	file_name = f"{args.policy}_{args.env}_{args.reward}_{args.seed}"
 	print("---------------------------------------")
 	print(f"Policy: {args.policy}, Env: {args.env}, Seed: {args.seed}")
 	print("---------------------------------------")

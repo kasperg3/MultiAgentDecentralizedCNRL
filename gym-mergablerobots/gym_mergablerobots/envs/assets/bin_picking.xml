@@ -1,6 +1,8 @@
 <mujoco model="ur5">
 	<compiler angle="radian" coordinate="local" meshdir="../assets/meshes" texturedir="../assets/textures"/>
-	<option timestep="0.002">
+	<option timestep="0.002"
+            impratio="20"
+			tolerance="1e-10">
 		<flag warmstart="enable"/>
 	</option>
 
@@ -27,7 +29,7 @@
 			<geom size="0.4 1.2 0.2" type="box" name="table0" mass="2000" material="table_mat"/>
 		</body>
         <body name="box" pos="0.50 1.10 0.4">
-			<joint name="box:joint" type="free" damping="0.01"/>
+			<joint name="box:joint" type="free"/>
             <body name="box_bottom" pos="0 0 -0.05" euler="0 0 0">
                 <geom size="0.15 0.10 0.005" type="box" condim="3" name="box_bottom" material="block_mat" mass="5"/>
             </body>
@@ -49,22 +51,10 @@
 		<body name="object0" pos="0.50 1.60 0.45">
 			<joint name="object0:joint" type="free" damping="0.01"/>
 			<geom size="0.015 0.015 0.015" type="box" condim="3" name="object0" material="block_mat" mass="2"/>
-			<site name="object0" pos="0 0 0" size="0.02 0.02 0.02" rgba="1 0 0 1" type="sphere"/>
+			<site name="object0" pos="0 0 0" size="0.01 0.01 0.01" rgba="1 0 0 1" type="sphere"/>
 		</body>
 
-		<body name="object1" pos="0.55 1.60 0.45">
-			<joint name="object1:joint" type="free" damping="0.01"/>
-			<geom size="0.015 0.015 0.015" type="box" condim="3" name="object1" material="block_mat" mass="2"/>
-			<site name="object1" pos="0 0 0" size="0.02 0.02 0.02" rgba="1 0 0 1" type="sphere"/>
-		</body>
-
-		<body name="object2" pos="0.45 1.60 0.45">
-			<joint name="object2:joint" type="free" damping="0.01"/>
-			<geom size="0.015 0.015 0.015" type="box" condim="3" name="object2" material="block_mat" mass="2"/>
-			<site name="object2" pos="0 0 0" size="0.02 0.02 0.02" rgba="1 0 0 1" type="sphere"/>
-		</body>
-
-		<light directional="true" ambient="0.2 0.2 0.2" diffuse="0.8 0.8 0.8" specular="0.3 0.3 0.3" castshadow="false" pos="0 0 4" dir="0 0 -1" name="light0"/>
+		<light directional="true" ambient="0.1 0.1 0.1" diffuse="0.8 0.8 0.8" specular="0.3 0.3 0.3" castshadow="false" pos="0 0 4" dir="0 0 -1" name="light0"/>
 	</worldbody>
 
     <actuator>
