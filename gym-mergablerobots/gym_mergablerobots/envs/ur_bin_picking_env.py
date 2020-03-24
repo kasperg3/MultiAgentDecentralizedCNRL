@@ -522,8 +522,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         result = False
         if self.reward_type == 'reach':
             d = goal_distance(self.sim.data.get_site_xpos('robot0:grip'), desired_goal)
-            if (d < self.success_threshold).astype(np.float32):
-                print('SUCCESS')
             result = (d < self.success_threshold).astype(np.float32)
         elif self.reward_type == 'orient':
             success_angle_z = math.radians(10)
@@ -551,8 +549,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # A lift is successful if the object has been lifted lift_threshold over the box
             object_height = self.sim.data.get_site_xpos('object0')[2]
             table_height = 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
-            if np.abs(object_height - table_height) > self.lift_threshold:
-                print('SUCCESS')
             result = (np.abs(object_height - table_height) > self.lift_threshold)
         return result
 
