@@ -18,9 +18,11 @@ def angle_between(v1, v2):
     v2_u = unit_vector(v2)
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
+
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
     return vector / np.linalg.norm(vector)
+
 
 class UrBinPickingEnv(robot_env.RobotEnv):
     """Superclass for UR environments.
@@ -85,7 +87,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                                 'robot0:forearm_mesh robot0:robotiq_base_mesh',
                                 'robot0:forearm_mesh robot0:robotiq_finger_mesh_r',
                                 'robot0:forearm_mesh robot0:robotiq_finger_mesh_l',
-        ]
+                                ]
 
         super(UrBinPickingEnv, self).__init__(
             model_path=model_path, n_substeps=n_substeps, n_actions=8,
@@ -122,15 +124,16 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             theta_z = angle_between(orient_line, (0, 0, 1))
             angle_45 = math.radians(45)
             angle_90 = math.radians(90)
-            r_theta = 1 - (0.5*(min(theta_x, theta_y)/angle_45)+theta_z/angle_90)**alpha
-            gamma_t = 1 - (self.episode_steps / self.spec.max_episode_steps)**alpha
-            r_d = 1 - (goal_distance(achieved_goal, goal))**alpha
-            if goal_distance(achieved_goal, goal) < self.success_threshold and theta_z < success_angle_z and theta_y < success_angle_y\
+            r_theta = 1 - (0.5 * (min(theta_x, theta_y) / angle_45) + theta_z / angle_90) ** alpha
+            gamma_t = 1 - (self.episode_steps / self.spec.max_episode_steps) ** alpha
+            r_d = 1 - (goal_distance(achieved_goal, goal)) ** alpha
+            if goal_distance(achieved_goal,
+                             goal) < self.success_threshold and theta_z < success_angle_z and theta_y < success_angle_y \
                     and theta_x < success_angle_x:
                 # TODO: change '5' if reward gaming!
-                reward = gamma_t*5
+                reward = gamma_t * 5
             else:
-                reward = gamma_t*(w_theta*r_theta + w_d*r_d)  # rtheta
+                reward = gamma_t * (w_theta * r_theta + w_d * r_d)  # rtheta
         if self.reward_type == 'lift':
             # TODO: LIFT compute lift reward
             # penalty of box movement
@@ -321,9 +324,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
     def sample_point(self, x_range, y_range, z_range):
         return [
-                float(self.np_random.uniform(-x_range, x_range)),
-                float(self.np_random.uniform(-y_range, y_range)),
-                float(z_range)]
+            float(self.np_random.uniform(-x_range, x_range)),
+            float(self.np_random.uniform(-y_range, y_range)),
+            float(z_range)]
 
     def _reset_sim(self):
         self.sim.set_state(self.initial_state)
@@ -343,10 +346,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 float(self.np_random.uniform(-target_y_range, target_y_range)),
                 target_height]
 
-            #Randomize box
+            # Randomize box
             self.sample_box_position()
 
-            #random object spawn (z-rot and xyz)
+            # random object spawn (z-rot and xyz)
             object_qpos = self.sim.data.get_joint_qpos('object0:joint')
             object_offset = [
                 float(self.np_random.uniform(-target_x_range, target_x_range)),
@@ -356,12 +359,12 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             object_qpos_euler = rotations.quat2euler(object_qpos[3:])
             object_qpos_euler[2] = object_z_angle
             object_qpos[3:] = rotations.euler2quat(object_qpos_euler)
-            object_qpos[:3] = self.box_qpos[:3]+object_offset
+            object_qpos[:3] = self.box_qpos[:3] + object_offset
 
-            #for test or perfect alignment
+            # for test or perfect alignment
             quat_test_grip = np.array([0, 0, 1, 0])
             euler_test_grip = rotations.quat2euler(quat_test_grip)
-            euler_test_grip[2] = -object_z_angle                    # Negative because the z-axis is opposite
+            euler_test_grip[2] = -object_z_angle  # Negative because the z-axis is opposite
             quat_test_grip = rotations.euler2quat(euler_test_grip)
 
             # sample the initial gripper rot
@@ -379,19 +382,19 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
 
             # rotate gripper into position
-            #move overbox
-            overbox_pos = self.box_qpos[:3]+gripper_offset
-            overbox_pos[2] = overbox_pos[2]+0.1
-            self.sim.data.set_mocap_pos('robot0:mocap', overbox_pos)                   #This is the real one
+            # move overbox
+            overbox_pos = self.box_qpos[:3] + gripper_offset
+            overbox_pos[2] = overbox_pos[2] + 0.1
+            self.sim.data.set_mocap_pos('robot0:mocap', overbox_pos)  # This is the real one
             self.sim.data.set_mocap_quat('robot0:mocap', rotations.mat2quat(rot_grip))
             grip_test_pos = object_qpos[:3] + [0, 0, 0.1]
-            #self.sim.data.set_mocap_pos('robot0:mocap', grip_test_pos)                #this is test or perfect alignment
-            #self.sim.data.set_mocap_quat('robot0:mocap', quat_test_grip)
+            # self.sim.data.set_mocap_pos('robot0:mocap', grip_test_pos)                #this is test or perfect alignment
+            # self.sim.data.set_mocap_quat('robot0:mocap', quat_test_grip)
             for _ in range(10):
                 self.sim.step()
             # go down to box 1
-            self.sim.data.set_mocap_pos('robot0:mocap', self.box_qpos[:3]+gripper_offset)   #real
-            #self.sim.data.set_mocap_pos('robot0:mocap', object_qpos[:3])              #test
+            self.sim.data.set_mocap_pos('robot0:mocap', self.box_qpos[:3] + gripper_offset)  # real
+            # self.sim.data.set_mocap_pos('robot0:mocap', object_qpos[:3])              #test
             for _ in range(10):
                 self.sim.step()
 
@@ -429,7 +432,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             goal = self.sim.data.get_site_xpos('box')[:3] + self.box_offset
 
         elif self.reward_type == 'orient':
-            #TODO Make this such that the closest object is chosen
+            # TODO Make this such that the closest object is chosen
             goal = self.sim.data.get_site_xpos('object0')[:3]
         elif self.reward_type == 'lift':
             # The goal is the z height lift_threshold over the box
@@ -464,9 +467,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             theta_y = angle_between(orient_line, (0, 1, 0))
             theta_z = angle_between(orient_line, (0, 0, 1))
 
-            if goal_distance(achieved_goal, desired_goal) < self.success_threshold and theta_z < success_angle_z and theta_y < success_angle_y\
+            if goal_distance(achieved_goal,
+                             desired_goal) < self.success_threshold and theta_z < success_angle_z and theta_y < success_angle_y \
                     and theta_x < success_angle_x:
-                #print('SUCCESS ORIENT')
+                # print('SUCCESS ORIENT')
                 result = True
 
         elif self.reward_type == 'lift':
@@ -490,18 +494,20 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         return result
 
     def _is_collision(self):
-        #Todo: make less dirty?
+        # Todo: make less dirty?
         for i in range(self.sim.data.ncon):
             contact = self.sim.data.contact[i]
-            if 'robot0' in self.sim.model.geom_id2name(contact.geom1) or 'robot0' in self.sim.model.geom_id2name(contact.geom2):
+            if 'robot0' in self.sim.model.geom_id2name(contact.geom1) or 'robot0' in self.sim.model.geom_id2name(
+                    contact.geom2):
                 # print('Rob in collision')
                 # print('contact:', i)
                 # print('distance:', contact.dist)
                 # print('geom1:', contact.geom1, self.sim.model.geom_id2name(contact.geom1))
                 # print('geom2:', contact.geom2, self.sim.model.geom_id2name(contact.geom2))
                 # print('contact position:', contact.pos)
-                if 'object' not in self.sim.model.geom_id2name(contact.geom1) or 'object' not in self.sim.model.geom_id2name(contact.geom2):
-                    #print('Collission with non object')
+                if 'object' not in self.sim.model.geom_id2name(
+                        contact.geom1) or 'object' not in self.sim.model.geom_id2name(contact.geom2):
+                    # print('Collission with non object')
                     return True
         return False
 
