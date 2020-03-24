@@ -24,5 +24,5 @@ class UrBinPicking(UrBinPickingEnv, utils.EzPickle):
             reward_type=reward_type,
             box_range=0.15,
             success_threshold=0.02,
-            lift_threshold=0.12)
+            lift_threshold=0.20)
         utils.EzPickle.__init__(self)

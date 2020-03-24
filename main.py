@@ -36,7 +36,7 @@ def main(args):
     elif args.policy == "DDPG":
         policy = TD3.DDPG.DDPG(**kwargs)
 
-    policy_file = f"{args.policy}_{args.env}_{args.seed}"
+    policy_file = f"{args.policy}_{args.env}_{args.reward_type}_{args.seed}"
     print("---------------------------------------")
     print(f"Loading existing model from: ./models/{policy_file}")
     print("---------------------------------------")
