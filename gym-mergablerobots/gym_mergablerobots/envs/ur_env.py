@@ -54,7 +54,6 @@ class UrEnv(robot_env.RobotEnv):
     # ----------------------------
 
     def is_grasped(self, b_z):
-        # TODO: calibrate this threshold
         return (b_z > 0.025).astype(np.bool)
 
     def is_stacked(self,  object0, object1):
@@ -70,7 +69,6 @@ class UrEnv(robot_env.RobotEnv):
 
 
     def is_reached(self, object, gripper):
-        # TODO: calibrate this threshold
         cube_threshold = [0.020, 0.020, 0.020]
         if abs(object[0] - gripper[0]) < cube_threshold[0] and \
            abs(object[1] - gripper[1]) < cube_threshold[1] and \
@@ -104,7 +102,7 @@ class UrEnv(robot_env.RobotEnv):
             s_B2 = self.goal  # The position where object1 will lay once stacked
             b_z = s_B1[2] - 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
             s_P = self.sim.data.get_site_xpos('robot0:grip')
-            w1 = 1.125  # TODO: Tune these
+            w1 = 1.125
             w2 = 1.3  #
 
             # if the blocks are stacked return the maximum reward
@@ -354,7 +352,6 @@ class UrEnv(robot_env.RobotEnv):
         return goal.copy()
 
     def _is_success(self, achieved_goal, desired_goal):
-        # Todo: Add different success functions depending on the goal
         d = goal_distance(achieved_goal, desired_goal)
         result = (d < self.distance_threshold).astype(np.float32)
 

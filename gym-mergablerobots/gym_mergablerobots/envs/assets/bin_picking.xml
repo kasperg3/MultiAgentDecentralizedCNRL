@@ -2,8 +2,9 @@
 	<compiler angle="radian" coordinate="local" meshdir="../assets/meshes" texturedir="../assets/textures"/>
 	<option timestep="0.002"
             impratio="20"
-			tolerance="1e-10">
-		<flag warmstart="enable"/>
+			noslip_tolerance="1e-10"
+            noslip_iterations="100"
+            cone="elliptic">
 	</option>
 
     <include file="shared.xml"/>
@@ -49,8 +50,8 @@
 		</body>
 
 		<body name="object0" pos="0.50 1.60 0.45">
-			<joint name="object0:joint" type="free" damping="0.01"/>
-			<geom size="0.015 0.015 0.015" type="box" condim="3" name="object0" material="block_mat" mass="2"/>
+			<joint name="object0:joint" type="free" frictionloss="0" damping="0"/>
+			<geom size="0.015 0.015 0.015" type="box" name="object0" material="block_mat" mass="2" condim="3" friction="1.2 0.05 0.01"/>
 			<site name="object0" pos="0 0 0" size="0.01 0.01 0.01" rgba="1 0 0 1" type="sphere"/>
 		</body>
 
@@ -58,7 +59,7 @@
 	</worldbody>
 
     <actuator>
-		<position ctrllimited="true" ctrlrange="0 1" joint="robot0:joint7_l" kp="10000" name="robot0:l_gripper_finger_joint" user="1"/>
-		<position ctrllimited="true" ctrlrange="0 1" joint="robot0:joint7_r" kp="10000" name="robot0:r_gripper_finger_joint" user="1"/>
+		<position ctrllimited="true" ctrlrange="0 1" joint="robot0:joint7_l" kp="20000" name="robot0:l_gripper_finger_joint" user="1"/>
+		<position ctrllimited="true" ctrlrange="0 1" joint="robot0:joint7_r" kp="20000" name="robot0:r_gripper_finger_joint" user="1"/>
     </actuator>
 </mujoco>
