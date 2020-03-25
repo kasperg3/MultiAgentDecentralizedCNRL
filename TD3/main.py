@@ -17,7 +17,7 @@ import gym_mergablerobots
 from gym.wrappers import FlattenObservation, FilterObservation
 
 
-def eval_policy(policy, reward_type, env_name, seed, eval_episodes=10):
+def eval_policy(policy, reward_type, env_name, seed, eval_episodes=15):
 	eval_env = gym.make(env_name, reward_type=str(reward_type))
 	eval_env = FlattenObservation(FilterObservation(eval_env, ['observation', 'desired_goal']))
 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 		print("---------------------------------------")
 
 	replay_buffer = utils.ReplayBuffer(state_dim, action_dim)
-	
+
 	# Evaluate untrained policy
 	evaluations = [eval_policy(policy, args.reward, args.env, args.seed)]
 
@@ -176,7 +176,8 @@ if __name__ == "__main__":
 				   	f"Episode T: {episode_timesteps} | "
 				   	f"Reward: {episode_reward:.3f} | "
 				   	f"Episode time: {time.time() - episode_real_time:.2f} [seconds] | "
-				   	f"Estimated time left: {est_time_left/60:.2f} [minutes]")
+				   	f"Estimated time left: {est_time_left/60:.2f} [minutes] | "
+					f"Success:  {info['is_success']}")
 			# Reset environment
 			state, done = env.reset(), False
 			episode_reward = 0
@@ -189,6 +190,7 @@ if __name__ == "__main__":
 			evaluations.append(eval_policy(policy, args.reward, args.env, args.seed))
 			np.save(f"./results/{file_name}_test", evaluations)
 			np.save(f"./results/{file_name}_train", episode_reward)
+			# TODO: Only save the best evaluation of the model
 			if args.save_model:
 				policy.save(f"./models/{file_name}")
 			episode_real_time = time.time()

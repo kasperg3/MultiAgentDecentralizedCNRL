@@ -193,6 +193,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         box_rel_pos = box_pos - grip_pos
         box_rot = rotations.mat2euler(self.sim.data.get_site_xmat('box'))
 
+        object_pos = self.sim.data.get_site_xpos('object0')
+        object_rel_pos = object_pos - grip_pos
+        object_rot = rotations.mat2euler(self.sim.data.get_site_xmat('object0'))
+
         achieved_goal = grip_pos.copy()
 
         obs = None
@@ -221,6 +225,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 grip_rot,
                 grip_velp,
                 grip_velr,
+                object_pos.ravel(),
+                object_rel_pos.ravel(),
+                object_rot.ravel(),
                 box_pos.ravel(),
                 box_rel_pos.ravel(),
                 box_rot.ravel(),
@@ -231,7 +238,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # The relative position is between object and goal position
             object_height = self.sim.data.get_site_xpos('object0')[2]
             goal_rel_height = self.goal - object_height
-
             # Override achieved_goal to fit with the one dimentional goal of lift(the height of the object)
             achieved_goal = object_height
 
@@ -240,6 +246,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 grip_rot,
                 grip_velp,
                 grip_velr,
+                object_pos.ravel(),
+                object_rel_pos.ravel(),
                 box_pos.ravel(),
                 box_rel_pos.ravel(),
                 box_rot.ravel(),
@@ -487,7 +495,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             #     self.render()
             #     self.sim.step()
         elif self.reward_type == 'place':
-            # Start the simulation over the box with the
+            # TODO: PLACE Start the simulation over the box
             pass
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
@@ -512,6 +520,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # The goal is the z height lift_threshold over the box
             goal = self.sim.data.get_site_xpos('object0')[2] + self.lift_threshold
         elif self.reward_type == 'place':
+            # TODO: implement place sample_goal()
             pass
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
@@ -544,12 +553,17 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                     and theta_x < success_angle_x:
                 # print('SUCCESS ORIENT')
                 result = True
-
         elif self.reward_type == 'lift':
             # A lift is successful if the object has been lifted lift_threshold over the box
             object_height = self.sim.data.get_site_xpos('object0')[2]
             table_height = 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
             result = (np.abs(object_height - table_height) > self.lift_threshold)
+            result = False
+            # TODO: make sure that the block is in the "goal" zone in x timesteps
+        elif self.reward_type == 'place':
+            # TODO: PLACE, implement is_success
+            result = False
+
         return result
 
     def _is_failed(self):
