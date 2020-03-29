@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", default=1234, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # Max time steps to run environment
     parser.add_argument("--episodes", default=100, type=int)
-    parser.add_argument("--reward_type", default='reach')
+    parser.add_argument("--reward_type", default='orient')
     parser.add_argument("--render", action="store_true")  # Render the Training
     parser.set_defaults(render=True)
     args = parser.parse_args()
