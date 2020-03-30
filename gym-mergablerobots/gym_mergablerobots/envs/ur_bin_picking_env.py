@@ -106,14 +106,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             reward = float(-(d + box_move_penalty * d))
         elif self.reward_type == 'orient':
             # #angular component
-            w_d = 0.33
-            w_theta = 0.66
-            success_angle_low_z = math.radians(45)
-            success_angle_low_y = math.radians(20)
-            success_angle_low_x = math.radians(20)
-            success_angle_high_z = math.radians(135)
-            success_angle_high_y = math.radians(70)
-            success_angle_high_x = math.radians(70)
+            w_d = 0.5
+            w_theta = 0.5
             alpha = 0.4
 
             body_id1 = self.sim.model.body_name2id('robot0:left_finger')
@@ -124,31 +118,29 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
             orient_line = finger_left - finger_right
             rot_object0 = self.sim.data.get_site_xmat('object0')
-            theta_x = angle_between(orient_line, np.matmul(rot_object0, (1, 0, 0)))
-            theta_y = angle_between(orient_line, np.matmul(rot_object0, (0, 1, 0)))
+            theta_x = min(angle_between(orient_line, np.matmul(rot_object0, (1, 0, 0))), angle_between(orient_line, np.matmul(rot_object0, (-1, 0, 0))))
+            theta_y = min(angle_between(orient_line, np.matmul(rot_object0, (0, 1, 0))), angle_between(orient_line, np.matmul(rot_object0, (0, -1, 0))))
             theta_z = angle_between(orient_line, np.matmul(rot_object0, (0, 0, 1)))
             angle_45 = math.radians(45)
             angle_90 = math.radians(90)
-            r_theta = 1 - (0.5 * (min(theta_x, theta_y) / angle_45) + theta_z / angle_90) ** alpha
-            gamma_t = 1 - (self.episode_steps / self.spec.max_episode_steps) ** alpha
-            r_d = 1 - (goal_distance(achieved_goal, goal)) ** alpha
-
-            box_vel = self.sim.data.get_site_xvelp('box')
-            box_pos = self.sim.data.get_site_xpos('box')
-            box_pos_difference = goal_distance(box_pos, self.initial_box_xpos)
-            vel_threshold = 0.3  # m/s?
-            #if np.linalg.norm(box_vel) > vel_threshold: #failed
-            #    reward = -1
-            if (goal_distance(achieved_goal, goal) < self.success_threshold):  # Close xyz
-                #print('zyx:{}, {}, {}'.format(math.degrees(theta_z), math.degrees(theta_y), math.degrees(theta_x)))
-                if (success_angle_high_z > theta_z > success_angle_low_z and (
-                        success_angle_high_y < theta_y % (np.pi / 2) or theta_y % (np.pi / 2) < success_angle_low_y) \
-                        or (success_angle_high_x < theta_x % (np.pi / 2) or theta_x % (
-                                np.pi / 2) < success_angle_low_x)):
-                    # TODO: change '10' if reward gaming!
-                    reward = gamma_t * 10 #- box_pos_difference
+            if theta_z > 2 * angle_90:
+                theta_z = 2 * angle_90
+            if np.abs(theta_x - 45) > np.abs(theta_y - 45):
+                r_theta = 1 - (0.5 * (theta_x / angle_45 + theta_z / angle_90) ** alpha)
             else:
-                reward = gamma_t * (w_theta * r_theta + w_d * r_d)  #- box_pos_difference
+                r_theta = 1 - (0.5 * (theta_y / angle_45 + theta_z / angle_90) ** alpha)
+
+            gamma_t = 1 - (self.episode_steps / self.spec.max_episode_steps) ** alpha
+            if goal_distance(achieved_goal, goal) < self.initial_goal_distance:
+                r_d = 1 - (goal_distance(achieved_goal, goal)/self.initial_goal_distance) ** alpha
+            else:
+                r_d = 1 - 1 ** alpha
+
+            if goal_distance(achieved_goal, goal) < self.success_threshold and (np.abs(theta_x - angle_45 ) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
+                # if close-euclidean and ( low-x-angle or low-y-angle ) and good-z-angle
+                reward = gamma_t * 2
+            else:
+                reward = gamma_t * (w_theta * r_theta + w_d * r_d)
         elif self.reward_type == 'lift':
             d = abs((goal - achieved_goal))
             penalty_weight = 10
@@ -190,7 +182,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         action = action.copy()  # ensure that we don't change the action outside of this scope
         pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
         pos_ctrl *= 0.01  # limit maximum change in position
-        rot_ctrl *= 0.1
+        rot_ctrl *= 0.01
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
         if self.reward_type == 'reach':
@@ -444,6 +436,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # self.sim.data.set_mocap_pos('robot0:mocap', object_qpos[:3])              #test
             for _ in range(10):
                 self.sim.step()
+            self.initial_goal_distance = goal_distance(overbox_pos, object_qpos[:3])
 
         elif self.reward_type == 'lift':
             self.sample_box_position()
@@ -598,13 +591,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             d = goal_distance(self.sim.data.get_site_xpos('robot0:grip'), desired_goal)
             result = (d < self.success_threshold).astype(np.float32)
         elif self.reward_type == 'orient':
-            success_angle_low_z = math.radians(45)
-            success_angle_low_y = math.radians(20)
-            success_angle_low_x = math.radians(20)
-            success_angle_high_z = math.radians(135)
-            success_angle_high_y = math.radians(70)
-            success_angle_high_x = math.radians(70)
-
             body_id1 = self.sim.model.body_name2id('robot0:left_finger')
             body_id2 = self.sim.model.body_name2id('robot0:right_finger')
 
@@ -613,16 +599,19 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
             orient_line = finger_left - finger_right
             rot_object0 = self.sim.data.get_site_xmat('object0')
-            theta_x = angle_between(orient_line, np.matmul(rot_object0, (1, 0, 0)))
-            theta_y = angle_between(orient_line, np.matmul(rot_object0, (0, 1, 0)))
+            theta_x = min(angle_between(orient_line, np.matmul(rot_object0, (1, 0, 0))),
+                          angle_between(orient_line, np.matmul(rot_object0, (-1, 0, 0))))
+            theta_y = min(angle_between(orient_line, np.matmul(rot_object0, (0, 1, 0))),
+                          angle_between(orient_line, np.matmul(rot_object0, (0, -1, 0))))
             theta_z = angle_between(orient_line, np.matmul(rot_object0, (0, 0, 1)))
+            angle_45 = math.radians(45)
+            angle_90 = math.radians(90)
+            if theta_z > 2 * angle_90:
+                theta_z = 2 * angle_90
 
-            if (goal_distance(achieved_goal, desired_goal) < self.success_threshold):  # Close xyz
-                if (success_angle_high_z > theta_z > success_angle_low_z and (
-                        success_angle_high_y < theta_y % (np.pi / 2) or theta_y % (np.pi / 2) < success_angle_low_y) \
-                        or (success_angle_high_x < theta_x % (np.pi / 2) or theta_x % (
-                                np.pi / 2) < success_angle_low_x)):
-                    result = True
+            if goal_distance(achieved_goal, desired_goal) < self.success_threshold and (np.abs(theta_x - angle_45) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
+                # if close-euclidean and ( low-x-angle or low-y-angle ) and good-z-angle
+                result = True
         elif self.reward_type == 'lift':
             # A lift is successful if the object has been lifted lift_threshold over the box
             object_height = self.sim.data.get_site_xpos('object0')[2]
