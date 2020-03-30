@@ -148,21 +148,21 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             box_move_penalty = np.abs(np.linalg.norm(self.sim.data.get_site_xvelp('box')) * penalty_weight)
             reward = float(-(d + box_move_penalty * d))
         elif self.reward_type == 'place':
-            # TODO PLACE TEST THIS
             # Positional difference
-            dist = goal_distance(achieved_goal, goal)
-            dist_ref = goal_distance(self.sim.data.get_site_xpos('box'), goal)
+            dist = goal_distance(achieved_goal[:3], goal[:3])
+            dist_ref = goal_distance(self.initial_box_xpos, goal[:3])
             # Clip the score such that it will not be positive
-            position_score = -(np.square(np.tanh(np.clip((dist / dist_ref), -1, 0) - 1)))
+            position_score = -(np.square(np.tanh(np.clip((dist / dist_ref), 0, 1))))
             # Rotational difference between two quaternions
-            q1 = Rotation.from_matrix(self.sim.data.get_site_xmat('object0')).as_quat()
-            q2 = Rotation.from_matrix(self.sim.data.get_site_xmat('robot0:grip')).as_quat()
+            q1 = Rotation.from_matrix(self.sim.data.get_site_xmat('robot0:grip')).as_quat()
+            q2 = Rotation.from_quat(self.goal[3:]).as_quat()
 
-            theta = -np.square(np.sum(np.multiply(q1, q2)))
+            theta = 1 - np.square(np.sum(np.multiply(q1, q2)))
             rotation_score = -np.square(np.tanh(theta))
             # reward weights
-            w1 = w2 = 1
-            reward = rotation_score * w1 + position_score * w2
+            w1 = 0.3
+            w2 = 0.7
+            reward = position_score * w2
         return reward
 
     # RobotEnv methods
@@ -208,7 +208,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
         box_pos = self.sim.data.get_site_xpos('box')
         box_rel_pos = box_pos - grip_pos
-        box_rot = rotations.mat2euler(self.sim.data.get_site_xmat('box'))
+        box_rot = Rotation.from_matrix(self.sim.data.get_site_xmat('box')).as_quat()
 
         object_pos = self.sim.data.get_site_xpos('object0')
         object_rel_pos = object_pos - grip_pos
@@ -272,7 +272,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             ])
         elif self.reward_type == 'place':
             # The relative position to the goal
-            goal_rel_pos = self.goal - achieved_goal
+            achieved_goal = np.concatenate((grip_pos, grip_rot))
+            goal_rel_pos = self.goal[:3] - achieved_goal[:3]
             obs = np.concatenate([
                 grip_pos,
                 grip_rot,
@@ -313,6 +314,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             visualized_goal = self.sim.data.get_site_xpos('box').copy()
             visualized_goal[2] = self.goal
             self.sim.model.site_pos[site_id] = visualized_goal - sites_offset[0]
+        elif self.reward_type == 'place':
+            # Place also has a orientation as goal
+            self.sim.model.site_pos[site_id] = self.goal[:3] - sites_offset[0]
+            self.sim.model.site_quat[site_id] = self.goal[3:]
         else:
             self.sim.model.site_pos[site_id] = self.goal - sites_offset[0]
         self.sim.forward()
@@ -365,7 +370,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         return [
             float(self.np_random.uniform(-x_range, x_range)),
             float(self.np_random.uniform(-y_range, y_range)),
-            float(z_range)]
+            float(self.np_random.uniform(-z_range, z_range))]
 
     def _reset_sim(self):
         self.sim.set_state(self.initial_state)
@@ -553,7 +558,19 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 # self.render()
                 self.sim.step()
 
-
+            # Grasp and lift the gripper
+            action = np.concatenate([[0, 0, 0], [0, 0, 0, 0], [0.3, 0.3]])
+            # Apply action to simulation.
+            utils.ctrl_set_action(self.sim, action)
+            utils.mocap_set_action(self.sim, action)
+            for _ in range(10):
+                self.sim.step()
+            action = np.concatenate([[0, 0, self.lift_threshold], [0, 0, 0, 0], [0.3, 0.3]])
+            # Apply action to simulation.
+            utils.ctrl_set_action(self.sim, action)
+            utils.mocap_set_action(self.sim, action)
+            for _ in range(10):
+                self.sim.step()
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
         self.sim.forward()
@@ -576,11 +593,31 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # The goal is the z height lift_threshold over the box
             goal = self.sim.data.get_site_xpos('object0')[2] + self.lift_threshold
         elif self.reward_type == 'place':
-            # TODO: PLACE test this
             # goal zone size 10x10cm
             goal_offset = self.sample_point(0.1, 0.1, 0.01)
-            goal = np.array([0.5, 1.6, 0.45]) + goal_offset # A goal just beside the robot
-            # TODO sample a goal rotation aswell
+
+            goal_height = 0.43
+            if bool(np.random.binomial(1, 0.5)):
+                goal_height = 0.6
+                goal_offset = self.sample_point(0.1, 0.1, 0.10)
+
+            goal_pos = np.array([0.63, 0.5, goal_height]) + goal_offset  # A goal just beside the robot
+
+            #Sample a random rotation
+            rot_grip = Rotation.random().as_matrix()
+            rot_box = self.sim.data.get_site_xmat('box')
+            rot_gb = np.matmul(rot_grip.transpose(), rot_box)
+            p_box = np.array([0, 0, -1])
+            p_g = np.matmul(rot_gb, p_box)
+            alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
+
+            while math.degrees(alpha_z) > 15:
+                rot_grip = Rotation.random().as_matrix()
+                rot_gb = np.matmul(rot_grip.transpose(), rot_box)
+                p_g = np.matmul(rot_gb, p_box)
+                alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
+
+            goal = np.concatenate((goal_pos, rotations.mat2quat(rot_grip)))
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
         return goal.ravel().copy()
