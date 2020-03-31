@@ -40,7 +40,7 @@ def main(args):
     print("---------------------------------------")
     print(f"Loading existing model from: ./models/{policy_file}")
     print("---------------------------------------")
-    policy.load(f"./TD3/models/{policy_file}")
+    policy.load(f"./models/{policy_file}")
 
     for _ in range(100):
         state, done, is_success = env.reset(), False, False
@@ -54,11 +54,11 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--policy", default="TD3")  # Policy name (TD3, DDPG or OurDDPG)
-    parser.add_argument("--env", default="UrBinPicking-v0")  # OpenAI gym environment name
+    parser.add_argument("--env", default="UrBinPickingLift-v0")  # OpenAI gym environment name
     parser.add_argument("--seed", default=1234, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # Max time steps to run environment
     parser.add_argument("--episodes", default=100, type=int)
-    parser.add_argument("--reward_type", default='orient')
+    parser.add_argument("--reward_type", default='lift')
     parser.add_argument("--render", action="store_true")  # Render the Training
     parser.set_defaults(render=True)
     args = parser.parse_args()

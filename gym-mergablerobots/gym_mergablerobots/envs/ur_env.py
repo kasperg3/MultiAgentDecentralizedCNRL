@@ -173,7 +173,7 @@ class UrEnv(robot_env.RobotEnv):
         action = action.copy()  # ensure that we don't change the action outside of this scope
         pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
         pos_ctrl *= 0.01  # limit maximum change in position
-        rot_ctrl *= 0.1
+        rot_ctrl *= 0.01
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
         if self.block_gripper:
@@ -354,10 +354,8 @@ class UrEnv(robot_env.RobotEnv):
     def _is_success(self, achieved_goal, desired_goal):
         d = goal_distance(achieved_goal, desired_goal)
         result = (d < self.distance_threshold).astype(np.float32)
-
-        if(self.reward_type is 'composite_reward'):
+        if self.reward_type is 'composite_reward':
             result = ((self.sim.data.get_site_xpos('object0') - 0.414) < 0.04).astype(np.float32)
-
         return result
 
     def _env_setup(self, initial_qpos):
