@@ -9,20 +9,26 @@ for reward_type in ['sparse', 'dense', 'place', 'orient', 'lift', 'reach']:
     elif reward_type == 'lift':
         suffix = 'Lift'
     elif reward_type == 'orient':
+        episode_steps = 150
         suffix = 'Orient'
     elif reward_type == 'reach':
         suffix = 'Reach'
-
+    elif reward_type == 'dense':
+        episode_steps = 70
+    elif reward_type == 'composite_reward':
+        episode_steps = 150
+    elif reward_type == 'sparse':
+        episode_steps = 150
 
     kwargs = {
         'reward_type': reward_type,
     }
-    if reward_type == 'sparse' or reward_type == 'dense':
+    if reward_type == 'sparse' or reward_type == 'dense' or reward_type == 'composite_reward':
         register(
             id='UrPickAndPlace{}-v0'.format(suffix),
             entry_point='gym_mergablerobots.envs:URPickAndPlaceEnv',
             kwargs=kwargs,
-            max_episode_steps=150,
+            max_episode_steps=episode_steps,
         )
 
         register(

@@ -106,8 +106,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             reward = float(-(d + box_move_penalty * d))
         elif self.reward_type == 'orient':
             # #angular component
-            w_d = 0.5
-            w_theta = 0.5
+            w_d = 1
+            w_theta = 1
             alpha = 0.4
 
             body_id1 = self.sim.model.body_name2id('robot0:left_finger')
@@ -123,21 +123,16 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             theta_z = angle_between(orient_line, np.matmul(rot_object0, (0, 0, 1)))
             angle_45 = math.radians(45)
             angle_90 = math.radians(90)
-            if theta_z > 2 * angle_90:
-                theta_z = 2 * angle_90
+            if theta_z > angle_90:
+                theta_z = angle_90 - (np.abs(theta_z) - angle_90)
             if np.abs(theta_x - 45) > np.abs(theta_y - 45):
-                r_theta = 1 - (0.5 * (theta_x / angle_45 + theta_z / angle_90) ** alpha)
+                r_theta = -(1-(np.clip((0.5*((1-(theta_x / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
             else:
-                r_theta = 1 - (0.5 * (theta_y / angle_45 + theta_z / angle_90) ** alpha)
+                r_theta = -(1-(np.clip((0.5*((1-(theta_y / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
 
-            gamma_t = 1 - (self.episode_steps / self.spec.max_episode_steps) ** alpha
-            r_d = 1 - np.clip((goal_distance(achieved_goal, goal) / self.initial_goal_distance), 0, 1) ** alpha
+            r_d = -(np.clip((goal_distance(achieved_goal, goal) / self.initial_goal_distance), 0, 1) ** alpha)
 
-            if goal_distance(achieved_goal, goal) < self.success_threshold and (np.abs(theta_x - angle_45 ) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
-                # if close-euclidean and ( low-x-angle or low-y-angle ) and good-z-angle
-                reward = gamma_t * 2
-            else:
-                reward = gamma_t * (w_theta * r_theta + w_d * r_d)
+            reward = (w_theta * r_theta + w_d * r_d)
         elif self.reward_type == 'lift':
             d = abs((goal - achieved_goal))
             penalty_weight = 10
@@ -163,7 +158,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             rotation_score = -np.square(np.tanh(theta))
             # reward weights
             w1 = 1
-            w2 = 0.5
+            w2 = 0.7
             reward = rotation_score * w1 + position_score * w2
         return reward
 
@@ -606,12 +601,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         elif self.reward_type == 'place':
             # goal zone size 10x10cm
             goal_offset = self.sample_point(0.1, 0.1, 0.01)
-
             goal_height = 0.43
-            if bool(np.random.binomial(1, 0.5)):
-                goal_height = 0.6
-                goal_offset = self.sample_point(0.1, 0.1, 0.10)
-
             goal_pos = np.array([0.63, 0.5, goal_height]) + goal_offset  # A goal just beside the robot
 
             #Sample a random rotation
@@ -665,7 +655,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             object_height = self.sim.data.get_site_xpos('object0')[2]
             table_height = 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
             result = (np.abs(object_height - table_height) > self.lift_threshold)
-            result = False
             # TODO: LIFT make sure that the block is in the "goal" zone in x timesteps
         elif self.reward_type == 'place':
             # TODO: PLACE, implement is_success
