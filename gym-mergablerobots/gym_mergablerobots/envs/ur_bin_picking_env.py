@@ -90,7 +90,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                                 ]
 
         super(UrBinPickingEnv, self).__init__(
-            model_path=model_path, n_substeps=n_substeps, n_actions=8,
+            model_path=model_path, n_substeps=n_substeps, n_actions=5,
             initial_qpos=initial_qpos)
 
     # GoalEnv methods
@@ -106,9 +106,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             reward = float(-(d + box_move_penalty * d))
         elif self.reward_type == 'orient':
             # #angular component
-            w_d = 1
+            w_d = 2
             w_theta = 1
-            alpha = 0.4
+            alpha = 0.6
 
             body_id1 = self.sim.model.body_name2id('robot0:left_finger')
             body_id2 = self.sim.model.body_name2id('robot0:right_finger')
@@ -120,18 +120,17 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             rot_object0 = self.sim.data.get_site_xmat('object0')
             theta_x = min(angle_between(orient_line, np.matmul(rot_object0, (1, 0, 0))), angle_between(orient_line, np.matmul(rot_object0, (-1, 0, 0))))
             theta_y = min(angle_between(orient_line, np.matmul(rot_object0, (0, 1, 0))), angle_between(orient_line, np.matmul(rot_object0, (0, -1, 0))))
-            theta_z = angle_between(orient_line, np.matmul(rot_object0, (0, 0, 1)))
             angle_45 = math.radians(45)
-            angle_90 = math.radians(90)
-            if theta_z > angle_90:
-                theta_z = angle_90 - (np.abs(theta_z) - angle_90)
-            if np.abs(theta_x - 45) > np.abs(theta_y - 45):
-                r_theta = -(1-(np.clip((0.5*((1-(theta_x / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
+
+            theta_x = angle_45 - np.abs(theta_x-angle_45)
+            theta_y = angle_45 - np.abs(theta_y-angle_45)
+
+            if theta_x > theta_y:
+                r_theta = -((theta_y / angle_45) ** alpha)
             else:
-                r_theta = -(1-(np.clip((0.5*((1-(theta_y / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
+                r_theta = -((theta_x / angle_45) ** alpha)
 
             r_d = -(np.clip((goal_distance(achieved_goal, goal) / self.initial_goal_distance), 0, 1) ** alpha)
-
             reward = (w_theta * r_theta + w_d * r_d)
         elif self.reward_type == 'lift':
             d = abs((goal - achieved_goal))
@@ -168,28 +167,30 @@ class UrBinPickingEnv(robot_env.RobotEnv):
     def _step_callback(self):
         # Lock gripper open in reach
         if self.reward_type == 'reach' or self.reward_type == 'orient':  # Keep the gripper open
-            self.sim.data.set_joint_qpos('robot0:joint7_l', -0.008)
-            self.sim.data.set_joint_qpos('robot0:joint7_r', -0.008)
+            self.sim.data.set_joint_qpos('robot0:joint7_l', -0.007)
+            self.sim.data.set_joint_qpos('robot0:joint7_r', -0.007)
             self.sim.forward()
         self.episode_steps += 1
 
     def _set_action(self, action):
         # Change action space if number of is changed
-        assert action.shape == (8,)
+        assert action.shape == (5,)
         action = action.copy()  # ensure that we don't change the action outside of this scope
-        pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
+        pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3], action[4]
         pos_ctrl *= 0.01  # limit maximum change in position
-        rot_ctrl *= 0.01
+
+        # Only do z rotation
+        z_rot = rotations.euler2quat([0, np.pi, rot_ctrl*2*np.pi]) * 0.05
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
-        if self.reward_type == 'reach':
+        if self.reward_type == 'reach' or self.reward_type == 'orient':
             gripper_ctrl = np.zeros_like(gripper_ctrl)
         elif self.reward_type == 'lift':
             gripper_ctrl = np.ones_like(gripper_ctrl)*0.3
         elif self.reward_type == 'place':
             gripper_ctrl = np.ones_like(gripper_ctrl) * 0.3
 
-        action = np.concatenate([pos_ctrl, rot_ctrl, gripper_ctrl])
+        action = np.concatenate([pos_ctrl, z_rot, gripper_ctrl])
 
         # Apply action to simulation.
         utils.ctrl_set_action(self.sim, action)
@@ -236,7 +237,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # The relative position to the goal
             goal_rel_pos = self.goal - achieved_goal
             # Update the goal to follow the box
-            self.goal = self.sim.data.get_site_xpos('object0')[:3]
+            self.goal = self.sim.data.get_site_xpos('object0')
             obs = np.concatenate([
                 grip_pos,
                 grip_rot,
@@ -255,7 +256,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # The relative position is between object and goal position
             object_height = self.sim.data.get_site_xpos('object0')[2]
             goal_rel_height = self.goal - object_height
-            # Override achieved_goal to fit with the one dimentional goal of lift(the height of the object)
+            # Override achieved_goal to fit with the one dimensionally goal of lift(the height of the object)
             achieved_goal = object_height
 
             obs = np.concatenate([
@@ -411,40 +412,16 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             object_qpos[3:] = rotations.euler2quat(object_qpos_euler)
             object_qpos[:3] = self.box_qpos[:3] + object_offset
 
-            # for test or perfect alignment
-            quat_test_grip = np.array([0, 0, 1, 0])
-            euler_test_grip = rotations.quat2euler(quat_test_grip)
-            euler_test_grip[2] = -object_z_angle  # Negative because the z-axis is opposite
-            quat_test_grip = rotations.euler2quat(euler_test_grip)
-
-            # sample the initial gripper rot
-            rot_grip = Rotation.random().as_matrix()
-            rot_box = self.sim.data.get_site_xmat('box')
-            rot_gb = np.matmul(rot_grip.transpose(), rot_box)
-            p_box = np.array([0, 0, -1])
-            p_g = np.matmul(rot_gb, p_box)
-            alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
-
-            while math.degrees(alpha_z) > 10:
-                rot_grip = Rotation.random().as_matrix()
-                rot_gb = np.matmul(rot_grip.transpose(), rot_box)
-                p_g = np.matmul(rot_gb, p_box)
-                alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
-
             # rotate gripper into position
             # move overbox
             overbox_pos = self.box_qpos[:3] + gripper_offset
             overbox_pos[2] = overbox_pos[2] + 0.1
-            self.sim.data.set_mocap_pos('robot0:mocap', overbox_pos)  # This is the real one
-            self.sim.data.set_mocap_quat('robot0:mocap', rotations.mat2quat(rot_grip))
-            grip_test_pos = object_qpos[:3]
-            # self.sim.data.set_mocap_pos('robot0:mocap', grip_test_pos)                #this is test or perfect alignment
-            # self.sim.data.set_mocap_quat('robot0:mocap', quat_test_grip)
+            self.sim.data.set_mocap_pos('robot0:mocap', overbox_pos)
+            self.sim.data.set_mocap_quat('robot0:mocap', [0, -1, 1, 0])
             for _ in range(10):
                 self.sim.step()
             # go down to box 1
-            self.sim.data.set_mocap_pos('robot0:mocap', self.box_qpos[:3] + gripper_offset)  # real
-            # self.sim.data.set_mocap_pos('robot0:mocap', object_qpos[:3])              #test
+            self.sim.data.set_mocap_pos('robot0:mocap', self.box_qpos[:3] + gripper_offset)
             for _ in range(10):
                 self.sim.step()
             self.initial_goal_distance = goal_distance(overbox_pos, object_qpos[:3])
@@ -650,6 +627,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             if goal_distance(achieved_goal, desired_goal) < self.success_threshold and (np.abs(theta_x - angle_45) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
                 # if close-euclidean and ( low-x-angle or low-y-angle ) and good-z-angle
                 result = True
+
+            result = False
         elif self.reward_type == 'lift':
             # A lift is successful if the object has been lifted lift_threshold over the box
             object_height = self.sim.data.get_site_xpos('object0')[2]
@@ -694,7 +673,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
         # Move end effector into position.
         gripper_target = self.sim.data.get_site_xpos('robot0:grip')
-        gripper_rotation = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
+        gripper_rotation = [0, -1, 1, 0]
 
         self.sim.data.set_mocap_pos('robot0:mocap', gripper_target)
         self.sim.data.set_mocap_quat('robot0:mocap', gripper_rotation)

@@ -23,8 +23,8 @@
 		</body>
 
         <!--Include the UR robot-->
-        <include file="robot.xml"/>
-        <include file="robot1.xml"/>
+        <include file="robot2.xml"/>
+        <include file="robot2.xml"/>
 
 		<body pos="0.4 1.2 0.2" name="table0">
 			<geom size="0.4 1.2 0.2" type="box" name="table0" mass="2000" material="table_mat"/>
@@ -45,6 +45,26 @@
 			<geom size="0.015 0.015 0.015" type="box" condim="3" name="object2" material="block_mat" mass="2"/>
 			<site name="object2" pos="0 0 0" size="0.02 0.02 0.02" rgba="1 0 0 1" type="sphere"/>
 		</body>
+
+		<body name="box" pos="0.50 1.10 0.4225">
+            <body name="box_bottom" pos="0 0 -0.025" euler="0 0 0">
+                <geom size="0.15 0.10 0.005" type="box" condim="3" name="box_bottom" material="block_mat" mass="5"/>
+            </body>
+            <body name="box_side:0" pos="0 -0.1 0" euler="0 0 0">
+                <geom size="0.145 0.005 0.025" type="box" condim="3" name="box_side:0" material="block_mat" mass="5"/>
+            </body>
+            <body name="box_side:1" pos="0 0.1 0" euler="0 0 0">
+                <geom size="0.145 0.005 0.025" type="box" condim="3" name="box_side:1" material="block_mat" mass="5"/>
+            </body>
+            <body name="box_side:2" pos="-0.15 0 0" euler="0 0 0">
+                <geom size="0.005 0.105 0.025" type="box" condim="3" name="box_side:2" material="block_mat" mass="5"/>
+            </body>
+            <body name="box_side:3" pos="0.15 0 0" euler="0 0 0">
+                <geom size="0.005 0.105 0.025" type="box" condim="3" name="box_side:3" material="block_mat" mass="5"/>
+            </body>
+            <site name="box" pos="0 0 0"/>
+		</body>
+
 
 		<light directional="true" ambient="0.2 0.2 0.2" diffuse="0.8 0.8 0.8" specular="0.3 0.3 0.3" castshadow="false" pos="0 0 4" dir="0 0 -1" name="light0"/>
 	</worldbody>

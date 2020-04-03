@@ -4,7 +4,7 @@ from gym_mergablerobots.envs.ur_env import UrEnv
 
 
 # Ensure we get the path separator correct on windows
-MODEL_XML_PATH ='/home/nikolaj/master/mergableindustrialrobots/gym-mergablerobots/gym_mergablerobots/envs/assets/two_robots.xml'
+MODEL_XML_PATH ='/home/nikolaj/master/mergableindustrialrobots/gym-mergablerobots/gym_mergablerobots/envs/assets/dual_robot.xml'
 
 
 class DualURPickAndPlaceEnv(UrEnv, utils.EzPickle):
