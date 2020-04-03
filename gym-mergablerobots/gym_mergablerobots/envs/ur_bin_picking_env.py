@@ -123,18 +123,19 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             theta_z = angle_between(orient_line, np.matmul(rot_object0, (0, 0, 1)))
             angle_45 = math.radians(45)
             angle_90 = math.radians(90)
-            if theta_z > 2 * angle_90:
-                theta_z = 2 * angle_90
-            if np.abs(theta_x - 45) > np.abs(theta_y - 45):
+
+            theta_x = angle_45 - np.abs(theta_x - angle_45)
+            theta_y = angle_45 - np.abs(theta_y - angle_45)
+            theta_z = angle_90 - np.abs(theta_z - angle_90)
+
+            if theta_x < theta_y:
                 r_theta = 1 - (0.5 * (theta_x / angle_45 + theta_z / angle_90) ** alpha)
             else:
                 r_theta = 1 - (0.5 * (theta_y / angle_45 + theta_z / angle_90) ** alpha)
 
             gamma_t = 1 - (self.episode_steps / self.spec.max_episode_steps) ** alpha
-            if goal_distance(achieved_goal, goal) < self.initial_goal_distance:
-                r_d = 1 - (goal_distance(achieved_goal, goal)/self.initial_goal_distance) ** alpha
-            else:
-                r_d = 1 - 1 ** alpha
+            r_d = 1 - np.clip((goal_distance(achieved_goal, goal)/self.initial_goal_distance), 0, 1) ** alpha
+
 
             if goal_distance(achieved_goal, goal) < self.success_threshold and (np.abs(theta_x - angle_45 ) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
                 # if close-euclidean and ( low-x-angle or low-y-angle ) and good-z-angle
@@ -604,12 +605,15 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             theta_y = min(angle_between(orient_line, np.matmul(rot_object0, (0, 1, 0))),
                           angle_between(orient_line, np.matmul(rot_object0, (0, -1, 0))))
             theta_z = angle_between(orient_line, np.matmul(rot_object0, (0, 0, 1)))
+
             angle_45 = math.radians(45)
             angle_90 = math.radians(90)
-            if theta_z > 2 * angle_90:
-                theta_z = 2 * angle_90
 
-            if goal_distance(achieved_goal, desired_goal) < self.success_threshold and (np.abs(theta_x - angle_45) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
+            theta_x = angle_45 - np.abs(theta_x - angle_45)
+            theta_y = angle_45 - np.abs(theta_y - angle_45)
+            theta_z = angle_90 - np.abs(theta_z - angle_90)
+
+            if goal_distance(achieved_goal, desired_goal) < self.success_threshold and (theta_x < math.radians(10) or theta_y > math.radians(10)) and theta_z > math.radians(45):
                 # if close-euclidean and ( low-x-angle or low-y-angle ) and good-z-angle
                 result = True
         elif self.reward_type == 'lift':

@@ -72,13 +72,13 @@
 
                                             <body name="robot0:right_finger" pos="-0.005 -0.027 -0.01" euler="1.5707 0 -1.5707">
                                                 <inertial diaginertia="0.1 0.1 0.1" mass="4" pos="-0.01 0 0"/>
-                                                <joint name='robot0:joint7_r' type='slide' axis='0 0 -1' range='0 0.03' armature="100" damping="20000" limited="true" solimplimit="0.99 0.999 0.01" solreflimit="0.01 1" />
+                                                <joint name='robot0:joint7_r' type='slide' axis='0 0 -1' range='0 0.035' armature="100" damping="20000" limited="true" solimplimit="0.99 0.999 0.01" solreflimit="0.01 1" />
                                                 <geom pos="0 0.005 0" size="0.023 0.01 0.004" rgba="0.356 0.361 0.376 1.0" type="box" name="robot0:robotiq_finger_mesh_r" material="robot:gripper_finger_mat" condim="4" friction="1.2 0.05 0.01" margin="0.00001" solimp="0.99 0.99 .001" solref="-100000 -150"/>
                                             </body>
 
                                             <body name="robot0:left_finger" pos="0.0025 0.027 -0.01" euler="-1.5707 0 1.5707">
                                                 <inertial diaginertia="0.1 0.1 0.1" mass="4" pos="-0.01 0 0"/>
-                                                <joint name='robot0:joint7_l' type='slide' axis='0 0 -1' range='0 0.03'  armature="100" damping="20000" limited="true" solimplimit="0.99 0.999 0.01" solreflimit="0.01 1"/>
+                                                <joint name='robot0:joint7_l' type='slide' axis='0 0 -1' range='0 0.035'  armature="100" damping="20000" limited="true" solimplimit="0.99 0.999 0.01" solreflimit="0.01 1"/>
                                                 <geom pos="0 0.005 0" size="0.023 0.01 0.004" rgba="0.356 0.361 0.376 1.0" type="box" name="robot0:robotiq_finger_mesh_l" material="robot:gripper_finger_mat" condim="4" friction="1.2 0.05 0.01" margin="0.00001" solimp="0.99 0.99 .001" solref="-100000 -150"/>
                                             </body>
                                             <site name="robot0:grip" pos="0 0 0" rgba="1 0 0 1" size="0.005 0.005 0.005" type="box"/>

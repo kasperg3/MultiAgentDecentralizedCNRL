@@ -30,7 +30,7 @@ def eval_policy(policy, reward_type, env_name, seed, eval_episodes=15):
 			action = policy.select_action(np.array(state))
 			state, reward, done, info = eval_env.step(action)
 			is_success = info['is_success']
-			avg_reward += reward
+			avg_reward += int(is_success)
 
 	avg_reward /= eval_episodes
 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 			policy.train(replay_buffer, args.batch_size)
 
 		# If the episode is done or the agent reaches a terminal state or info['is_success']
-		if done or info['is_success'] or info['is_failed']:
+		if done or info['is_failed']:
 			episode_time_buffer.append(time.time() - episode_real_time)
 			est_time_left = ((sum(episode_time_buffer)/episode_time_buffer.maxlen)/150) * (args.max_timesteps - t)
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
