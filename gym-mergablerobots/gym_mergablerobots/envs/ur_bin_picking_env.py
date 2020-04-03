@@ -435,6 +435,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             box_qpos = self.sim.data.get_joint_qpos('box:joint')
             object_qpos = self.sim.data.get_joint_qpos('object0:joint')
             object_qpos[:3] = box_qpos[:3] + object_offset
+            self.initial_object_pos = object_qpos[:3]
             self.sim.data.set_joint_qpos('object0:joint', object_qpos)
 
             # Start the simulation just over the box(same space as reach goal)
@@ -631,8 +632,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # A lift is successful if the object has been lifted lift_threshold over the box
             object_height = self.sim.data.get_site_xpos('object0')[2]
             table_height = 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
-            result = (np.abs(object_height - table_height) > self.lift_threshold)
-            # TODO: LIFT make sure that the block is in the "goal" zone in x timesteps
+            lift_cylinder_radius = 0.1
+            if np.abs(object_height - table_height) > self.lift_threshold and np.linalg.norm(self.sim.data.get_site_xpos('object0')[:2], self.initial_object_pos[:2]) < lift_cylinder_radius:
+                result = True
         elif self.reward_type == 'place':
             # TODO: PLACE, implement is_success
             # maybe use compute reward to decide weather it's close enough
