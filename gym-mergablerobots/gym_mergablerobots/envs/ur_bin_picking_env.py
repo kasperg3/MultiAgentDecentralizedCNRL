@@ -621,14 +621,12 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             theta_z = angle_between(orient_line, np.matmul(rot_object0, (0, 0, 1)))
             angle_45 = math.radians(45)
             angle_90 = math.radians(90)
-            if theta_z > 2 * angle_90:
-                theta_z = 2 * angle_90
+            theta_x = angle_45 - np.abs(theta_x - angle_45)
+            theta_y = angle_45 - np.abs(theta_y - angle_45)
 
-            if goal_distance(achieved_goal, desired_goal) < self.success_threshold and (np.abs(theta_x - angle_45) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
-                # if close-euclidean and ( low-x-angle or low-y-angle ) and good-z-angle
+            if goal_distance(achieved_goal, desired_goal) < self.success_threshold and (theta_x < math.radians(10) or theta_y > math.radians(10)):
                 result = True
 
-            result = False
         elif self.reward_type == 'lift':
             # A lift is successful if the object has been lifted lift_threshold over the box
             object_height = self.sim.data.get_site_xpos('object0')[2]
