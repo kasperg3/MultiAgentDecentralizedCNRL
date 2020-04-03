@@ -123,22 +123,32 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             theta_z = angle_between(orient_line, np.matmul(rot_object0, (0, 0, 1)))
             angle_45 = math.radians(45)
             angle_90 = math.radians(90)
-            if theta_z > angle_90:
-                theta_z = angle_90 - (np.abs(theta_z) - angle_90)
-            if np.abs(theta_x - 45) > np.abs(theta_y - 45):
-                r_theta = -(1-(np.clip((0.5*((1-(theta_x / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
+
+            theta_x = angle_45 - np.abs(theta_x - angle_45)
+            theta_y = angle_45 - np.abs(theta_y - angle_45)
+            theta_z = angle_90 - np.abs(theta_z - angle_90)
+
+            if theta_x < theta_y:
+                r_theta = -(1 - (np.clip((0.5 * ((1 - (theta_x / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
             else:
-                r_theta = -(1-(np.clip((0.5*((1-(theta_y / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
+                r_theta = -(1 - (np.clip((0.5 * ((1 - (theta_y / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
 
             r_d = -(np.clip((goal_distance(achieved_goal, goal) / self.initial_goal_distance), 0, 1) ** alpha)
 
             reward = (w_theta * r_theta + w_d * r_d)
         elif self.reward_type == 'lift':
-            d = abs((goal - achieved_goal))
-            penalty_weight = 10
-            # penalty of box movement
-            box_move_penalty = np.abs(np.linalg.norm(self.sim.data.get_site_xvelp('box')) * penalty_weight)
-            reward = float(-(d + box_move_penalty * d))
+            h = np.abs(goal - achieved_goal)
+            h_max = self.lift_threshold
+            alpha = 4
+            r_h = -np.clip((1-((h / h_max) ** alpha)), 0, 1)
+            bonus_reward = 10
+
+            # TODO: Make a pinch threshold
+            if h > self.lift_threshold:
+                reward = bonus_reward
+            else:
+                reward = r_h
+
         elif self.reward_type == 'place':
             # Positional difference
             dist = goal_distance(achieved_goal[:3], goal[:3])
@@ -148,10 +158,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # Rotational difference between two quaternions
             q1 = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
             q2 = self.goal[3:]
-
-            #theta = 1 - np.square(np.sum(np.multiply(q1, q2)))
-            # New method: ang = acos{[q1(inner)q2] / [norm(q1)norm(q2)]}
-            #theta = np.arccos((np.inner(q1, q2))/(np.linalg.norm(q1)*np.linalg.norm(q2)))
 
             # Newer method with normalization to two pi
             theta = (2*np.arccos(np.abs(np.inner(q1, rotations.quat_conjugate(q2))))) / (2*np.pi)
@@ -182,7 +188,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         rot_ctrl *= 0.01
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
-        if self.reward_type == 'reach':
+        if self.reward_type == 'reach' or self.reward_type == 'orient':
             gripper_ctrl = np.zeros_like(gripper_ctrl)
         elif self.reward_type == 'lift':
             gripper_ctrl = np.ones_like(gripper_ctrl)*0.3
@@ -644,10 +650,12 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             theta_z = angle_between(orient_line, np.matmul(rot_object0, (0, 0, 1)))
             angle_45 = math.radians(45)
             angle_90 = math.radians(90)
-            if theta_z > 2 * angle_90:
-                theta_z = 2 * angle_90
 
-            if goal_distance(achieved_goal, desired_goal) < self.success_threshold and (np.abs(theta_x - angle_45) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
+            theta_x = angle_45 - np.abs(theta_x - angle_45)
+            theta_y = angle_45 - np.abs(theta_y - angle_45)
+            theta_z = angle_90 - np.abs(theta_z - angle_90)
+
+            if goal_distance(achieved_goal, desired_goal) < self.success_threshold and (theta_x < math.radians(10) or theta_y > math.radians(10)) and theta_z > math.radians(45):
                 # if close-euclidean and ( low-x-angle or low-y-angle ) and good-z-angle
                 result = True
         elif self.reward_type == 'lift':
@@ -655,10 +663,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             object_height = self.sim.data.get_site_xpos('object0')[2]
             table_height = 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
             result = (np.abs(object_height - table_height) > self.lift_threshold)
-            # TODO: LIFT make sure that the block is in the "goal" zone in x timesteps
         elif self.reward_type == 'place':
-            # TODO: PLACE, implement is_success
-            # maybe use compute reward to decide weather it's close enough
+            # maybe use compute reward to decide whether it's close enough
             result = False
 
         return result
