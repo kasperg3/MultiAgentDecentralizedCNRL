@@ -159,26 +159,38 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # Positional difference
             dist = goal_distance(achieved_goal[:3], goal[:3])
             dist_ref = goal_distance(self.initial_box_xpos, goal[:3])
-            # Clip the score such that it will not be positive
             position_score = -(np.square(np.tanh(np.clip((dist / dist_ref), 0, 1))))
-            # Rotational difference between two quaternions
-            q1 = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
-            q2 = self.goal[3:]
+            # TODO PLACE TEST THIS
+            w_d = 1
+            w_theta = 1
+            bonus = 2
+            alpha = 0.4
+            goal_rot = rotations.quat2mat(goal[3:])
+            goal_z = np.matmul(goal_rot, (0, 0, 1))
+            goal_y = np.matmul(goal_rot, (0, 1, 0))
+            goal_x = np.matmul(goal_rot, (1, 0, 0))
 
-            # Newer method with normalization to two pi
-            theta = (2*np.arccos(np.abs(np.inner(q1, rotations.quat_conjugate(q2))))) / (2*np.pi)
-            rotation_score = -np.square(np.tanh(theta))
-            # reward weights
-            w1 = 1
-            w2 = 0.7
+            rot_object0 = self.sim.data.get_site_xmat('object0')
+            theta_x = min(angle_between(goal_x, np.matmul(rot_object0, (1, 0, 0))), angle_between(goal_x, np.matmul(rot_object0, (-1, 0, 0))))
+            theta_y = min(angle_between(goal_y, np.matmul(rot_object0, (0, 1, 0))), angle_between(goal_y, np.matmul(rot_object0, (0, -1, 0))))
+            theta_z = angle_between(goal_z, np.matmul(rot_object0, (0, 0, 1)))
+            angle_45 = math.radians(45)
+            angle_90 = math.radians(90)
 
-            # bonus reward if successful
-            if self._is_success(achieved_goal, goal):
-                reward = 1
-            elif self._is_failed():
-                reward = -10
+            theta_x = angle_45 - np.abs(theta_x - angle_45)
+            theta_y = angle_45 - np.abs(theta_y - angle_45)
+            theta_z = angle_90 - np.abs(theta_z - angle_90)
+
+            if theta_x < theta_y:   # rot reward
+                r_theta = 1 - (0.5 * (theta_x / angle_45 + theta_z / angle_90) ** alpha)
             else:
-                reward = rotation_score * w1 + position_score * w2
+                r_theta = 1 - (0.5 * (theta_y / angle_45 + theta_z / angle_90) ** alpha)
+            # TODO MAKE THIS NEGATIVE
+            rotation_score = r_theta
+            if self._is_success(achieved_goal,goal):
+                reward = 1
+            else:
+                reward = rotation_score * w_theta + position_score * w_d
         return reward
 
     # RobotEnv methods
@@ -597,6 +609,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             utils.mocap_set_action(self.sim, action)
             for _ in range(10):
                 self.sim.step()
+            self.initial_goal_distance = goal_distance(overbox_pos, object_qpos[:3])
+
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
         self.sim.forward()
@@ -637,7 +651,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 rot_gb = np.matmul(rot_grip.transpose(), rot_box)
                 p_g = np.matmul(rot_gb, p_box)
                 alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
+            # TODO: Test if this works properly
             goal = np.concatenate((goal_pos, rotations.mat2quat(rot_grip)))
+
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
         return goal.ravel().copy()
@@ -680,26 +696,24 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             if np.abs(object_height - table_height) > self.lift_threshold and radial_dist < lift_cylinder_radius:
                 result = True
         elif self.reward_type == 'place':
-            dist = goal_distance(achieved_goal[:3], self.goal[:3])
-            q1 = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
-            q2 = self.goal[3:]
-            theta = (2 * np.arccos(np.abs(np.inner(q1, rotations.quat_conjugate(q2))))) / (2 * np.pi)
-
-            dist_threshold = 0.01
-            angular_threshold = math.degrees(10)
-            if theta < angular_threshold and dist < dist_threshold:
+            if goal_distance(achieved_goal[:3], desired_goal[:3]) < self.success_threshold and (np.abs(theta_x - angle_45) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
                 result = True
         return result
 
     def _is_failed(self):
+        # TODO: implement terminate states depending on the goal
         result = False
         if self.reward_type == 'reach':
             pass
         elif self.reward_type == 'orient':
+            # calculate the tilt of object
             rot_object0 = self.sim.data.get_site_xmat('object0')
             object_tilt = angle_between(np.array((0, 0, 1)), np.matmul(rot_object0, (0, 0, 1)))
             if object_tilt > math.radians(15):
                 result = True
+            if goal_distance(self.sim.data.get_site_xpos('robot0:grip'), self.sim.data.get_site_xpos('object0')) > 0.4:
+                result = True
+
         elif self.reward_type == 'lift':
             # A lift is successful if the object has been lifted lift_threshold over the box
             lift_cylinder_radius = 0.05
