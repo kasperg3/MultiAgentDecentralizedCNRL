@@ -10,12 +10,12 @@ MODEL_XML_PATH = ROOT_DIR[:-15] + '/assets/single_robot.xml'
 class URPickAndPlaceEnv(UrEnv, utils.EzPickle):
     def __init__(self, reward_type='dense'):
         initial_qpos = {
-            'robot0:joint1': -2,
-            'robot0:joint2': -2.053,
-            'robot0:joint3': 2.3,
-            'robot0:joint4': -1.8,
-            'robot0:joint5': -1.50,
-            'robot0:joint6': -1.7588
+            'robot0:joint1': -0,
+            'robot0:joint2': -0.2,
+            'robot0:joint3': 2,
+            'robot0:joint4': 0.6,
+            'robot0:joint5': 1.6,
+            'robot0:joint6': 0
         }
         UrEnv.__init__(
             self, MODEL_XML_PATH, has_object=True, block_gripper=False, n_substeps=20,

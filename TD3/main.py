@@ -30,7 +30,7 @@ def eval_policy(policy, reward_type, env_name, seed, eval_episodes=15):
 			action = policy.select_action(np.array(state))
 			state, reward, done, info = eval_env.step(action)
 			is_success = info['is_success']
-			avg_reward += int(is_success)
+			avg_reward += reward
 
 	avg_reward /= eval_episodes
 
@@ -41,13 +41,12 @@ def eval_policy(policy, reward_type, env_name, seed, eval_episodes=15):
 
 
 if __name__ == "__main__":
-
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
-	parser.add_argument("--env", default="UrBinPicking-v0")      	# OpenAI gym environment name
+	parser.add_argument("--env", default="UrBinPickingPlace-v0")      	# OpenAI gym environment name
 	parser.add_argument("--reward", default="place")      			# reward type
-	parser.add_argument("--seed", default=1234, type=int)           # Sets Gym, PyTorch and Numpy seeds
-	parser.add_argument("--start_timesteps", default=25e3, type=int)# Time steps initial random policy is used
+	parser.add_argument("--seed", default=2345, type=int)           # Sets Gym, PyTorch and Numpy seeds
+	parser.add_argument("--start_timesteps", default=5e3, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
 	parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
 	parser.add_argument("--expl_noise", default=0.1)                # Std of Gaussian exploration noise
@@ -65,7 +64,7 @@ if __name__ == "__main__":
 	parser.set_defaults(save_model=True)
 	args = parser.parse_args()
 
-	file_name = f"{args.policy}_{args.env}_{args.reward}_{args.seed}"
+	file_name = f"{args.policy}_{args.env}_{args.seed}"
 	print("---------------------------------------")
 	print(f"Policy: {args.policy}, Env: {args.env}, Seed: {args.seed}")
 	print("---------------------------------------")
@@ -128,6 +127,7 @@ if __name__ == "__main__":
 
 	# Evaluate untrained policy
 	evaluations = [eval_policy(policy, args.reward, args.env, args.seed)]
+	best_eval = evaluations[0]
 
 	state, done = env.reset(), False
 	episode_reward = 0
@@ -193,4 +193,6 @@ if __name__ == "__main__":
 			# TODO: Only save the best evaluation of the model
 			if args.save_model:
 				policy.save(f"./models/{file_name}")
+				print(".............Saving model..............")
+				print("---------------------------------------")
 			episode_real_time = time.time()

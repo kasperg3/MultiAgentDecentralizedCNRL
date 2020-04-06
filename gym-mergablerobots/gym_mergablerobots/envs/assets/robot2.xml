@@ -9,6 +9,7 @@
         <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="4" diaginertia="0.0072 0.00443333 0.00443333" />
         <geom name="robot0:standoff" type="cylinder" euler="0 0 0"  size="0.1 0.035" material="robot:base_mat" class="robot:grey"/>
         <geom name="robot0:base_mesh" type="mesh" pos="0 0 0.035" euler="1.57 0 0" mesh="base" material="robot:base_mat" class="robot:grey"/>
+        <site name="robot0:base" pos="0 0 0" rgba="0 0 0 0" size="0.02 0.02 0.02"/>
         <body name="link1" pos="0 0 0.135">
             <joint name="robot0:joint1" axis="0 0 1" pos="0 0 0"/>
             <inertial pos="0 -0.02561 0.00193" mass="3.761" diaginertia="0.1 0.1 0.1"/>

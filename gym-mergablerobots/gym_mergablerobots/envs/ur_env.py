@@ -102,8 +102,8 @@ class UrEnv(robot_env.RobotEnv):
             s_B2 = self.goal  # The position where object1 will lay once stacked
             b_z = s_B1[2] - 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
             s_P = self.sim.data.get_site_xpos('robot0:grip')
-            w1 = 1.125
-            w2 = 1.3  #
+            w1 = 2
+            w2 = 2
 
             # if the blocks are stacked return the maximum reward
             if self.is_stacked(s_B1, s_B2):
@@ -173,7 +173,7 @@ class UrEnv(robot_env.RobotEnv):
         action = action.copy()  # ensure that we don't change the action outside of this scope
         pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
         pos_ctrl *= 0.01  # limit maximum change in position
-        rot_ctrl *= 0.1
+        rot_ctrl *= 0.01
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
         if self.block_gripper:
@@ -287,6 +287,9 @@ class UrEnv(robot_env.RobotEnv):
 
         return contact_points
 
+    def _is_failed(self):
+        return False
+
     def _reset_sim(self):
         self.sim.set_state(self.initial_state)
         self.action_counter = 0
@@ -321,8 +324,8 @@ class UrEnv(robot_env.RobotEnv):
             utils.mocap_set_action(self.sim, action)
 
             # Place the end effector at the object every other episode
-            if bool(np.random.binomial(1, 0.5)) and self.has_object:
-                initial_grip = np.add(self.initial_object_xpos, [0, 0, 0.045])
+            if bool(np.random.binomial(1, 1)) and self.has_object:
+                initial_grip = np.add(self.initial_object_xpos, [0, 0, 0.043])
                 self.sim.data.set_mocap_quat('robot0:mocap', [0, 0, 1, 0])
                 self.sim.data.set_mocap_pos('robot0:mocap', initial_grip)
                 for _ in range(20):
@@ -338,9 +341,9 @@ class UrEnv(robot_env.RobotEnv):
     def _sample_goal(self):
         if self.has_object and self.reward_type is not 'composite_reward':
             goal = self.sim.data.get_site_xpos('object0')
+            # sample a point which is not close to the base
             while goal_distance(self.sim.data.get_site_xpos('object0'), goal) < self.distance_threshold:
-                goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-self.target_range, self.target_range,
-                                                                              size=3)
+                goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-self.target_range, self.target_range, size=3)
                 goal += self.target_offset
                 goal[2] = self.height_offset
                 if self.target_in_the_air and self.np_random.uniform() < 0.5:
@@ -354,10 +357,8 @@ class UrEnv(robot_env.RobotEnv):
     def _is_success(self, achieved_goal, desired_goal):
         d = goal_distance(achieved_goal, desired_goal)
         result = (d < self.distance_threshold).astype(np.float32)
-
-        if(self.reward_type is 'composite_reward'):
-            result = ((self.sim.data.get_site_xpos('object0') - 0.414) < 0.04).astype(np.float32)
-
+        if self.reward_type is 'composite_reward':
+            result = np.all(((self.sim.data.get_site_xpos('object0') - 0.414) < 0.04))
         return result
 
     def _env_setup(self, initial_qpos):

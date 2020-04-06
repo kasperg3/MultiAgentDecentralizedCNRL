@@ -106,8 +106,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             reward = float(-(d + box_move_penalty * d))
         elif self.reward_type == 'orient':
             # #angular component
-            w_d = 0.5
-            w_theta = 0.5
+            w_d = 1
+            w_theta = 1
             alpha = 0.4
 
             body_id1 = self.sim.model.body_name2id('robot0:left_finger')
@@ -190,7 +190,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 reward = gamma_t * (w_theta * r_theta + w_d * r_d)
         return reward
 
-
     # RobotEnv methods
     # ----------------------------
 
@@ -213,8 +212,11 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         assert gripper_ctrl.shape == (2,)
         if self.reward_type == 'reach':
             gripper_ctrl = np.zeros_like(gripper_ctrl)
-        elif self.reward_type == 'lift' or self.reward_type == 'place':
+        elif self.reward_type == 'lift':
             gripper_ctrl = np.ones_like(gripper_ctrl)*0.3
+        elif self.reward_type == 'place':
+            gripper_ctrl = np.ones_like(gripper_ctrl) * 0.3
+
         action = np.concatenate([pos_ctrl, rot_ctrl, gripper_ctrl])
 
         # Apply action to simulation.
@@ -319,7 +321,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 goal_rel_pos,
                 goal_rel_rot.ravel(),
             ])
-
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift')
 
@@ -347,6 +348,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             visualized_goal = self.sim.data.get_site_xpos('box').copy()
             visualized_goal[2] = self.goal
             self.sim.model.site_pos[site_id] = visualized_goal - sites_offset[0]
+        elif self.reward_type == 'place':
+            # Place also has a orientation as goal
+            self.sim.model.site_pos[site_id] = self.goal[:3] - sites_offset[0]
+            self.sim.model.site_quat[site_id] = self.goal[3:]
         else:
             self.sim.model.site_pos[site_id] = self.goal - sites_offset[0]
         self.sim.forward()
@@ -399,7 +404,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         return [
             float(self.np_random.uniform(-x_range, x_range)),
             float(self.np_random.uniform(-y_range, y_range)),
-            float(z_range)]
+            float(self.np_random.uniform(-z_range, z_range))]
 
     def _reset_sim(self):
         self.sim.set_state(self.initial_state)
@@ -587,7 +592,19 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 # self.render()
                 self.sim.step()
 
-
+            # Grasp and lift the gripper
+            action = np.concatenate([[0, 0, 0], [0, 0, 0, 0], [0.3, 0.3]])
+            # Apply action to simulation.
+            utils.ctrl_set_action(self.sim, action)
+            utils.mocap_set_action(self.sim, action)
+            for _ in range(10):
+                self.sim.step()
+            action = np.concatenate([[0, 0, self.lift_threshold], [0, 0, 0, 0], [0.3, 0.3]])
+            # Apply action to simulation.
+            utils.ctrl_set_action(self.sim, action)
+            utils.mocap_set_action(self.sim, action)
+            for _ in range(10):
+                self.sim.step()
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
         self.sim.forward()
@@ -630,7 +647,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
             # TODO: Test if this works properly
             goal = np.concatenate((goal_pos, rotations.mat2quat(rot_grip)))
-
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
         return goal.ravel().copy()
@@ -654,7 +670,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             theta_y = min(angle_between(orient_line, np.matmul(rot_object0, (0, 1, 0))),
                           angle_between(orient_line, np.matmul(rot_object0, (0, -1, 0))))
             theta_z = angle_between(orient_line, np.matmul(rot_object0, (0, 0, 1)))
-
             angle_45 = math.radians(45)
             angle_90 = math.radians(90)
 
@@ -670,7 +685,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             object_height = self.sim.data.get_site_xpos('object0')[2]
             table_height = 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
             result = (np.abs(object_height - table_height) > self.lift_threshold)
-            result = False
             # TODO: LIFT make sure that the block is in the "goal" zone in x timesteps
         elif self.reward_type == 'place':
             # TODO: PLACE, implement is_success
@@ -702,17 +716,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
     def _is_collision(self):
         for i in range(self.sim.data.ncon):
             contact = self.sim.data.contact[i]
-            if 'robot0' in self.sim.model.geom_id2name(contact.geom1) or 'robot0' in self.sim.model.geom_id2name(
-                    contact.geom2):
-                # print('Rob in collision')
-                # print('contact:', i)
-                # print('distance:', contact.dist)
-                # print('geom1:', contact.geom1, self.sim.model.geom_id2name(contact.geom1))
-                # print('geom2:', contact.geom2, self.sim.model.geom_id2name(contact.geom2))
-                # print('contact position:', contact.pos)
-                if 'object' not in self.sim.model.geom_id2name(
-                        contact.geom1) or 'object' not in self.sim.model.geom_id2name(contact.geom2):
-                    # print('Collission with non object')
+            if 'robot0' in self.sim.model.geom_id2name(contact.geom1) or 'robot0' in self.sim.model.geom_id2name(contact.geom2):
+                if 'object' not in self.sim.model.geom_id2name(contact.geom1) or 'object' not in self.sim.model.geom_id2name(contact.geom2):
                     return True
         return False
 
