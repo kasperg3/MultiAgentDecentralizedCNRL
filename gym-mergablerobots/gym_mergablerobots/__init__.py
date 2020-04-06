@@ -13,6 +13,7 @@ for reward_type in ['sparse', 'dense', 'place', 'orient', 'lift', 'reach']:
         episode_steps = 150
         suffix = 'Orient'
     elif reward_type == 'reach':
+        episode_steps = 70
         suffix = 'Reach'
     elif reward_type == 'dense':
         episode_steps = 70
