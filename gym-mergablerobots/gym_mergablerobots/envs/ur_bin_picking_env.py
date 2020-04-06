@@ -104,6 +104,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             penalty_weight = 1
             box_move_penalty = np.abs(np.linalg.norm(self.sim.data.get_site_xvelp('box')) * penalty_weight)
             reward = float(-(d + box_move_penalty * d))
+
         elif self.reward_type == 'orient':
             # #angular component
             w_d = 0.5
@@ -149,7 +150,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             bonus_reward = 2
 
             if self._is_failed():
-                reward = -2
+                reward = -bonus_reward
             elif self._is_success(achieved_goal, goal):    # Is within 1 cm of the goal height
                 reward = bonus_reward
             else:
@@ -538,7 +539,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 #self.render()
                 self.sim.step()
         elif self.reward_type == 'place':
-            # TODO: PLACE Start the simulation over the box with lift_threshold height
             self.sample_box_position()
             self.sim.data.get_site_xpos('object0')
             # Start the simulation with the object between the fingers
@@ -581,7 +581,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             grip_test_pos = object_qpos[:3] + [0, 0, 0.1]
             self.sim.data.set_mocap_pos('robot0:mocap', grip_test_pos)  # this is test or perfect alignment
             self.sim.data.set_mocap_quat('robot0:mocap', quat_test_grip)
-            # TODO Place convert to using the position controller in the gripper
             for _ in range(10):
                 self.sim.data.set_joint_qpos('robot0:joint7_l', -0.0)
                 self.sim.data.set_joint_qpos('robot0:joint7_r', -0.0)

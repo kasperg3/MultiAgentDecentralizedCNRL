@@ -7,12 +7,13 @@ for reward_type in ['sparse', 'dense', 'place', 'orient', 'lift', 'reach']:
         episode_steps = 150 # Extra time for placing the object
         suffix = 'Place'
     elif reward_type == 'lift':
-        suffix = 'Lift'
         episode_steps = 50
+        suffix = 'Lift'
     elif reward_type == 'orient':
         episode_steps = 150
         suffix = 'Orient'
     elif reward_type == 'reach':
+        episode_steps = 70
         suffix = 'Reach'
     elif reward_type == 'dense':
         episode_steps = 70
