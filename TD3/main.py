@@ -44,8 +44,8 @@ def eval_policy(policy, reward_type, env_name, seed, eval_episodes=15):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
-	parser.add_argument("--env", default="UrBinPickingOrient-v0")  	# OpenAI gym environment name
-	parser.add_argument("--reward", default="orient")      			# reward type
+	parser.add_argument("--env", default="UrBinPickingPlace-v0")  	# OpenAI gym environment name
+	parser.add_argument("--reward", default="place")      			# reward type
 	parser.add_argument("--seed", default=2345, type=int)           # Sets Gym, PyTorch and Numpy seeds
 	parser.add_argument("--start_timesteps", default=5e3, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
