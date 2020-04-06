@@ -43,8 +43,8 @@ def eval_policy(policy, reward_type, env_name, seed, eval_episodes=15):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
-	parser.add_argument("--env", default="UrBinPickingPlace-v0")      	# OpenAI gym environment name
-	parser.add_argument("--reward", default="place")      			# reward type
+	parser.add_argument("--env", default="UrBinPickingOrient-v0")  	# OpenAI gym environment name
+	parser.add_argument("--reward", default="orient")      			# reward type
 	parser.add_argument("--seed", default=2345, type=int)           # Sets Gym, PyTorch and Numpy seeds
 	parser.add_argument("--start_timesteps", default=5e3, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 	parser.add_argument("--render", action="store_true")            # Render the Training
 	parser.set_defaults(load_model='')  							# Set to "default" if you want to load default model
-	parser.set_defaults(render=False)
+	parser.set_defaults(render=True)
 	parser.set_defaults(save_model=True)
 	args = parser.parse_args()
 

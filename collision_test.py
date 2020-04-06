@@ -12,9 +12,9 @@ MODEL_XML_PATH = '/home/nikolaj/master/mergableindustrialrobots/gym-mergablerobo
 # viewer = mujoco_py.MjViewer(sim)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--reward_type", default='orient')
+parser.add_argument("--reward_type", default='place')
 
-env = gym.make('UrBinPicking-v0', reward_type='orient')
+env = gym.make('UrBinPickingPlace-v0', reward_type='place')
 
 for _ in range(100):
     # Simulate 1000 steps so humanoid has fallen on the ground

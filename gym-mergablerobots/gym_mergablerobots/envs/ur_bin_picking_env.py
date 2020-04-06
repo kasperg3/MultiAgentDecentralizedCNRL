@@ -137,7 +137,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             r_d = 1 - np.clip((goal_distance(achieved_goal, goal)/self.initial_goal_distance), 0, 1) ** alpha
 
 
-            if goal_distance(achieved_goal, goal) < self.success_threshold and (np.abs(theta_x - angle_45 ) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
+            if self._is_success(achieved_goal, goal):
                 # if close-euclidean and ( low-x-angle or low-y-angle ) and good-z-angle
                 reward = gamma_t * 2
             else:
@@ -150,7 +150,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             r_h = 1 - (np.clip((h / h_max), 0, 1) ** alpha)[0]
             bonus_reward = 2
 
-            if h < 0.01:    # Is within 1 cm of the goal height
+            if self._is_success(achieved_goal, goal):    # Is within 1 cm of the goal height
                 reward = bonus_reward
             else:
                 reward = r_h
@@ -183,8 +183,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 r_theta = 1 - (0.5 * (theta_y / angle_45 + theta_z / angle_90) ** alpha)
 
             gamma_t = 1 - (self.episode_steps / self.spec.max_episode_steps) ** alpha  # speed encouragement
-            r_d = 1 - np.clip((goal_distance(achieved_goal, goal)/self.initial_goal_distance), 0, 1) ** alpha  # pos reward
-            if goal_distance(achieved_goal, goal) < self.success_threshold and (np.abs(theta_x - angle_45 ) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
+            r_d = 1 - np.clip((goal_distance(achieved_goal[:3], goal[:3])/self.initial_goal_distance), 0, 1) ** alpha  # pos reward
+            if self._is_success(achieved_goal,goal):
                 reward = gamma_t * bonus
             else:
                 reward = gamma_t * (w_theta * r_theta + w_d * r_d)
@@ -533,6 +533,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 self.sim.forward()
                 #self.render()
                 self.sim.step()
+            self.initial_object_pos = object_qpos[:3]
         elif self.reward_type == 'place':
             # TODO: PLACE Start the simulation over the box with lift_threshold height
             self.sample_box_position()
@@ -605,6 +606,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             utils.mocap_set_action(self.sim, action)
             for _ in range(10):
                 self.sim.step()
+            self.initial_goal_distance = goal_distance(overbox_pos, object_qpos[:3])
+
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
         self.sim.forward()
@@ -647,6 +650,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
             # TODO: Test if this works properly
             goal = np.concatenate((goal_pos, rotations.mat2quat(rot_grip)))
+
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
         return goal.ravel().copy()
@@ -685,32 +689,45 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             object_height = self.sim.data.get_site_xpos('object0')[2]
             table_height = 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
             result = (np.abs(object_height - table_height) > self.lift_threshold)
-            # TODO: LIFT make sure that the block is in the "goal" zone in x timesteps
         elif self.reward_type == 'place':
-            # TODO: PLACE, implement is_success
-            # maybe use compute reward to decide weather it's close enough
-            result = False
-
+            if goal_distance(achieved_goal[:3], desired_goal[:3]) < self.success_threshold and (np.abs(theta_x - angle_45) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
+                result = True
         return result
 
     def _is_failed(self):
         # TODO: implement terminate states depending on the goal
         result = False
         if self.reward_type == 'reach':
+
             pass
         elif self.reward_type == 'orient':
-            pass
+            # calculate the tilt of object
+            rot_object0 = self.sim.data.get_site_xmat('object0')
+            object_tilt = angle_between(np.array((0, 0, 1)), np.matmul(rot_object0, (0, 0, 1)))
+            if object_tilt > math.radians(15):
+                result = True
+            if goal_distance(self.sim.data.get_site_xpos('robot0:grip'), self.sim.data.get_site_xpos('object0')) > 0.4:
+                result = True
 
         elif self.reward_type == 'lift':
-            object_height = self.sim.data.get_site_xpos('object0')[2]
-            table_height = 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
-            lift_cylinder_radius = 0.1
+            lift_cylinder_radius = 0.05
             dist_vec = np.abs(self.sim.data.get_site_xpos('object0')[:2] - self.initial_object_pos[:2])
             radial_dist = np.sqrt(np.square(dist_vec[0]) + np.square(dist_vec[1]))
 
-            if np.abs(object_height - table_height) > self.lift_threshold + 0.02 or radial_dist > lift_cylinder_radius:
+            # If the object is outside the cylinder zone
+            if radial_dist > lift_cylinder_radius:
                 result = True
 
+            # If the object is further than 5cm of the gripper
+            if np.linalg.norm(self.sim.data.get_site_xpos('object0') - self.sim.data.get_site_xpos('robot0:grip'),
+                              axis=-1) > 0.05:
+                result = True
+
+        elif self.reward_type == 'place':
+            pass
+            #if goal_distance(self.goal[:3], self.sim.data.get_site_xpos('object0')) > 0.3:  # TODO: REPLACE WITH VARIABLE
+            if goal_distance(self.sim.data.get_site_xpos('object0'), self.sim.data.get_site_xpos('robot0:grip')) > 0.05:
+                result = True
         return result
 
     def _is_collision(self):
