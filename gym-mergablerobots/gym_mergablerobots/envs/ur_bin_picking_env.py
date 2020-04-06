@@ -140,11 +140,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             h = np.abs(goal - achieved_goal)
             h_max = self.lift_threshold
             alpha = 4
-            r_h = -np.clip((1-((h / h_max) ** alpha)), 0, 1)
-            bonus_reward = 10
+            r_h = -(np.clip((h / h_max), 0, 1) ** alpha)[0]
+            bonus_reward = 2
 
-            # TODO: Make a pinch threshold
-            if h > self.lift_threshold:
+            if h < 0.01:    # Is within 1 cm of the goal height
                 reward = bonus_reward
             else:
                 reward = r_h
@@ -464,7 +463,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             box_qpos = self.sim.data.get_joint_qpos('box:joint')
             object_qpos = self.sim.data.get_joint_qpos('object0:joint')
             object_qpos[:3] = box_qpos[:3] + object_offset
-            self.initial_object_pos = object_qpos[:3]
+            self.initial_object_pos = object_qpos[:3].copy()
             self.sim.data.set_joint_qpos('object0:joint', object_qpos)
 
             # Start the simulation just over the box(same space as reach goal)
@@ -663,8 +662,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # A lift is successful if the object has been lifted lift_threshold over the box
             object_height = self.sim.data.get_site_xpos('object0')[2]
             table_height = 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
-            lift_cylinder_radius = 0.1
-            if np.abs(object_height - table_height) > self.lift_threshold and np.linalg.norm(self.sim.data.get_site_xpos('object0')[:2], self.initial_object_pos[:2]) < lift_cylinder_radius:
+            lift_cylinder_radius = 0.05
+            dist_vec = np.abs(self.sim.data.get_site_xpos('object0')[:2]-self.initial_object_pos[:2])
+            radial_dist = np.sqrt(np.square(dist_vec[0])+np.square(dist_vec[1]))
+            if np.abs(object_height - table_height) > self.lift_threshold and radial_dist < lift_cylinder_radius:
                 result = True
         elif self.reward_type == 'place':
             # maybe use compute reward to decide whether it's close enough
