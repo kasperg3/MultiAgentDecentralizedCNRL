@@ -160,10 +160,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             dist = goal_distance(achieved_goal[:3], goal[:3])
             dist_ref = goal_distance(self.initial_box_xpos, goal[:3])
             position_score = -(np.square(np.tanh(np.clip((dist / dist_ref), 0, 1))))
-            # TODO PLACE TEST THIS
             w_d = 1
             w_theta = 1
-            bonus = 2
+            bonus = 10
             alpha = 0.4
             goal_rot = rotations.quat2mat(goal[3:])
             goal_z = np.matmul(goal_rot, (0, 0, 1))
@@ -181,16 +180,17 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             theta_y = angle_45 - np.abs(theta_y - angle_45)
             theta_z = angle_90 - np.abs(theta_z - angle_90)
 
-            if theta_x < theta_y:   # rot reward
-                r_theta = 1 - (0.5 * (theta_x / angle_45 + theta_z / angle_90) ** alpha)
+            if theta_x < theta_y:
+                r_theta = -(1 - (np.clip((0.5 * ((1 - (theta_x / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
             else:
-                r_theta = 1 - (0.5 * (theta_y / angle_45 + theta_z / angle_90) ** alpha)
-            # TODO MAKE THIS NEGATIVE
-            rotation_score = r_theta
-            if self._is_success(achieved_goal,goal):
-                reward = 1
+                r_theta = -(1 - (np.clip((0.5 * ((1 - (theta_y / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
+
+            if self._is_success(achieved_goal, goal):
+                reward = bonus
+            elif self._is_failed():
+                reward = -bonus
             else:
-                reward = rotation_score * w_theta + position_score * w_d
+                reward = r_theta * w_theta + position_score * w_d
         return reward
 
     # RobotEnv methods
@@ -701,7 +701,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         return result
 
     def _is_failed(self):
-        # TODO: implement terminate states depending on the goal
         result = False
         if self.reward_type == 'reach':
             pass
@@ -723,10 +722,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # If the object is outside the cylinder zone
             if radial_dist > lift_cylinder_radius:
                 result = True
-
             # If the object is further than 5cm of the gripper
             if np.linalg.norm(self.sim.data.get_site_xpos('object0') - self.sim.data.get_site_xpos('robot0:grip'), axis=-1) > 0.05:
                 result = True
+
         elif self.reward_type == 'place':
             # If the object is further than 5cm of the gripper
             if np.linalg.norm(self.sim.data.get_site_xpos('object0') - self.sim.data.get_site_xpos('robot0:grip'), axis=-1) > 0.05:
