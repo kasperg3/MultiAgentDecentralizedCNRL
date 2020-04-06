@@ -25,11 +25,12 @@ def eval_policy(policy, reward_type, env_name, seed, eval_episodes=15):
 
 	avg_reward = 0.
 	for _ in range(eval_episodes):
-		state, done, is_success = eval_env.reset(), False, False
-		while not done and not is_success:
+		state, done, is_success, is_failed = eval_env.reset(), False, False, False
+		while not done and not is_success and not is_failed:
 			action = policy.select_action(np.array(state))
 			state, reward, done, info = eval_env.step(action)
 			is_success = info['is_success']
+			is_failed = info['is_failed']
 			avg_reward += reward
 
 	avg_reward /= eval_episodes
@@ -177,7 +178,8 @@ if __name__ == "__main__":
 				   	f"Reward: {episode_reward:.3f} | "
 				   	f"Episode time: {time.time() - episode_real_time:.2f} [seconds] | "
 				   	f"Estimated time left: {est_time_left/60:.2f} [minutes] | "
-					f"Success:  {info['is_success']}")
+					f"Success:  {info['is_success']} | "
+					f"Failed:  {info['is_failed']}")
 			# Reset environment
 			state, done = env.reset(), False
 			episode_reward = 0
