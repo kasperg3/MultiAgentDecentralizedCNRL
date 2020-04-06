@@ -703,7 +703,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             goal_x = np.matmul(goal_rot, (1, 0, 0))
             goal_y = np.matmul(goal_rot, (0, 1, 0))
             goal_z = np.matmul(goal_rot, (0, 0, 1))
-            rot_object0 = rotations.quat2mat(achieved_goal[3:])
+            rot_object0 = self.sim.data.get_site_xmat('object0')
             theta_x = min(angle_between(goal_x, np.matmul(rot_object0, (1, 0, 0))),
                           angle_between(goal_x, np.matmul(rot_object0, (-1, 0, 0))))
             theta_y = min(angle_between(goal_y, np.matmul(rot_object0, (0, 1, 0))),
@@ -715,7 +715,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             theta_x = angle_45 - np.abs(theta_x - angle_45)
             theta_y = angle_45 - np.abs(theta_y - angle_45)
             theta_z = angle_90 - np.abs(theta_z - angle_90)
-            if goal_distance(achieved_goal[:3], desired_goal[:3]) < self.success_threshold and (np.abs(theta_x - angle_45) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
+            if goal_distance(self.sim.data.get_site_xpos('object0'), desired_goal[:3]) < self.success_threshold and (np.abs(theta_x - angle_45) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
                 result = True
         return result
 
