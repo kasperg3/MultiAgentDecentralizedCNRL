@@ -101,9 +101,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         reward = 0
         if self.reward_type == 'reach':
             d = goal_distance(achieved_goal, goal)
-            penalty_weight = 1
-            box_move_penalty = np.abs(np.linalg.norm(self.sim.data.get_site_xvelp('box')) * penalty_weight)
-            reward = float(-(d + box_move_penalty * d))
+            reward = 1 - np.clip((d / goal_distance(self.initial_gripper_xpos, self.goal)), 0, 1)[0]
         elif self.reward_type == 'orient':
             # #angular component
             w_d = 0.5
