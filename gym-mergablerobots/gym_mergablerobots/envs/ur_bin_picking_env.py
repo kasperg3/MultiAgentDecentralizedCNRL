@@ -101,7 +101,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         reward = 0
         if self.reward_type == 'reach':
             d = goal_distance(achieved_goal, goal)
-            reward = 1 - np.clip((d / goal_distance(self.initial_gripper_xpos, self.goal)), 0, 1)[0]
+            reward = 1 - np.clip((d / goal_distance(self.initial_gripper_xpos, self.goal)), 0, 1)
         elif self.reward_type == 'orient':
             # #angular component
             w_d = 0.5
@@ -138,8 +138,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             if self._is_success(achieved_goal, goal):
                 # if close-euclidean and ( low-x-angle or low-y-angle ) and good-z-angle
                 reward = gamma_t * 10
-            elif self._is_failed():
-                reward = gamma_t * -50
             else:
                 reward = gamma_t * (w_theta * r_theta + w_d * r_d)
 
@@ -153,8 +151,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
             if self._is_success(achieved_goal, goal):    # Is within 1 cm of the goal height
                 reward = gamma_t * bonus_reward
-            elif self._is_failed():
-                reward = gamma_t * - bonus_reward
             else:
                 reward = gamma_t * r_h
 
@@ -189,8 +185,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             r_d = 1 - np.clip((goal_distance(achieved_goal[:3], goal[:3])/self.initial_goal_distance), 0, 1) ** alpha  # pos reward
             if self._is_success(achieved_goal, goal):
                 reward = gamma_t * bonus
-            elif self._is_failed():
-                reward = gamma_t * -bonus
             else:
                 reward = gamma_t * (w_theta * r_theta + w_d * r_d)
         return reward
