@@ -100,10 +100,10 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         # Compute distance between goal and the achieved goal.
         reward = 0
         if self.reward_type == 'reach':
-            d = goal_distance(achieved_goal, goal)
-            penalty_weight = 1
-            box_move_penalty = np.abs(np.linalg.norm(self.sim.data.get_site_xvelp('box')) * penalty_weight)
-            reward = float(-(d + box_move_penalty * d))
+            #d = goal_distance(achieved_goal, goal)
+            #penalty_weight = 1
+            #box_move_penalty = np.abs(np.linalg.norm(self.sim.data.get_site_xvelp('box')) * penalty_weight)
+            reward = float(-(goal_distance(achieved_goal, goal)))
 
         elif self.reward_type == 'orient':
             # #angular component
@@ -147,7 +147,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             h_max = self.lift_threshold
             alpha = 4
             r_h = -(np.clip((h / h_max), 0, 1) ** alpha)[0]
-            bonus_reward = 2
+            bonus_reward = 30
 
             if self._is_failed():
                 reward = -bonus_reward
@@ -661,7 +661,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         result = False
         if self.reward_type == 'reach':
             d = goal_distance(self.sim.data.get_site_xpos('robot0:grip'), desired_goal)
-            result = (d < self.success_threshold).astype(np.float32)
+            result = (d < self.success_threshold).astype(np.bool)
         elif self.reward_type == 'orient':
             body_id1 = self.sim.model.body_name2id('robot0:left_finger')
             body_id2 = self.sim.model.body_name2id('robot0:right_finger')

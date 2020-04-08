@@ -45,9 +45,9 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
 	parser.add_argument("--env", default="UrBinPickingOrient-v0")  	# OpenAI gym environment name
-	parser.add_argument("--reward", default="orient")      			# reward type
-	parser.add_argument("--seed", default=2345, type=int)           # Sets Gym, PyTorch and Numpy seeds
-	parser.add_argument("--start_timesteps", default=5e3, type=int)# Time steps initial random policy is used
+	parser.add_argument("--reward", default="Place")      			# reward type
+	parser.add_argument("--seed", default=1234, type=int)           # Sets Gym, PyTorch and Numpy seeds
+	parser.add_argument("--start_timesteps", default=25e3, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
 	parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
 	parser.add_argument("--expl_noise", default=0.1)                # Std of Gaussian exploration noise
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 	parser.add_argument("--render", action="store_true")            # Render the Training
 	parser.set_defaults(load_model='')  							# Set to "default" if you want to load default model
-	parser.set_defaults(render=True)
+	parser.set_defaults(render=False)
 	parser.set_defaults(save_model=True)
 	args = parser.parse_args()
 
@@ -168,7 +168,7 @@ if __name__ == "__main__":
 			policy.train(replay_buffer, args.batch_size)
 
 		# If the episode is done or the agent reaches a terminal state or info['is_success']
-		if done or info['is_failed']:
+		if done or info['is_failed'] or info['is_success']:
 			episode_time_buffer.append(time.time() - episode_real_time)
 			est_time_left = ((sum(episode_time_buffer)/episode_time_buffer.maxlen)/150) * (args.max_timesteps - t)
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
