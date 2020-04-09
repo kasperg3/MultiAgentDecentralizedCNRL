@@ -134,10 +134,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             else:
                 r_theta = -(1 - (np.clip((0.5 * ((1 - (theta_y / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
 
-            if self._is_failed():
-                reward = -50
-            elif self._is_success(achieved_goal, goal):
-                reward = 10
+            if self._is_success(achieved_goal, goal):
+                reward = 1
             else:
                 r_d = -(np.clip((goal_distance(achieved_goal, goal) / self.initial_goal_distance), 0, 1) ** alpha)
                 reward = (w_theta * r_theta + w_d * r_d)
@@ -147,11 +145,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             h_max = self.lift_threshold
             alpha = 4
             r_h = -(np.clip((h / h_max), 0, 1) ** alpha)[0]
-            bonus_reward = 30
+            bonus_reward = 1
 
-            if self._is_failed():
-                reward = -bonus_reward
-            elif self._is_success(achieved_goal, goal):    # Is within 1 cm of the goal height
+            if self._is_success(achieved_goal, goal):    # Is within 1 cm of the goal height
                 reward = bonus_reward
             else:
                 reward = r_h
@@ -163,7 +159,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             position_score = -(np.square(np.tanh(np.clip((dist / dist_ref), 0, 1))))
             w_d = 1
             w_theta = 1
-            bonus = 2
+            bonus = 1
             alpha = 0.4
             goal_rot = rotations.quat2mat(goal[3:])
             goal_z = np.matmul(goal_rot, (0, 0, 1))
@@ -188,8 +184,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
             if self._is_success(achieved_goal, goal):
                 reward = bonus
-            elif self._is_failed():
-                reward = -bonus
             else:
                 reward = r_theta * w_theta + position_score * w_d
         return reward
