@@ -153,12 +153,11 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             dist = goal_distance(achieved_goal[:3], goal[:3])
             dist_ref = goal_distance(self.initial_box_xpos, goal[:3])
             position_score = -(np.square(np.tanh(np.clip((dist / dist_ref), 0, 1))))
-            w_d = 1
-            w_theta = 1
+            w_d = 0.5
+            w_theta = 0.5
             bonus = 1
             alpha = 0.4
             goal_rot = rotations.quat2mat(goal[3:])
-            goal_z = np.matmul(goal_rot, (0, 0, 1))
             goal_y = np.matmul(goal_rot, (0, 1, 0))
             goal_x = np.matmul(goal_rot, (1, 0, 0))
 

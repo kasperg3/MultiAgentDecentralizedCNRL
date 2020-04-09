@@ -23,7 +23,7 @@
 		</body>
 
         <!--Include the UR robot-->
-        <include file="robot2.xml"/>
+        <include file="robot1.xml"/>
         <include file="robot2.xml"/>
 
 		<body pos="0.4 1.2 0.2" name="table0">
