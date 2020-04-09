@@ -44,12 +44,12 @@ def eval_policy(policy, reward_type, env_name, seed, eval_episodes=15):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
-	parser.add_argument("--env", default="UrBinPickingOrient-v0")  	# OpenAI gym environment name
-	parser.add_argument("--reward", default="Place")      			# reward type
+	parser.add_argument("--env", default="UrBinPickingReach-v0")  	# OpenAI gym environment name
+	parser.add_argument("--reward", default="reach")      			# reward type
 	parser.add_argument("--seed", default=1234, type=int)           # Sets Gym, PyTorch and Numpy seeds
 	parser.add_argument("--start_timesteps", default=25e3, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
-	parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
+	parser.add_argument("--max_timesteps", default=2000000, type=int)   # Max time steps to run environment
 	parser.add_argument("--expl_noise", default=0.1)                # Std of Gaussian exploration noise
 	parser.add_argument("--batch_size", default=256, type=int)      # Batch size for both actor and critic
 	parser.add_argument("--discount", default=0.99)                 # Discount factor
