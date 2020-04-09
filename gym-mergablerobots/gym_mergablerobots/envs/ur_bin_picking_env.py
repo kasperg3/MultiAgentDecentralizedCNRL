@@ -110,7 +110,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             w_d = 0.5
             w_theta = 0.5
             alpha = 0.4
-
+            bonus_reward = 1
             body_id1 = self.sim.model.body_name2id('robot0:left_finger')
             body_id2 = self.sim.model.body_name2id('robot0:right_finger')
 
@@ -131,8 +131,11 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             else:
                 r_theta = -((theta_x / angle_45) ** alpha)
 
-            r_d = -(np.clip((goal_distance(achieved_goal, goal) / self.initial_goal_distance), 0, 1) ** alpha)
-            reward = (w_theta * r_theta + w_d * r_d)
+            if self._is_success(achieved_goal, goal):
+                reward = bonus_reward
+            else:
+                r_d = -(np.clip((goal_distance(achieved_goal, goal) / self.initial_goal_distance), 0, 1) ** alpha)
+                reward = (w_theta * r_theta + w_d * r_d)
         elif self.reward_type == 'lift':
             h = np.abs(goal - achieved_goal)
             h_max = self.lift_threshold
@@ -155,11 +158,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             q1 = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
             q2 = self.goal[3:]
 
-            #theta = 1 - np.square(np.sum(np.multiply(q1, q2)))
-            # New method: ang = acos{[q1(inner)q2] / [norm(q1)norm(q2)]}
-            #theta = np.arccos((np.inner(q1, q2))/(np.linalg.norm(q1)*np.linalg.norm(q2)))
-
-            # Newer method with normalization to two pi
             theta = (2*np.arccos(np.abs(np.inner(q1, rotations.quat_conjugate(q2))))) / (2*np.pi)
             rotation_score = -np.square(np.tanh(theta))
             # reward weights
@@ -167,6 +165,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             w2 = 0.7
             reward = rotation_score * w1 + position_score * w2
 
+            # TODO: Add is success and bonus reward
 
         return reward
 
