@@ -64,22 +64,27 @@ class ConceptEnv(gym.Env):
         pass
 
     def step(self, action):
-        action = np.clip(action, self.action_space.low, self.action_space.high)
         # TODO Add multiple actions
-        self._set_action(action)
+        #self._set_action(action)
         self.sim.step()
         self._step_callback()
         obs = self._get_obs()
 
+        # TODO: Make logic of whether to keep on stepping a previous action or choosing a new one
+
+
+
+
         done = False
         info = {}
-
         reward = self.compute_reward()
         return obs, reward, done, info
 
     def _set_action(self, action):
+        # TODO set action should take a action from a concept loaded at init
+        # then step should decide what concept to use
         # Change action space if number of is changed
-        assert action.shape == (5,)
+        assert action.shape == (10,)
         action = action.copy()  # ensure that we don't change the action outside of this scope
         pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3], action[4]
         pos_ctrl *= 0.01  # limit maximum change in position
