@@ -53,12 +53,23 @@ class ConceptEnv(gym.Env):
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=obs.shape, dtype='float32')
 
         # Multi-agent variables
+
+        self.actions_available = {"NOOP": 0,
+                                  "REACH": 1,
+                                  "LIFT": 2,
+                                "ORIENT": 3,
+                                  "CLOSE_GRIPPER": 4,
+                                  "OPEN_GRIPPER": 5,
+                                  "PLACE": 6}
+
         self.n_agents = n_agents
-        self.agent_actions = np.empty(n_agents)
-        self.agent_action_done = np.empty(n_agents)
+        self.agent_actions = np.empty(n_agents)         # The current action for each agent
         for i in range(n_agents):
-            self.agent_actions[i] = 0  # Initial No-Op action
-            self.agent_action_done[i] = True  # Make both agents ready for a new action
+            self.agent_actions[i] = -1  # initial action to a invalid action
+
+        # TODO load policies for each actions
+        for i in range(self.n_actions):
+            pass
 
     @property
     def dt(self):
@@ -75,48 +86,65 @@ class ConceptEnv(gym.Env):
     def choose_action(self, action, agent):
         # get a movement from a policy dependent on the agent and the action chosen
         # Set agent_action_done to True if
-
         # No-Op Action
+        if action == self.actions_available["NOOP"]:
+            pass
+        elif action == self.actions_available["REACH"]:
+            # Reach Action
+            pass
+        elif action == self.actions_available["LIFT"]:
+            # Lift Action
+            pass
+        elif action == self.actions_available["ORIENT"]:
+            # Orient Action
+            pass
+        elif action == self.actions_available["CLOSE_GRIPPER"]:
+            # Close Gripper Action
+            pass
+        elif action == self.actions_available["OPEN_GRIPPER"]:
+            # Open Gripper Action
+            pass
+        elif action == self.actions_available["PLACE"]:
+            # Place Action
+            pass
 
-        # Reach Action
+        # TODO Implement this and replace self.sample_action()
+        return self.sample_action()
 
-        # Lift Action
-
-        # Orient Action
-
-        # Close Gripper Action
-
-        # Open Gripper Action
-
-        # Place Action
-
-        # TODO Implement this and replace random sample
-        return True, self.sample_action()
-
+    """ step:
+        action: Contains an array of n discrete agent actions ranging from 0 to available action of the agent
+    """
     def step(self, action):
+        # TODO What will happen if two agents finish simultaneously
+
         # TODO Add logic to choose what concept to use:
         # This should be the same concept until the concept is done
         # Choose a new concept independently depending on the robot
-        agent_actions = np.empty((2, 5))
+        agent_movement = np.empty((2, 5))
         for agent in range(self.n_agents):
-            if self.agent_action_done[agent]:
-                self.agent_action_done[agent], agent_actions[agent] = self.choose_action(action[agent], agent)
+            if self.agent_actions[agent] == -1:
+                agent_movement[agent] = self.choose_action(action[agent], agent)
+            else:
+                # TODO: If the action is not done, get a action from a concept/trained policy
+                pass
 
-        # Act in the env
-        self._set_action(agent_actions)
+        # Act in the environment
+        self._set_action(agent_movement)
         self.sim.step()
         self._step_callback()
         obs = self._get_obs()
         done = False
         info = {}
 
-        for i in range(self.agent_action_done.size):
-            #Check if an action is done.
-            if self.agent_action_done[i]:
-                info["agent_done"] = i+1
+        for i in range(self.agent_actions.size):
+            # Check if an action is done.
+            if self.agent_actions[i] == -1:
+                info["agent_done"] = i
             else:
-                info["agent_done"] = 0
+                # Set to -1 if the agent is not done
+                info["agent_done"] = -1
 
+        # TODO If action is done, compute reward for the agent
         reward = self.compute_reward()
         return obs, reward, done, info
 
