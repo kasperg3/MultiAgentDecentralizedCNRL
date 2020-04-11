@@ -13,7 +13,7 @@ import numpy as np
 
 
 class ConceptEnv(gym.Env):
-    """Superclass for UR environments.
+    """
     """
 
     def _is_collision(self):
@@ -23,7 +23,8 @@ class ConceptEnv(gym.Env):
                  model_path,
                  n_substeps,
                  initial_qpos,
-                 n_actions,):
+                 n_actions,
+                 n_agents, ):
 
         if model_path.startswith('/'):
             fullpath = model_path
@@ -45,11 +46,19 @@ class ConceptEnv(gym.Env):
         self.seed()
         self._env_setup(initial_qpos=initial_qpos)
         self.initial_state = copy.deepcopy(self.sim.get_state())
-
+        self.n_actions = n_actions
         self.goal = self._sample_goal()
         obs = self._get_obs()
         self.action_space = spaces.Discrete(n_actions)
-        self.observation_space = spaces.Box(-np.inf, np.inf, shape=obs['observation'].shape, dtype='float32')
+        self.observation_space = spaces.Box(-np.inf, np.inf, shape=obs.shape, dtype='float32')
+
+        # Multi-agent variables
+        self.n_agents = n_agents
+        self.agent_actions = np.empty(n_agents)
+        self.agent_action_done = np.empty(n_agents)
+        for i in range(n_agents):
+            self.agent_actions[i] = 0  # Initial No-Op action
+            self.agent_action_done[i] = True  # Make both agents ready for a new action
 
     @property
     def dt(self):
@@ -63,53 +72,88 @@ class ConceptEnv(gym.Env):
     def _step_callback(self):
         pass
 
+    def choose_action(self, action, agent):
+        # get a movement from a policy dependent on the agent and the action chosen
+        # Set agent_action_done to True if
+
+        # No-Op Action
+
+        # Reach Action
+
+        # Lift Action
+
+        # Orient Action
+
+        # Close Gripper Action
+
+        # Open Gripper Action
+
+        # Place Action
+
+        # TODO Implement this and replace random sample
+        return True, self.sample_action()
+
     def step(self, action):
-        # TODO Add multiple actions
-        #self._set_action(action)
+        # TODO Add logic to choose what concept to use:
+        # This should be the same concept until the concept is done
+        # Choose a new concept independently depending on the robot
+        agent_actions = np.empty((2, 5))
+        for agent in range(self.n_agents):
+            if self.agent_action_done[agent]:
+                self.agent_action_done[agent], agent_actions[agent] = self.choose_action(action[agent], agent)
+
+        # Act in the env
+        self._set_action(agent_actions)
         self.sim.step()
         self._step_callback()
         obs = self._get_obs()
-
-        # TODO: Make logic of whether to keep on stepping a previous action or choosing a new one
-
-
-
-
         done = False
         info = {}
+
+        for i in range(self.agent_action_done.size):
+            #Check if an action is done.
+            if self.agent_action_done[i]:
+                info["agent_done"] = i+1
+            else:
+                info["agent_done"] = 0
+
         reward = self.compute_reward()
         return obs, reward, done, info
 
+    def sample_action(self):
+        return np.array((
+            float(self.np_random.uniform(-1, 1)),
+            float(self.np_random.uniform(-1, 1)),
+            float(self.np_random.uniform(-1, 1)),
+            float(self.np_random.uniform(-1, 1)),
+            float(self.np_random.uniform(-1, 1))))
+
     def _set_action(self, action):
-        # TODO set action should take a action from a concept loaded at init
-        # then step should decide what concept to use
-        # Change action space if number of is changed
-        assert action.shape == (10,)
+        # Change action space if number of actions is changed
+        assert action.shape == (2, 5)
         action = action.copy()  # ensure that we don't change the action outside of this scope
-        pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3], action[4]
-        pos_ctrl *= 0.01  # limit maximum change in position
 
-        # Only do z rotation
-        z_rot = rotations.euler2quat([0, np.pi, rot_ctrl * 2 * np.pi]) * 0.05
-        gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
-
-        action = np.concatenate([pos_ctrl, z_rot, gripper_ctrl])
+        mocap_action = np.zeros((2, 7))
+        actuator_action = np.zeros((2, 9))
+        for i in range(action.shape[0]):
+            pos_ctrl, rot_ctrl, gripper_ctrl = action[i][:3], action[i][3], action[i][4]
+            pos_ctrl *= 0.02  # limit maximum change in position
+            # Only do z rotation
+            z_rot = rotations.euler2quat([0, np.pi, rot_ctrl * 2 * np.pi]) * 0.05
+            gripper_ctrl_arr = np.array((gripper_ctrl, gripper_ctrl))
+            actuator_action[i] = np.concatenate([pos_ctrl, z_rot, gripper_ctrl_arr])
+            mocap_action[i] = np.concatenate([pos_ctrl, z_rot])
 
         # Apply action to simulation.
-        utils.ctrl_set_action(self.sim, action)
-        utils.mocap_set_action(self.sim, action)
+        utils.ctrl_set_action(self.sim, actuator_action)
+        utils.mocap_set_action(self.sim, mocap_action)
 
     def _get_obs(self):
         # positions
+        # TODO Design observations space
         grip_pos = self.sim.data.get_site_xpos('robot0:grip')
         achieved_goal = grip_pos.copy()
-
-        obs = None
-        return {
-            'observation': grip_pos.copy(),
-            'achieved_goal': achieved_goal.copy(),
-            'desired_goal': self.goal.copy(),
-        }
+        return grip_pos.copy()
 
     def _viewer_setup(self):
         body_id = self.sim.model.body_name2id('robot0:robotiq_base_link')
@@ -156,7 +200,6 @@ class ConceptEnv(gym.Env):
         self.sim.data.set_mocap_pos('robot1:mocap', gripper1_target)
         self.sim.data.set_mocap_quat('robot1:mocap', gripper1_rotation)
         for _ in range(10):
-            self.render()
             self.sim.step()
 
         # Extract information for sampling goals.
