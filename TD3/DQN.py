@@ -240,15 +240,17 @@ if __name__ == '__main__':
         score = 0
         while not done:
             action = [agent0.choose_action(observation), agent1.choose_action(observation)]
-            rand_action = [env.action_space.sample(), env.action_space.sample()]
+            rand_action = [4, 5]
             observation_, reward, done, info = env.step(rand_action)
 
             # Keep stepping while actions are not done
-            while info["agent_done"] == 0:
-                rand_action = [env.action_space.sample(), env.action_space.sample()]
-                observation_, reward, done, info = env.step(rand_action)
-                env.render()
+            # TODO Make a loop to see what agent has finished the action
+            for agent in range(2):
+                if info["agent_done"] == agent:
+                    # TODO Store transition and learn
+                    pass
 
+            env.render()
             score += reward
 
             # if not load_checkpoint:

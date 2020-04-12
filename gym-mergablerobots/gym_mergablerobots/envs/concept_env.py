@@ -11,6 +11,8 @@ from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
 
+import TD3
+
 
 class ConceptEnv(gym.Env):
     """
@@ -47,29 +49,55 @@ class ConceptEnv(gym.Env):
         self._env_setup(initial_qpos=initial_qpos)
         self.initial_state = copy.deepcopy(self.sim.get_state())
         self.n_actions = n_actions
-        self.goal = self._sample_goal()
         obs = self._get_obs()
         self.action_space = spaces.Discrete(n_actions)
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=obs.shape, dtype='float32')
 
         # Multi-agent variables
-
         self.actions_available = {"NOOP": 0,
                                   "REACH": 1,
                                   "LIFT": 2,
-                                "ORIENT": 3,
+                                  "ORIENT": 3,
                                   "CLOSE_GRIPPER": 4,
                                   "OPEN_GRIPPER": 5,
                                   "PLACE": 6}
 
         self.n_agents = n_agents
-        self.agent_actions = np.empty(n_agents)         # The current action for each agent
-        for i in range(n_agents):
-            self.agent_actions[i] = -1  # initial action to a invalid action
 
-        # TODO load policies for each actions
-        for i in range(self.n_actions):
-            pass
+        # Policies and TD3 variables
+        self.policies = {}
+        for action in self.actions_available:
+            action_dim = 5
+            state_dim = 0
+            name = ""
+            seed = ""
+            max_action = float(1)
+            if action == "REACH":
+                name = "Reach"
+                seed = "2345"
+                state_dim = 29
+            elif action == "LIFT":
+                name = "Lift"
+                seed = "2345"
+                state_dim = 31
+            elif action == "ORIENT":
+                name = "Orient"
+                seed = "2345"
+                state_dim = 39
+            elif action == "PLACE":
+                name = "Place"
+                seed = "1234"
+                state_dim = 34
+            else:  # If not a trained policy, then skip and dont load a policy
+                continue
+            kwargs = {
+                "state_dim": state_dim,
+                "action_dim": action_dim,
+                "max_action": max_action,
+            }
+            file_name = f"TD3_UrBinPicking{name}-v0_{seed}"
+            self.policies[self.actions_available[action]] = TD3.TD3(**kwargs)
+            self.policies[self.actions_available[action]].load(f"./models/{file_name}")
 
     @property
     def dt(self):
@@ -83,68 +111,176 @@ class ConceptEnv(gym.Env):
     def _step_callback(self):
         pass
 
+    """
+    get_concept_state: Returns the state space of the agent
+    concept: integer corresponding to a specific concept
+    agent: number of the agent used to get the right state space
+    """
+
+    def get_concept_state(self, concept, agent):
+        # TODO: MAKE SURE THAT THE GOAL IS CONCATENATED AT THE FRONT IN THE RIGHT ENVIRONMENTS
+        # positions
+        grip_pos = self.sim.data.get_site_xpos('robot'+str(agent)+':grip')
+        grip_rot_cart = Rotation.from_matrix(
+            self.sim.data.get_site_xmat('robot'+str(agent)+':grip'))  # The rotation of gripper(Cartesian)
+        grip_rot = Rotation.as_quat(grip_rot_cart)
+        dt = self.sim.nsubsteps * self.sim.model.opt.timestep
+        grip_velp = self.sim.data.get_site_xvelp('robot'+str(agent)+':grip') * dt
+        grip_velr = self.sim.data.get_site_xvelr('robot'+str(agent)+':grip') * dt
+        robot_qpos, robot_qvel = utils.robot_get_obs(self.sim)
+
+        box_pos = self.sim.data.get_site_xpos('box')
+        box_rel_pos = box_pos - grip_pos
+        box_rot = Rotation.from_matrix(self.sim.data.get_site_xmat('box')).as_quat()
+
+        object_pos = self.sim.data.get_site_xpos('object0')
+        object_rel_pos = object_pos - grip_pos
+        object_rot = Rotation.from_matrix(self.sim.data.get_site_xmat('object0')).as_quat()
+
+        achieved_goal = grip_pos.copy()
+
+        # Define a goal and concat at the front of the observation
+        if concept == self.actions_available["REACH"]:
+            # Update the goal to follow the box
+            goal = self.sim.data.get_site_xpos('box')[:3]
+            # The relative position to the goal
+            goal_rel_pos = goal - achieved_goal
+            obs = np.concatenate([
+                grip_pos,
+                grip_rot,
+                grip_velp,
+                grip_velr,
+                box_pos.ravel(),
+                box_rel_pos.ravel(),
+                box_rot.ravel(),
+                goal_rel_pos,
+            ])
+        elif concept == self.actions_available["LIFT"]:
+            # The relative position is between object and goal position
+            object_height = self.sim.data.get_site_xpos('object0')[2]
+            goal = (self.sim.data.get_site_xpos('object0')[2] + 0.15).ravel()
+            goal_rel_height = goal - object_height
+            obs = np.concatenate([
+                grip_pos,
+                grip_rot,
+                grip_velp,
+                grip_velr,
+                object_pos.ravel(),
+                object_rel_pos.ravel(),
+                box_pos.ravel(),
+                box_rel_pos.ravel(),
+                box_rot.ravel(),
+                goal_rel_height,
+            ])
+        elif concept == self.actions_available["ORIENT"]:
+            # Update the goal to follow the box
+            goal = self.sim.data.get_site_xpos('object0')
+            # The relative position to the goal
+            goal_rel_pos = goal - achieved_goal
+            obs = np.concatenate([
+                grip_pos,
+                grip_rot,
+                grip_velp,
+                grip_velr,
+                object_pos.ravel(),
+                object_rel_pos.ravel(),
+                object_rot.ravel(),
+                box_pos.ravel(),
+                box_rel_pos.ravel(),
+                box_rot.ravel(),
+                goal_rel_pos,
+            ])
+        elif concept == self.actions_available["PLACE"]:
+            # The relative position to the goal
+            achieved_goal = np.concatenate((grip_pos, grip_rot))
+            # TODO: make the goal dynamic, so one can change it if one wants to move the position of place
+            goal = np.concatenate((np.array([0.63, 0.5, 0.43]), rotations.mat2quat(self.sim.data.get_site_xmat('object0'))))
+            goal_rel_pos = goal[:3] - achieved_goal[:3]
+            grip_q = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
+            goal_q = goal[3:]
+
+            goal_rel_rot = np.array(2 * np.arccos(np.abs(np.inner(grip_q, rotations.quat_conjugate(goal_q)))))
+
+            obs = np.concatenate([
+                grip_pos,
+                grip_rot,
+                grip_velp,
+                grip_velr,
+                object_pos,
+                object_rel_pos,
+                object_rot.ravel(),
+                goal_rel_pos,
+                goal_rel_rot.ravel(),
+            ])
+
+        return np.concatenate((goal, obs))
+    """
+        choose_action: Takes a action for a single agent
+        action: Discrete action from the DQN
+        agent: used to determine what states to use for the different policies
+        returns: agent_done , agent_movement
+    """
+
     def choose_action(self, action, agent):
         # get a movement from a policy dependent on the agent and the action chosen
         # Set agent_action_done to True if
-        # No-Op Action
+        agent_movement = np.zeros(5)
+        agent_done = False
         if action == self.actions_available["NOOP"]:
             pass
         elif action == self.actions_available["REACH"]:
-            # Reach Action
-            pass
+            state = self.get_concept_state(action, agent)
+            agent_movement = self.policies[action].select_action(state)
         elif action == self.actions_available["LIFT"]:
-            # Lift Action
-            pass
+            state = self.get_concept_state(action, agent)
+            agent_movement = self.policies[action].select_action(state)
         elif action == self.actions_available["ORIENT"]:
-            # Orient Action
-            pass
+            state = self.get_concept_state(action, agent)
+            agent_movement = self.policies[action].select_action(state)
         elif action == self.actions_available["CLOSE_GRIPPER"]:
-            # Close Gripper Action
-            pass
+            self.gripper_ctrl[agent] = 0.3
+            self.move_allowed[agent] = False
         elif action == self.actions_available["OPEN_GRIPPER"]:
-            # Open Gripper Action
-            pass
+            self.gripper_ctrl[agent] = -0.3
+            self.move_allowed[agent] = False
         elif action == self.actions_available["PLACE"]:
-            # Place Action
-            pass
+            state = self.get_concept_state(action, agent)
+            agent_movement = self.policies[action].select_action(state)
 
-        # TODO Implement this and replace self.sample_action()
-        return self.sample_action()
+        return agent_done, agent_movement
 
     """ step:
+            This method should only return when the agent has completed an action or timeouted
         action: Contains an array of n discrete agent actions ranging from 0 to available action of the agent
     """
+
     def step(self, action):
         # TODO What will happen if two agents finish simultaneously
-
-        # TODO Add logic to choose what concept to use:
         # This should be the same concept until the concept is done
         # Choose a new concept independently depending on the robot
         agent_movement = np.empty((2, 5))
-        for agent in range(self.n_agents):
-            if self.agent_actions[agent] == -1:
-                agent_movement[agent] = self.choose_action(action[agent], agent)
-            else:
-                # TODO: If the action is not done, get a action from a concept/trained policy
-                pass
-
-        # Act in the environment
-        self._set_action(agent_movement)
-        self.sim.step()
-        self._step_callback()
-        obs = self._get_obs()
-        done = False
         info = {}
 
-        for i in range(self.agent_actions.size):
-            # Check if an action is done.
-            if self.agent_actions[i] == -1:
-                info["agent_done"] = i
-            else:
-                # Set to -1 if the agent is not done
-                info["agent_done"] = -1
+        while True:
+            for agent in range(self.n_agents):
+                agent_done, agent_movement[agent] = self.choose_action(action[agent], agent)
+                if agent_done:
+                    info["agent_done"] = agent
+                else:
+                    info["agent_done"] = -1
+
+            # Act in the environment
+            self._set_action(agent_movement)
+            self.sim.step()
+            self._step_callback()
+            done = False
+            self.render()
+
+            if info["agent_done"] != -1:
+                break
 
         # TODO If action is done, compute reward for the agent
+        obs = self._get_obs()
         reward = self.compute_reward()
         return obs, reward, done, info
 
@@ -162,18 +298,24 @@ class ConceptEnv(gym.Env):
         action = action.copy()  # ensure that we don't change the action outside of this scope
 
         mocap_action = np.zeros((2, 7))
-        actuator_action = np.zeros((2, 9))
+        actuator_action = np.zeros((2, 2))
         for i in range(action.shape[0]):
-            pos_ctrl, rot_ctrl, gripper_ctrl = action[i][:3], action[i][3], action[i][4]
+            pos_ctrl, rot_ctrl, gripper_ctrl = action[i][:3], action[i][3], self.gripper_ctrl[i]
             pos_ctrl *= 0.02  # limit maximum change in position
             # Only do z rotation
             z_rot = rotations.euler2quat([0, np.pi, rot_ctrl * 2 * np.pi]) * 0.05
-            gripper_ctrl_arr = np.array((gripper_ctrl, gripper_ctrl))
-            actuator_action[i] = np.concatenate([pos_ctrl, z_rot, gripper_ctrl_arr])
+            actuator_action[i] = np.array((gripper_ctrl, gripper_ctrl))
+
+            # Disallow movement when closing or opening gripper
+            if not self.move_allowed[i]:
+                pos_ctrl = np.zeros(3)
+                pos_ctrl[2] = 0.0002  # To avoid drifting in z
+                z_rot = np.zeros(4)
+
             mocap_action[i] = np.concatenate([pos_ctrl, z_rot])
 
         # Apply action to simulation.
-        utils.ctrl_set_action(self.sim, actuator_action)
+        utils.ctrl_set_action(self.sim, np.concatenate((np.zeros(14), actuator_action.ravel())))
         utils.mocap_set_action(self.sim, mocap_action)
 
     def _get_obs(self):
@@ -198,6 +340,28 @@ class ConceptEnv(gym.Env):
     def _reset_sim(self):
         self.sim.set_state(self.initial_state)
         self.episode_steps = 0
+
+        #Start with the gripper open:
+        self.gripper_ctrl = np.array((-0.3, -0.3))
+        target_y_range = 0.05  # The length of the box
+        target_x_range = 0.1  # The width of the box
+        target_height = 0.05  # The height of the box
+
+        # Allow movement for all other actions than close and open gripper
+        self.move_allowed = np.array((True, True), np.bool)
+
+        # random object spawn (z-rot and xyz)
+        object_qpos = self.sim.data.get_joint_qpos('object0:joint')
+        object_offset = [
+            float(self.np_random.uniform(-target_x_range, target_x_range)),
+            float(self.np_random.uniform(-target_y_range, target_y_range)),
+            target_height]
+        object_z_angle = float(self.np_random.uniform(-np.pi, np.pi))
+        object_qpos_euler = rotations.quat2euler(object_qpos[3:])
+        object_qpos_euler[2] = object_z_angle
+        object_qpos[3:] = rotations.euler2quat(object_qpos_euler)
+        object_qpos[:3] = self.sim.data.get_joint_qpos('box:joint')[:3] + object_offset
+
         self.sim.forward()
         return True
 
@@ -265,7 +429,6 @@ class ConceptEnv(gym.Env):
         did_reset_sim = False
         while not did_reset_sim:
             did_reset_sim = self._reset_sim()
-        self.goal = self._sample_goal().copy()
         obs = self._get_obs()
         return obs
 
