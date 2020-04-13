@@ -205,7 +205,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         action = action.copy()  # ensure that we don't change the action outside of this scope
         pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
         pos_ctrl *= 0.05  # limit maximum change in position
-        rot_ctrl *= 0.05
+        rot_ctrl *= 0.01
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
         if self.reward_type == 'reach' or self.reward_type == 'orient':
