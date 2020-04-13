@@ -52,7 +52,7 @@ if __name__ == "__main__":
 	parser.add_argument("--expl_noise", default=0.1)                # Std of Gaussian exploration noise
 	parser.add_argument("--batch_size", default=256, type=int)      # Batch size for both actor and critic
 	parser.add_argument("--discount", default=0.99)                 # Discount factor
-	parser.add_argument("--tau", default=0.005)                     # Target network update rate
+	parser.add_argument("--tau", default=0.005, type=float)                     # Target network update rate
 	parser.add_argument("--policy_noise", default=0.2)              # Noise added to target policy during critic update
 	parser.add_argument("--noise_clip", default=0.5)                # Range to clip target policy noise
 	parser.add_argument("--policy_freq", default=2, type=int)       # Frequency of delayed policy updates
@@ -133,7 +133,9 @@ if __name__ == "__main__":
 	episode_reward = 0
 	episode_timesteps = 0
 	episode_num = 0
-
+	last_eval_episode = 0
+	success_since_last_eval = 0
+	best_eval_success = 0
 	# reset timer and init time queue
 	episode_real_time = time.time()
 	episode_time_buffer = deque([], maxlen=10)
@@ -168,6 +170,7 @@ if __name__ == "__main__":
 
 		# If the episode is done or the agent reaches a terminal state or info['is_success']
 		if done or info['is_success']:
+			success_since_last_eval += int(info['is_success'])
 			episode_time_buffer.append(time.time() - episode_real_time)
 			est_time_left = ((sum(episode_time_buffer)/episode_time_buffer.maxlen)/150) * (args.max_timesteps - t)
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
@@ -187,12 +190,19 @@ if __name__ == "__main__":
 
 		# Evaluate episode
 		if (t + 1) % args.eval_freq == 0:
+			eval_success = success_since_last_eval / (episode_num - last_eval_episode)
 			evaluations.append(eval_policy(policy, args.reward, args.env, args.seed))
 			np.save(f"./results/{file_name}_test", evaluations)
 			np.save(f"./results/{file_name}_train", episode_reward)
 			# TODO: Only save the best evaluation of the model
-			if args.save_model:
-				policy.save(f"./models/{file_name}")
-				print(".............Saving model..............")
-				print("---------------------------------------")
+			print(f"success since last evaluation: {eval_success:.2f} best score: {best_eval_success}")
+			if eval_success >= best_eval_success:
+				best_eval_success = eval_success
+				if args.save_model:
+					policy.save(f"./models/{file_name}")
+					print(".............Saving model..............")
+					print("---------------------------------------")
+
 			episode_real_time = time.time()
+			last_eval_episode = episode_num
+			success_since_last_eval = 0
