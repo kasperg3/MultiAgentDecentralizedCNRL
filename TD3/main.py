@@ -196,7 +196,7 @@ if __name__ == "__main__":
 			evaluations.append(eval_policy(policy, args.reward, args.env, args.seed))
 			np.save(f"./results/{file_name}_test", evaluations)
 			np.save(f"./results/{file_name}_train", episode_reward)
-			# TODO: Only save the best evaluation of the model
+			np.save(f"./results/{file_name}_train_success", eval_success)
 			print(f"success since last evaluation: {eval_success:.2f} best score: {best_eval_success}")
 			if eval_success >= best_eval_success:
 				best_eval_success = eval_success
