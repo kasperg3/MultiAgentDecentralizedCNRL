@@ -88,6 +88,9 @@ if __name__ == "__main__":
 	action_dim = env.action_space.shape[0]
 	max_action = float(env.action_space.high[0])
 
+	success_history = []
+	train_history = []
+
 	kwargs = {
 		"state_dim": state_dim,
 		"action_dim": action_dim,
@@ -171,6 +174,7 @@ if __name__ == "__main__":
 
 		# If the episode is done or the agent reaches a terminal state or info['is_success']
 		if done or info['is_success']:
+			train_history.append(episode_reward)
 			success_since_last_eval += int(info['is_success'])
 			episode_time_buffer.append(time.time() - episode_real_time)
 			est_time_left = ((sum(episode_time_buffer)/episode_time_buffer.maxlen)/150) * (args.max_timesteps - t)
@@ -193,10 +197,11 @@ if __name__ == "__main__":
 		# Evaluate episode
 		if (t + 1) % args.eval_freq == 0:
 			eval_success = success_since_last_eval / (episode_num - last_eval_episode)
+			success_history.append(eval_success)
 			evaluations.append(eval_policy(policy, args.reward, args.env, args.seed))
 			np.save(f"./results/{file_name}_test", evaluations)
-			np.save(f"./results/{file_name}_train", episode_reward)
-			np.save(f"./results/{file_name}_train_success", eval_success)
+			np.save(f"./results/{file_name}_train", train_history)
+			np.save(f"./results/{file_name}_train_success", success_history)
 			print(f"success since last evaluation: {eval_success:.2f} best score: {best_eval_success}")
 			if eval_success >= best_eval_success:
 				best_eval_success = eval_success
