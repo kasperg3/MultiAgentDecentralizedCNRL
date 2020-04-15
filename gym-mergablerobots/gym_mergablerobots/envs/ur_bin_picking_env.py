@@ -313,9 +313,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 object_pos,
                 object_rel_pos,
                 object_rot.ravel(),
-                box_pos,
-                box_rel_pos,
-                box_rot.ravel(),
                 goal_rel_pos,
                 goal_rel_rot.ravel(),
             ])

@@ -10,10 +10,12 @@
     <include file="shared.xml"/>
 
     <equality>
+        <weld body1="robot1:mocap" body2="robot1:robotiq_tcp" solimp="0.9 0.95 0.001" solref="0.02 1"/>
         <weld body1="robot0:mocap" body2="robot0:robotiq_tcp" solimp="0.9 0.95 0.001" solref="0.02 1"/>
     </equality>
 
     <contact>
+        <exclude body1="robot1:left_finger" body2="robot1:right_finger"/>
         <exclude body1="robot0:left_finger" body2="robot0:right_finger"/>
     </contact>
 
@@ -24,7 +26,8 @@
 		</body>
 
         <!--Include the UR robot-->
-        <include file="robot2.xml"/>
+        <include file="robot0.xml"/>
+        <include file="robot1.xml"/>
 
 		<body pos="0.4 1.2 0.2" name="table0">
 			<geom size="0.4 1.2 0.2" type="box" name="table0" mass="2000" material="table_mat"/>
@@ -61,5 +64,7 @@
     <actuator>
 		<position ctrllimited="true" ctrlrange="0 1" joint="robot0:joint7_l" kp="20000" name="robot0:l_gripper_finger_joint" user="1"/>
 		<position ctrllimited="true" ctrlrange="0 1" joint="robot0:joint7_r" kp="20000" name="robot0:r_gripper_finger_joint" user="1"/>
+		<position ctrllimited="true" ctrlrange="0 1" joint="robot1:joint7_l" kp="20000" name="robot1:l_gripper_finger_joint" user="1"/>
+		<position ctrllimited="true" ctrlrange="0 1" joint="robot1:joint7_r" kp="20000" name="robot1:r_gripper_finger_joint" user="1"/>
     </actuator>
 </mujoco>

@@ -1,5 +1,12 @@
 from gym.envs.registration import register
 
+
+register(
+    id='Concept-v0',
+    entry_point='gym_mergablerobots.envs:Concept',
+    max_episode_steps=200,
+)
+
 for reward_type in ['sparse', 'dense', 'place', 'orient', 'lift', 'reach']:
     suffix = 'Dense' if reward_type == 'dense' else ''
     episode_steps = 70  # The default episode step
