@@ -239,9 +239,7 @@ if __name__ == '__main__':
     for i in range(n_games):
         done = False
         observation = env.reset()
-
         score = 0
-
         action = [5, 5]
         observation_, reward, done, info = env.step(action)
         while not done:

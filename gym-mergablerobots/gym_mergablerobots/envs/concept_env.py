@@ -242,9 +242,9 @@ class ConceptEnv(gym.Env):
             state = self.get_concept_state(action, agent)
             agent_movement = self.policies[action].select_action(state)
         elif action == self.actions_available["CLOSE_GRIPPER"]:
-            agent_movement[7] = 0.3
+            self.gripper_ctrl[agent] = 0.3
         elif action == self.actions_available["OPEN_GRIPPER"]:
-            agent_movement[7] = -0.3
+            self.gripper_ctrl[agent] = -0.3
         elif action == self.actions_available["PLACE"]:
             state = self.get_concept_state(action, agent)
             agent_movement = self.policies[action].select_action(state)
