@@ -241,22 +241,23 @@ if __name__ == '__main__':
         observation = env.reset()
         score = 0
         action = [5, 5]
-        observation_, reward, done, info = env.step(action)
         while not done:
+            # Step in the environment
+            print("Stepping with action:" + str(action))
+            observation_, reward, done, info = env.step(action)
+
             for agent in range(2):
                 if info["agent_done"][agent]:
-                    # TODO Store transition and learn
-                    action[agent] = env.action_space.sample()
-                    observation_, reward, done, info = env.step(action)
-                    print("Agent:" + str(agent) +" | stepping action: " + str(action[agent]))
+                    # if the action is done, add the transition to the replay buffer and learn
                     agents[agent].store_transition(observation, action[agent], reward, observation_, int(done))
                     agents[agent].learn()
+                    # when the previous action is done, choose a new action
+                    action[agent] = agents[agent].choose_action(observation)
 
             env.render()
             score += reward
             observation = observation_
             n_steps += 1
-            env.render()
         scores.append(score)
         steps_array.append(n_steps)
 

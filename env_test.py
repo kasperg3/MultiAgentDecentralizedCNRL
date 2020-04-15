@@ -9,16 +9,15 @@ torch.manual_seed(1000)
 np.random.seed(1000)
 
 env.reset()
+env.reset()
 while True:
     env.render()
-    for _ in range(10):
-        action = [2, 5]
-        env.step(action)
-    for _ in range(10):
-        action = [4, 5]
-        env.step(action)
-    for _ in range(10):
-        action = [1, 5]
-        env.step(action)
+    env.step([5, 5])
+    env.step([0, 5])
+    env.step([2, 5])
+    env.step([4, 5])
+    env.step([1, 5])
+    while True:
+        env.render()
     break
 env.close()
