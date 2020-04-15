@@ -6,7 +6,7 @@ import torch
 from gym.wrappers import FlattenObservation, FilterObservation
 import numpy as np
 
-from TD3 import TD3
+import TD3
 
 
 def main(args):
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--policy", default="TD3")  # Policy name (TD3, DDPG or OurDDPG)
     parser.add_argument("--env", default="UrBinPickingOrient-v0")  # OpenAI gym environment name
-    parser.add_argument("--seed", default=1234, type=int)  # Sets Gym, PyTorch and Numpy seeds
+    parser.add_argument("--seed", default=1000, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--max_timesteps", default=2000000, type=int)  # Max time steps to run environment
     parser.add_argument("--episodes", default=100, type=int)
     parser.add_argument("--reward_type", default='orient')

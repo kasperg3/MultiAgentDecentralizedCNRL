@@ -6,64 +6,83 @@
 		<geom conaffinity="0" contype="0" pos="0 0 0" rgba="0.5 0 0 0.1" size="0.005 0.005 1" type="box"/>
 	</body>
     <body childclass="robot:ur5" name="robot0:base_link" pos="0.125 0.575 0.4" quat="0.3826834324 0 0 0.9238795325">
-            <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="4" diaginertia="0.0072 0.00443333 0.00443333" />
-            <geom name="robot0:standoff" type="cylinder" euler="0 0 0"  size="0.1 0.035" material="robot:base_mat" class="robot:grey"/>
-            <geom name="robot0:base_mesh" type="mesh" pos="0 0 0.035" euler="1.57 0 0" mesh="base" material="robot:base_mat" class="robot:grey"/>
-            <body name="robot0:shoulder_link" pos="0 0 0.201">
-                <site name="robot0:base" pos="0 0 0" rgba="0 0 0 0" size="0.02 0.02 0.02"/>
-                <inertial pos="0 0 0" mass="3.7" diaginertia="0.0102675 0.0102675 0.00666" />
-                <geom name="robot0:shoulder_mesh" type="mesh" mesh="shoulder" material="robot:arm_mat" />
-                <joint name="robot0:joint1" axis="0 0 1" limited="false"/>
+        <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="4" diaginertia="0.0072 0.00443333 0.00443333" />
+        <geom name="robot0:standoff" type="cylinder" euler="0 0 0"  size="0.1 0.035" material="robot:base_mat" class="robot:grey"/>
+        <geom name="robot0:base_mesh" type="mesh" pos="0 0 0.035" euler="1.57 0 0" mesh="base" material="robot:base_mat" class="robot:grey"/>
+        <site name="robot0:base" pos="0 0 0" rgba="0 0 0 0" size="0.02 0.02 0.02"/>
+        <body name="link1" pos="0 0 0.135">
+            <joint name="robot0:joint1" axis="0 0 1" pos="0 0 0"/>
+            <inertial pos="0 -0.02561 0.00193" mass="3.761" diaginertia="0.1 0.1 0.1"/>
+            <geom name="link1_connector" type="mesh" mesh="link1_connector" pos="0 0 0" material="black"
+                conaffinity="32" contype="32"/>
+            <geom name="link1" type="mesh" mesh="link1" pos="0 0 0.008" material="grey"/>
+            <geom name="link1_cap" type="mesh" mesh="link1_cap" pos="0 0 .1025" material="blue"/>
 
-                <body name="robot0:upper_arm_link" pos="0 0.13585 0" quat="0.707107 0 0.707107 0">
-                    <inertial pos="0 0 0.28" mass="8.393" diaginertia="0.226891 0.226891 0.0151074" />
-                    <geom name="robot0:upperarm_mesh" type="mesh" mesh="upperarm" material="robot:arm_mat" />
-                    <joint name="robot0:joint2" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+            <body name="link2" pos="-0.0663 0 0.0679">
+                <joint name="robot0:joint2" axis="-1 0 0" pos="0 0 0"/>
+                <inertial pos="-0.04706 0 0.2125" mass="8.058" diaginertia="0.1 0.1 0.1"/>
+                <geom name="link2_connector" type="mesh" mesh="link2_connector" pos="0 0 0" material="black"
+                    conaffinity="32" contype="32"/>
+                <geom name="link2" type="mesh" mesh="link2" pos="-0.008 0 0" material="grey"/>
+                <geom name="link2_cap" type="mesh" mesh="link2_cap" pos="-0.1015 0 -0.0025" material="blue"/>
+                <geom name="link2_tube" type="mesh" mesh="link2_tube" pos="-0.0679 0 0.066" material="silver"/>
 
-                    <body name="robot0:forearm_link" pos="0 -0.1197 0.425">
-                        <inertial pos="0 0 0.25" mass="2.275" diaginertia="0.0494433 0.0494433 0.004095" />
-                        <geom name="robot0:forearm_mesh" type="mesh" mesh="forearm" material="robot:arm_mat" />
-                        <joint name="robot0:joint3" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+                <body name="link3" pos="-0.008 0 0.425">
+                    <joint name="robot0:joint3" axis="1 0 0" pos="0 0 0"/>
+                    <inertial pos="0.0478 0 0.15" mass="2.846" diaginertia="0.1 0.1 0.1"/>
+                    <geom name="link3a_connector" type="mesh" mesh="link3a_connector" pos="0 0 0" material="black"
+                        conaffinity="32" contype="32"/>
+                    <geom name="link3a" type="mesh" mesh="link3a" pos="0.008 0 0" material="grey"/>
+                    <geom name="link3_tube" type="mesh" mesh="link3_tube" pos="0.059 0 0.066" material="silver"/>
+                    <geom name="link3b_connector" type="mesh" mesh="link3b_connector" pos="0.059 0 0.3418" material="black" />
+                    <geom name="link3b_connector2" type="mesh" mesh="link3b_connector2" pos="0.059 0 0.34" material="grey"
+                        conaffinity="32" contype="32"/>
+                    <geom name="link3b" type="mesh" mesh="link3b" pos="0.059 0 0.347" material="grey"/>
+                    <geom name="link3_cap" type="mesh" mesh="link3_cap" pos="0.0837 0 0.392" material="blue"/>
 
-                        <body name="robot0:wrist1_link" pos="0 0 0.39225" quat="0.707107 0 0.707107 0">
-                            <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1.219" diaginertia="0.21942 0.111173 0.111173" />
-                            <geom name="robot0:wrist1_mesh" type="mesh" mesh="wrist1" material="robot:arm_mat" />
-                            <joint name="robot0:joint4" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+                    <body name="link4" pos="0.0173 0 0.3922">
+                        <joint name="robot0:joint4" axis="-1 0 0" pos="0 0 0"/>
+                        <inertial pos="-0.05796 -0.0018 0" mass="1.37" diaginertia="0.1 0.1 0.1"/>
+                        <geom name="link4_connector" type="mesh" mesh="link4_connector" pos="0 0 0" material="black"
+                            conaffinity="32" contype="32"/>
+                        <geom name="link4" type="mesh" mesh="link4" pos="-0.008 0 0" material="grey"/>
+                        <geom name="link4_cap" type="mesh" mesh="link4_cap" pos="-0.05325 0 -0.0247" material="blue"/>
 
-                            <body name="robot0:wrist2_link" pos="0 0.093 0">
-                                <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1.219" diaginertia="0.21942 0.111173 0.111173" />
-                                <geom name="robot0:wrist2_mesh" type="mesh" mesh="wrist2" material="robot:arm_mat" />
-                                <joint name="robot0:joint5" pos="0 0 0" axis="0 0 1" range="-3.1405 3.1405"/>
+                        <body name="link5" pos="-0.05325 0 0.04165">
+                            <joint name="robot0:joint5" axis="0 0 1" pos="0 0 0"/>
+                            <inertial pos="0.0018 0 0.01634" mass="1.3" diaginertia="0.1 0.1 0.1"/>
+                            <geom name="link5_connector" type="mesh" mesh="link5_connector" pos="0 0 0" material="black"
+                                conaffinity="32" contype="32"/>
+                            <geom name="link5" type="mesh" mesh="link5" pos="0 0 0.0079" material="grey"/>
+                            <geom name="link5_cap" type="mesh" mesh="link5_cap" pos="0.025 0 0.053" material="blue"/>
 
-                                <body name="robot0:wrist3_link" pos="0 0 0.09465" quat="0.707107 0 -0.707107 0" >
-                                    <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.1879" diaginertia="0.033822 0.0171365 0.0171365" />
-                                    <geom name="robot0:wrist3_mesh" type="mesh" mesh="wrist3" material="robot:arm_mat" contype="1" conaffinity="1" />
-                                    <joint name="robot0:joint6" pos="0 0 0" axis="0 1 0" range="-3.1405 3.1405"/>
+                            <body name="link6" pos="-0.04165 0 0.05305">
+                                <joint name="robot0:joint6" axis="-1 0 0" pos="0 0 0"/>
+                                <inertial pos="-0.038841 0 0" mass="0.365" diaginertia="0.1 0.1 0.1"/>
+                                <geom name="link6_connector" type="mesh" mesh="link6_connector" pos="0 0 0" material="black"
+                                    conaffinity="32" contype="32"/>
+                                <geom name="link6" type="mesh" mesh="link6" pos="-0.008 0 0" material="silver"/>
 
-                                    <body name="robot0:ee_link" pos="0 0.0823 0" quat="0.707107 -0.707107 0 0">
-                                        <inertial pos="0 0.0823 0" quat="0.707107 -0.707107 0 0" mass="0" diaginertia="0 0 0" />
-                                        <geom name="robot0:robotiq_coupler_mesh" type="mesh" mesh="robotiq_coupler" pos="0 0 0.005" material="robot:gripper_mat" />
-                                        <body name="robot0:robotiq_base_link" pos="0 0 0.095" euler="0 0 0">
-                                            <geom name="robot0:robotiq_base" type="mesh" mesh="robotiq_gripper" pos="0 0 0" euler="1.5707 0 0" material="robot:gripper_mat" class="robot:grey"/>
-                                            <body name="robot0:robotiq_tcp" pos="0 0 0.047" euler="0 0 0">
+                                <body name="EE" pos="0 0 0" euler="0 0 0"/>
+                                <body name="robot0:ee_link" pos="-0.037 0 0" euler="0 -1.57 0">
+                                    <inertial pos="0 0.0823 0" euler="0 0 0" mass="0" diaginertia="0 0 0" />
+                                    <geom name="robot0:robotiq_coupler_mesh" type="mesh" mesh="robotiq_coupler" pos="0 0 0.005" material="robot:gripper_mat" />
+                                    <body name="robot0:robotiq_base_link" pos="0 0 0.095" euler="0 0 0">
+                                        <geom name="robot0:robotiq_base" type="mesh" mesh="robotiq_gripper" pos="0 0 0" euler="1.5707 0 0" material="robot:gripper_mat" class="robot:grey"/>
+                                        <body name="robot0:robotiq_tcp" pos="0 0 0.047" euler="0 0 0">
 
-                                                <body childclass="robot:robotiqGripper" name="robot0:right_finger" pos="-0.005 -0.027 -0.01" euler="1.5707 0 -1.5707">
-                                                    <inertial diaginertia="0.1 0.1 0.1" mass="4" pos="-0.01 0 0"/>
-                                                    <geom pos="0 0.005 0" size="0.023 0.01 0.004" type="box" name="robot0:robotiq_finger_mesh_r" material="robot:gripper_finger_mat" condim="4" friction="1 0.05 0.01"/>
-                                                    <joint name='robot0:joint7_r' type='slide' axis='0 0 -1' range='0 .03'/>
-                                                    <!--<joint axis="0 1 0" name="robot0:r_gripper_finger_joint" range="0 0.05"></joint>-->
-                                                    <!-- <geom name="robot0:robotiq_finger_mesh_r" type="mesh" mesh="robotiq_finger" material="robot:gripper_finger_mat" contype="0" conaffinity="0"/>-->
-                                                </body>
-
-                                                <body childclass="robot:robotiqGripper" name="robot0:left_finger" pos="0.0025 0.027 -0.01" euler="-1.5707 0 1.5707">
-                                                    <inertial diaginertia="0.1 0.1 0.1" mass="4" pos="-0.01 0 0"/>
-                                                    <geom pos="0 0.005 0" size="0.023 0.01 0.004" type="box" name="robot0:robotiq_finger_mesh_l" material="robot:gripper_finger_mat" condim="4" friction="1 0.05 0.01"/>
-                                                    <joint name='robot0:joint7_l' type='slide' axis='0 0 -1' range='0 .03'/>
-<!--                                                    <geom name="robot0:robotiq_finger_mesh_l" type="mesh" mesh="robotiq_finger" material="robot:gripper_finger_mat"  contype="0" conaffinity="0"/>-->
-<!--                                                    <joint name='robot0:joint7_l' type='slide' axis='0 0 -1' range='0 .025'/>-->
-                                                </body>
-                                                <site name="robot0:grip" pos="0 0 0" rgba="1 0 0 1" size="0.005 0.005 0.005" type="box"/>
+                                            <body name="robot0:right_finger" pos="-0.005 -0.027 -0.01" euler="1.5707 0 -1.5707">
+                                                <inertial diaginertia="0.1 0.1 0.1" mass="4" pos="-0.01 0 0"/>
+                                                <joint name='robot0:joint7_r' type='slide' axis='0 0 -1' range='0 0.035' armature="100" damping="20000" limited="true" solimplimit="0.99 0.999 0.01" solreflimit="0.01 1" />
+                                                <geom pos="0 0.005 0" size="0.023 0.01 0.004" rgba="0.356 0.361 0.376 1.0" type="box" name="robot0:robotiq_finger_mesh_r" material="robot:gripper_finger_mat" condim="4" friction="1.2 0.05 0.01" margin="0.00001" solimp="0.99 0.99 .001" solref="-100000 -150"/>
                                             </body>
+
+                                            <body name="robot0:left_finger" pos="0.0025 0.027 -0.01" euler="-1.5707 0 1.5707">
+                                                <inertial diaginertia="0.1 0.1 0.1" mass="4" pos="-0.01 0 0"/>
+                                                <joint name='robot0:joint7_l' type='slide' axis='0 0 -1' range='0 0.035'  armature="100" damping="20000" limited="true" solimplimit="0.99 0.999 0.01" solreflimit="0.01 1"/>
+                                                <geom pos="0 0.005 0" size="0.023 0.01 0.004" rgba="0.356 0.361 0.376 1.0" type="box" name="robot0:robotiq_finger_mesh_l" material="robot:gripper_finger_mat" condim="4" friction="1.2 0.05 0.01" margin="0.00001" solimp="0.99 0.99 .001" solref="-100000 -150"/>
+                                            </body>
+                                            <site name="robot0:grip" pos="0 0 0" rgba="1 0 0 1" size="0.005 0.005 0.005" type="box"/>
                                         </body>
                                     </body>
                                 </body>
@@ -73,4 +92,5 @@
                 </body>
             </body>
         </body>
+    </body>
 </mujoco>
