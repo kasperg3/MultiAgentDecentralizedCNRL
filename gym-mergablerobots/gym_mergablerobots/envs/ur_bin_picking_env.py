@@ -181,7 +181,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 r_theta = -(1 - (np.clip((0.5 * ((1 - (theta_x / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
             else:
                 r_theta = -(1 - (np.clip((0.5 * ((1 - (theta_y / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
-
             if self._is_success(achieved_goal, goal):
                 reward = bonus
             else:
@@ -230,6 +229,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         dt = self.sim.nsubsteps * self.sim.model.opt.timestep
         grip_velp = self.sim.data.get_site_xvelp('robot0:grip') * dt
         grip_velr = self.sim.data.get_site_xvelr('robot0:grip') * dt
+        object_velp = self.sim.data.get_site_xvelp('object0') * dt
+        object_velr = self.sim.data.get_site_xvelr('object0') * dt
         robot_qpos, robot_qvel = utils.robot_get_obs(self.sim)
 
         box_pos = self.sim.data.get_site_xpos('box')
@@ -250,9 +251,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             self.goal = self.sim.data.get_site_xpos('box')[:3] + self.box_offset
             obs = np.concatenate([
                 grip_pos,
-                grip_rot,
                 grip_velp,
-                grip_velr,
                 box_pos.ravel(),
                 box_rel_pos.ravel(),
                 box_rot.ravel(),
@@ -286,19 +285,15 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
             obs = np.concatenate([
                 grip_pos,
-                grip_rot,
                 grip_velp,
-                grip_velr,
                 object_pos.ravel(),
                 object_rel_pos.ravel(),
-                box_pos.ravel(),
-                box_rel_pos.ravel(),
-                box_rot.ravel(),
                 goal_rel_height,
             ])
         elif self.reward_type == 'place':
             # The relative position to the goal
-            achieved_goal = np.concatenate((grip_pos, grip_rot))
+            #achieved_goal = np.concatenate((grip_pos, grip_rot))
+            achieved_goal = np.concatenate((object_pos, object_rot.ravel()))
             goal_rel_pos = self.goal[:3] - achieved_goal[:3]
             grip_q = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
             goal_q = self.goal[3:]
@@ -307,12 +302,11 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
             obs = np.concatenate([
                 grip_pos,
-                grip_rot,
-                grip_velp,
-                grip_velr,
                 object_pos,
-                object_rel_pos,
                 object_rot.ravel(),
+                object_velp,
+                object_velr,
+                object_rel_pos,
                 goal_rel_pos,
                 goal_rel_rot.ravel(),
             ])
@@ -624,25 +618,32 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             goal = self.sim.data.get_site_xpos('object0')[2] + self.lift_threshold
         elif self.reward_type == 'place':
             # goal zone size 10x10cm
-            goal_offset = self.sample_point(0.1, 0.1, 0.01)
+            goal_offset = self.sample_point(0.02, 0.02, 0.02)
             goal_height = 0.43
-            goal_pos = np.array([0.63, 0.5, goal_height]) + goal_offset  # A goal just beside the robot
+            grip_pos = self.sim.data.get_site_xpos('robot0:grip')
+            object_pos = self.sim.data.get_site_xpos('object0')
+            goal_pos = np.array(object_pos) + goal_offset  # A goal just beside the robot
+            grip_rot = self.sim.data.get_site_xmat('robot0:grip')
+            object_rot = self.sim.data.get_site_xmat('object0')
+            grip_rot_euler = rotations.mat2euler(grip_rot)
+            object_rot_euler = rotations.mat2euler(object_rot)
+            object_rot_euler[2] = float(self.np_random.uniform(-np.pi, np.pi))
 
             #Sample a random rotation
-            rot_grip = Rotation.random().as_matrix()
-            rot_box = self.sim.data.get_site_xmat('box')
-            rot_gb = np.matmul(rot_grip.transpose(), rot_box)
-            p_box = np.array([0, 0, -1])
-            p_g = np.matmul(rot_gb, p_box)
-            alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
-
-            while math.degrees(alpha_z) > 15:
-                rot_grip = Rotation.random().as_matrix()
-                rot_gb = np.matmul(rot_grip.transpose(), rot_box)
-                p_g = np.matmul(rot_gb, p_box)
-                alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
+            # rot_grip = Rotation.random().as_matrix()
+            # rot_box = self.sim.data.get_site_xmat('box')
+            # rot_gb = np.matmul(rot_grip.transpose(), rot_box)
+            # p_box = np.array([0, 0, -1])
+            # p_g = np.matmul(rot_gb, p_box)
+            # alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
+            #
+            # while math.degrees(alpha_z) > 15:
+            #     rot_grip = Rotation.random().as_matrix()
+            #     rot_gb = np.matmul(rot_grip.transpose(), rot_box)
+            #     p_g = np.matmul(rot_gb, p_box)
+            #     alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
             # TODO: Test if this works properly
-            goal = np.concatenate((goal_pos, rotations.mat2quat(rot_grip)))
+            goal = np.concatenate((goal_pos, rotations.euler2quat(object_rot_euler)))
 
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')

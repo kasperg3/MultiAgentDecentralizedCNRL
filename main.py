@@ -6,7 +6,7 @@ import torch
 from gym.wrappers import FlattenObservation, FilterObservation
 import numpy as np
 
-import TD3
+from TD3 import TD3
 
 
 def main(args):
