@@ -13,10 +13,66 @@ import numpy as np
 
 import TD3
 
+def goal_distance(goal_a, goal_b):
+    assert goal_a.shape == goal_b.shape
+    return np.linalg.norm(goal_a - goal_b, axis=-1)
+
+def angle_between(v1, v2):
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+
+def unit_vector(vector):
+    """ Returns the unit vector of the vector.  """
+    return vector / np.linalg.norm(vector)
+
 
 class ConceptEnv(gym.Env):
     """
     """
+
+    def rad_between_obj_and_grip(self, agent):
+        body_id1 = self.sim.model.body_name2id('robot'+agent+':left_finger')
+        body_id2 = self.sim.model.body_name2id('robot'+agent+':right_finger')
+
+        finger_left = self.sim.data.body_xpos[body_id1]
+        finger_right = self.sim.data.body_xpos[body_id2]
+
+        orient_line = finger_left - finger_right
+        rot_object0 = self.sim.data.get_site_xmat('object'+agent)
+        theta_x = min(angle_between(orient_line, np.matmul(rot_object0, (1, 0, 0))),
+                      angle_between(orient_line, np.matmul(rot_object0, (-1, 0, 0))))
+        theta_y = min(angle_between(orient_line, np.matmul(rot_object0, (0, 1, 0))),
+                      angle_between(orient_line, np.matmul(rot_object0, (0, -1, 0))))
+        theta_z = angle_between(orient_line, np.matmul(rot_object0, (0, 0, 1)))
+        angle_45 = math.radians(45)
+        angle_90 = math.radians(90)
+
+        theta_array = np.array([0, 0, 0])
+        theta_array[0] = angle_45 - np.abs(theta_x - angle_45)
+        theta_array[1] = angle_45 - np.abs(theta_y - angle_45)
+        theta_array[2] = angle_90 - np.abs(theta_z - angle_90)
+        return theta_array
+
+    def orientation_is_success(self, agent):
+        xy_success_threshold = math.radians(10)
+        z_success_threshold = math.radians(45)
+        theta_xyz = self.rad_between_obj_and_grip(agent)
+        if min(theta_xyz[0], theta_xyz[1]) < xy_success_threshold and theta_xyz[2] < z_success_threshold:
+            return True
+        return False
+
+
+    def gripper_is_closed(self, agent):
+        body_id1 = self.sim.model.body_name2id('robot' + agent + ':left_finger')
+        body_id2 = self.sim.model.body_name2id('robot' + agent + ':right_finger')
+
+        finger_left = self.sim.data.body_xpos[body_id1]
+        finger_right = self.sim.data.body_xpos[body_id2]
+
+        fingers_closed = bool(goal_distance(finger_left, finger_right) < 0.03)
+        return fingers_closed
 
     def _is_collision(self):
         pass
@@ -328,12 +384,34 @@ class ConceptEnv(gym.Env):
         utils.ctrl_set_action(self.sim, np.concatenate((np.zeros(14), actuator_action.ravel())))
         utils.mocap_set_action(self.sim, mocap_action)
 
-    def _get_obs(self):
-        # positions
-        # TODO Design observations space
-        grip_pos = self.sim.data.get_site_xpos('robot0:grip')
-        achieved_goal = grip_pos.copy()
-        return grip_pos.copy()
+    def _get_obs(self, agent):
+        dist_success_threshold = 0.02
+        lift_threshold = 0.15
+        grasp_ready = False
+        has_object = False
+        object_lifted = False
+
+        pinch_point = self.sim.data.get_site_xpos('robot' + agent + ':mocap')
+        object_position = self.sim.data.get_site_xpos('object' + agent)
+        grip_to_object_rel_distance = goal_distance(pinch_point, object_position)
+
+        if grip_to_object_rel_distance < dist_success_threshold and self.orientation_is_success(agent):
+            grasp_ready = True
+        if grasp_ready and self.gripper_is_closed(agent) and grip_to_object_rel_distance < dist_success_threshold:
+            has_object = True
+        if has_object and object_position[2] > lift_threshold:
+            object_lifted = True
+
+        obs = np.concatenate([
+            pinch_point.ravel(),
+            object_position.ravel(),
+            grip_to_object_rel_distance.ravel(),
+            grasp_ready,
+            has_object,
+            object_lifted,
+        ])
+
+        return obs.copy()
 
     def _viewer_setup(self):
         body_id = self.sim.model.body_name2id('robot0:robotiq_base_link')
