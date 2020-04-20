@@ -127,7 +127,7 @@ class ConceptEnv(gym.Env):
         # Policies and TD3 variables
         self.policies = {}
         for action in self.actions_available:
-            action_dim = 8
+            action_dim = 7
             max_action = 1.0
             if action == "REACH":
                 name = "Reach"
@@ -140,6 +140,7 @@ class ConceptEnv(gym.Env):
                 state_dim = 39
             elif action == "PLACE":
                 name = "Place"
+                action_dim = 4
                 state_dim = 34
             else:  # If not a trained policy, then skip and dont load a policy
                 continue
@@ -150,7 +151,7 @@ class ConceptEnv(gym.Env):
             }
             file_name = f"TD3_UrBinPicking{name}-v0_1000"
             self.policies[self.actions_available[action]] = TD3.TD3(**kwargs)
-            self.policies[self.actions_available[action]].load(f"./models/rot_optimal_concepts/{file_name}")
+            self.policies[self.actions_available[action]].load(f"./models/new_states/{file_name}")
 
     @property
     def dt(self):
@@ -179,6 +180,10 @@ class ConceptEnv(gym.Env):
         dt = self.sim.nsubsteps * self.sim.model.opt.timestep
         grip_velp = self.sim.data.get_site_xvelp('robot' + str(agent) + ':grip') * dt
         grip_velr = self.sim.data.get_site_xvelr('robot' + str(agent) + ':grip') * dt
+
+        object_velp = self.sim.data.get_site_xvelp('object0') * dt
+        object_velr = self.sim.data.get_site_xvelr('object0') * dt
+
         robot_qpos, robot_qvel = utils.robot_get_obs(self.sim)
 
         box_pos = self.sim.data.get_site_xpos('box')
@@ -244,10 +249,9 @@ class ConceptEnv(gym.Env):
                 goal_rel_pos,
             ])
         elif concept == self.actions_available["PLACE"]:
-            # The relative position to the goal
-            achieved_goal = np.concatenate((grip_pos, grip_rot))
             # TODO: make the goal dynamic, so one can change it if one wants to move the position of place
             goal = np.concatenate((np.array([0.63, 0.5, 0.43]), rotations.mat2quat(self.sim.data.get_site_xmat('object' + str(agent)))))
+            achieved_goal = np.concatenate((object_pos, object_rot.ravel()))
             goal_rel_pos = goal[:3] - achieved_goal[:3]
             grip_q = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
             goal_q = goal[3:]
@@ -257,11 +261,11 @@ class ConceptEnv(gym.Env):
             obs = np.concatenate([
                 grip_pos,
                 grip_rot,
-                grip_velp,
-                grip_velr,
                 object_pos,
-                object_rel_pos,
                 object_rot.ravel(),
+                object_velp,
+                object_velr,
+                object_rel_pos,
                 goal_rel_pos,
                 goal_rel_rot.ravel(),
             ])
@@ -279,7 +283,7 @@ class ConceptEnv(gym.Env):
         # get a movement from a policy dependent on the agent and the action chosen
         # Set agent_action_done to True if
         self.move_allowed[agent] = True
-        agent_movement = np.zeros(8)
+        agent_movement = np.zeros(7)
         agent_done = False
         self.current_action_steps[agent] += 1  # increment the amount of
         if self.current_action_steps[agent] >= self.max_action_steps:
@@ -310,7 +314,10 @@ class ConceptEnv(gym.Env):
             self.gripper_ctrl[agent] = -1
         elif action == self.actions_available["PLACE"]:
             state = self.get_concept_state(action, agent)
-            agent_movement = self.policies[action].select_action(state)
+            policy_output = self.policies[action].select_action(state)
+            rot_ctrl = (rotations.euler2quat([0, np.pi, policy_output[3] * 2 * np.pi]) * rotations.quat_conjugate(rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip')))) * 2
+            pos_crtl = policy_output[:3] * 0.5
+            agent_movement = np.concatenate((pos_crtl, rot_ctrl))
 
         return agent_done, agent_movement
 
@@ -323,7 +330,7 @@ class ConceptEnv(gym.Env):
         # TODO What will happen if two agents finish simultaneously
         # This should be the same concept until the concept is done
         # Choose a new concept independently depending on the robot
-        agent_movement = np.empty((2, 8))
+        agent_movement = np.empty((2, 7))
         info = {"agent_done": [-1, -1]}
 
         while True:
@@ -361,7 +368,7 @@ class ConceptEnv(gym.Env):
 
     def _set_action(self, action):
         # Change action space if number of actions is changed
-        assert action.shape == (2, 8)
+        assert action.shape == (2, 7)
         action = action.copy()  # ensure that we don't change the action outside of this scope
 
         mocap_action = np.zeros((2, 7))
@@ -423,6 +430,9 @@ class ConceptEnv(gym.Env):
         self.viewer.cam.elevation = -14.
 
     def _render_callback(self):
+        # Visualize target.
+        sites_offset = (self.sim.data.site_xpos - self.sim.model.site_pos).copy()
+        site_id = self.sim.model.site_name2id('target0')
         self.sim.forward()
 
     def sample_box_position(self):

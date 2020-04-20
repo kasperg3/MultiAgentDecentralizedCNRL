@@ -51,46 +51,14 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         self.box_range = box_range
         self.success_threshold = success_threshold
         self.lift_threshold = lift_threshold
-        self.collision_array = ['robot0:standoff robot0:forearm_mesh',
-                                'robot0:standoff robot0:wrist1_mesh',
-                                'robot0:standoff robot0:wrist2_mesh',
-                                'robot0:standoff robot0:wrist3_mesh',
-                                'robot0:standoff robot0:robotiq_coupler_mesh',
-                                'robot0:standoff robot0:robotiq_base_mesh',
-                                'robot0:standoff robot0:robotiq_finger_mesh_r',
-                                'robot0:standoff robot0:robotiq_finger_mesh_l',
-                                'robot0:base_mesh robot0:forearm_mesh',
-                                'robot0:base_mesh robot0:wrist1_mesh',
-                                'robot0:base_mesh robot0:wrist2_mesh',
-                                'robot0:base_mesh robot0:wrist3_mesh',
-                                'robot0:base_mesh robot0:robotiq_coupler_mesh',
-                                'robot0:base_mesh robot0:robotiq_base_mesh',
-                                'robot0:base_mesh robot0:robotiq_finger_mesh_r',
-                                'robot0:base_mesh robot0:robotiq_finger_mesh_l',
-                                'robot0:shoulder_mesh robot0:forearm_mesh',
-                                'robot0:shoulder_mesh robot0:wrist1_mesh',
-                                'robot0:shoulder_mesh robot0:wrist2_mesh',
-                                'robot0:shoulder_mesh robot0:wrist3_mesh',
-                                'robot0:shoulder_mesh robot0:robotiq_coupler_mesh',
-                                'robot0:shoulder_mesh robot0:robotiq_base_mesh',
-                                'robot0:shoulder_mesh robot0:robotiq_finger_mesh_r',
-                                'robot0:shoulder_mesh robot0:robotiq_finger_mesh_l',
-                                'robot0:upperarm_mesh robot0:wrist2_mesh',
-                                'robot0:upperarm_mesh robot0:wrist3_mesh',
-                                'robot0:upperarm_mesh robot0:robotiq_coupler_mesh',
-                                'robot0:upperarm_mesh robot0:robotiq_base_mesh',
-                                'robot0:upperarm_mesh robot0:robotiq_finger_mesh_r',
-                                'robot0:upperarm_mesh robot0:robotiq_finger_mesh_l',
-                                'robot0:forearm_mesh robot0:shoulder_mesh',
-                                'robot0:forearm_mesh robot0:wrist3_mesh',
-                                'robot0:forearm_mesh robot0:robotiq_coupler_mesh',
-                                'robot0:forearm_mesh robot0:robotiq_base_mesh',
-                                'robot0:forearm_mesh robot0:robotiq_finger_mesh_r',
-                                'robot0:forearm_mesh robot0:robotiq_finger_mesh_l',
-                                ]
+
+        if self.reward_type == 'place':
+            n_actions = 4
+        else:
+            n_actions = 7
 
         super(UrBinPickingEnv, self).__init__(
-            model_path=model_path, n_substeps=n_substeps, n_actions=8,
+            model_path=model_path, n_substeps=n_substeps, n_actions=n_actions,
             initial_qpos=initial_qpos)
 
     # GoalEnv methods
@@ -156,31 +124,29 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # Positional difference
             dist = goal_distance(achieved_goal[:3], goal[:3])
             dist_ref = goal_distance(self.initial_box_xpos, goal[:3])
-            position_score = -(np.square(np.tanh(np.clip((dist / dist_ref), 0, 1))))
+            position_score = -np.clip((dist / dist_ref), 0, 1)
             w_d = 1
-            w_theta = 1
+            w_theta = 0.5
             bonus = 1
             alpha = 0.4
             goal_rot = rotations.quat2mat(goal[3:])
-            goal_z = np.matmul(goal_rot, (0, 0, 1))
             goal_y = np.matmul(goal_rot, (0, 1, 0))
             goal_x = np.matmul(goal_rot, (1, 0, 0))
 
             rot_object0 = self.sim.data.get_site_xmat('object0')
-            theta_x = min(angle_between(goal_x, np.matmul(rot_object0, (1, 0, 0))), angle_between(goal_x, np.matmul(rot_object0, (-1, 0, 0))))
-            theta_y = min(angle_between(goal_y, np.matmul(rot_object0, (0, 1, 0))), angle_between(goal_y, np.matmul(rot_object0, (0, -1, 0))))
-            theta_z = angle_between(goal_z, np.matmul(rot_object0, (0, 0, 1)))
+            theta_x = min(angle_between(goal_x, np.matmul(rot_object0, (1, 0, 0))),
+                          angle_between(goal_x, np.matmul(rot_object0, (-1, 0, 0))))
+            theta_y = min(angle_between(goal_y, np.matmul(rot_object0, (0, 1, 0))),
+                          angle_between(goal_y, np.matmul(rot_object0, (0, -1, 0))))
             angle_45 = math.radians(45)
-            angle_90 = math.radians(90)
-
             theta_x = angle_45 - np.abs(theta_x - angle_45)
             theta_y = angle_45 - np.abs(theta_y - angle_45)
-            theta_z = angle_90 - np.abs(theta_z - angle_90)
 
             if theta_x < theta_y:
-                r_theta = -(1 - (np.clip((0.5 * ((1 - (theta_x / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
+                r_theta = -(1 - (np.clip((1 - (theta_x / angle_45)), 0, 1)) ** alpha)
             else:
-                r_theta = -(1 - (np.clip((0.5 * ((1 - (theta_y / angle_45)) + theta_z / angle_90)), 0, 1)) ** alpha)
+                r_theta = -(1 - (np.clip((1 - (theta_y / angle_45)), 0, 1)) ** alpha)
+
             if self._is_success(achieved_goal, goal):
                 reward = bonus
             else:
@@ -200,20 +166,28 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
     def _set_action(self, action):
         # Change action space if number of is changed
-        assert action.shape == (8,)
         action = action.copy()  # ensure that we don't change the action outside of this scope
-        pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[7]
-        pos_ctrl *= 0.05  # limit maximum change in position
-        rot_ctrl *= 0.01
-        gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
+
+        if action.shape == (7,):
+            pos_ctrl, rot_ctrl = action[:3], action[3:7]
+        elif action.shape == (4,):
+            pos_ctrl, rot_ctrl = action[:3], action[3]
+        else:
+            raise Exception('Invalid action space for ' + self.reward_type)
+
+        gripper_ctrl = np.array([0, 0])
         assert gripper_ctrl.shape == (2,)
         if self.reward_type == 'reach' or self.reward_type == 'orient':
             gripper_ctrl = np.zeros_like(gripper_ctrl)
         elif self.reward_type == 'lift':
             gripper_ctrl = np.ones_like(gripper_ctrl)*0.3
         elif self.reward_type == 'place':
+            pos_ctrl *= 0.5
             gripper_ctrl = np.ones_like(gripper_ctrl) * 0.3
+            rot_ctrl = (rotations.euler2quat([0, np.pi, rot_ctrl * 2 * np.pi]) * rotations.quat_conjugate(rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))))*2
 
+        pos_ctrl *= 0.05  # limit maximum change in position
+        rot_ctrl *= 0.01
         action = np.concatenate([pos_ctrl, rot_ctrl, gripper_ctrl])
 
         # Apply action to simulation.
@@ -251,7 +225,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             self.goal = self.sim.data.get_site_xpos('box')[:3] + self.box_offset
             obs = np.concatenate([
                 grip_pos,
+                grip_rot,
                 grip_velp,
+                grip_velr,
                 box_pos.ravel(),
                 box_rel_pos.ravel(),
                 box_rot.ravel(),
@@ -285,9 +261,14 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
             obs = np.concatenate([
                 grip_pos,
+                grip_rot,
                 grip_velp,
+                grip_velr,
                 object_pos.ravel(),
                 object_rel_pos.ravel(),
+                box_pos.ravel(),
+                box_rel_pos.ravel(),
+                box_rot.ravel(),
                 goal_rel_height,
             ])
         elif self.reward_type == 'place':
@@ -302,6 +283,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
             obs = np.concatenate([
                 grip_pos,
+                grip_rot,
                 object_pos,
                 object_rot.ravel(),
                 object_velp,
@@ -618,16 +600,25 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             goal = self.sim.data.get_site_xpos('object0')[2] + self.lift_threshold
         elif self.reward_type == 'place':
             # goal zone size 10x10cm
-            goal_offset = self.sample_point(0.02, 0.02, 0.02)
-            goal_height = 0.43
-            grip_pos = self.sim.data.get_site_xpos('robot0:grip')
-            object_pos = self.sim.data.get_site_xpos('object0')
-            goal_pos = np.array(object_pos) + goal_offset  # A goal just beside the robot
-            grip_rot = self.sim.data.get_site_xmat('robot0:grip')
-            object_rot = self.sim.data.get_site_xmat('object0')
-            grip_rot_euler = rotations.mat2euler(grip_rot)
-            object_rot_euler = rotations.mat2euler(object_rot)
-            object_rot_euler[2] = float(self.np_random.uniform(-np.pi, np.pi))
+            goal_offset = self.sample_point(0.1, 0.1, 0.1)
+            goal_height = 0.53
+            goal_pos = np.array([0.63, 0.5, goal_height]) + goal_offset  # A goal just beside the robot
+
+            theta = np.random.uniform(0, 2 * np.pi)
+            goal_quat = [np.cos(theta / 2), 0, 0, np.sin(theta / 2)]
+            goal = np.concatenate((goal_pos, goal_quat))
+
+            # # goal zone size 10x10cm
+            # goal_offset = self.sample_point(0.02, 0.02, 0.02)
+            # goal_height = 0.43
+            # grip_pos = self.sim.data.get_site_xpos('robot0:grip')
+            # object_pos = self.sim.data.get_site_xpos('object0')
+            # goal_pos = np.array(object_pos) + goal_offset  # A goal just beside the robot
+            # grip_rot = self.sim.data.get_site_xmat('robot0:grip')
+            # object_rot = self.sim.data.get_site_xmat('object0')
+            # grip_rot_euler = rotations.mat2euler(grip_rot)
+            # object_rot_euler = rotations.mat2euler(object_rot)
+            # object_rot_euler[2] = float(self.np_random.uniform(-np.pi, np.pi))
 
             #Sample a random rotation
             # rot_grip = Rotation.random().as_matrix()
@@ -643,7 +634,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             #     p_g = np.matmul(rot_gb, p_box)
             #     alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
             # TODO: Test if this works properly
-            goal = np.concatenate((goal_pos, rotations.euler2quat(object_rot_euler)))
+            #goal = np.concatenate((goal_pos, rotations.euler2quat(object_rot_euler)))
 
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
@@ -696,14 +687,12 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                           angle_between(goal_x, np.matmul(rot_object0, (-1, 0, 0))))
             theta_y = min(angle_between(goal_y, np.matmul(rot_object0, (0, 1, 0))),
                           angle_between(goal_y, np.matmul(rot_object0, (0, -1, 0))))
-            theta_z = angle_between(goal_z, np.matmul(rot_object0, (0, 0, 1)))
             angle_45 = math.radians(45)
-            angle_90 = math.radians(90)
 
             theta_x = angle_45 - np.abs(theta_x - angle_45)
             theta_y = angle_45 - np.abs(theta_y - angle_45)
-            theta_z = angle_90 - np.abs(theta_z - angle_90)
-            if goal_distance(self.sim.data.get_site_xpos('object0'), desired_goal[:3]) < self.success_threshold and (np.abs(theta_x - angle_45) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)) and np.abs(theta_z - angle_90) < math.radians(45):
+
+            if goal_distance(self.sim.data.get_site_xpos('object0'), desired_goal[:3]) < self.success_threshold and (np.abs(theta_x - angle_45) > math.radians(35) or np.abs(theta_y - angle_45) > math.radians(35)):
                 result = True
         return result
 
