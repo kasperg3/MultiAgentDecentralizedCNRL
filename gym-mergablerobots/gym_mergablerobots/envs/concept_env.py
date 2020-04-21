@@ -112,6 +112,7 @@ class ConceptEnv(gym.Env):
         self.initial_state = copy.deepcopy(self.sim.get_state())
         self.n_actions = n_actions
         self.agent = '0' # 0 or 1 in a string
+        self.goal_visuliser_array = [('0', [0]), ('1', [0])]
         obs = self._get_obs(self.agent)
         self.action_space = spaces.Discrete(n_actions)
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=obs.shape, dtype='float32')
@@ -119,8 +120,8 @@ class ConceptEnv(gym.Env):
         # Multi-agent variables
         self.actions_available = {
                                     "REACH": 0,
-                                    "LIFT": 1,
-                                    "ORIENT": 2,
+                                    "ORIENT": 1,
+                                    "LIFT": 2,
                                     "PLACE": 3,
                                     "CLOSE_GRIPPER": 4,
                                     "OPEN_GRIPPER": 5,
@@ -244,7 +245,7 @@ class ConceptEnv(gym.Env):
         elif concept == self.actions_available["LIFT"]:
             # The relative position is between object and goal position
             object_height = self.sim.data.get_site_xpos('object' + str(agent))[2]
-            goal = (self.sim.data.get_site_xpos('object' + str(agent))[2] + 0.15).ravel()
+            goal = (self.sim.data.get_site_xpos('box')[2] + 0.15).ravel()
             goal_rel_height = goal - object_height
             obs = np.concatenate([
                 grip_pos,
@@ -279,12 +280,12 @@ class ConceptEnv(gym.Env):
         elif concept == self.actions_available["PLACE"]:
             # TODO: make the goal dynamic, so one can change it if one wants to move the position of place
             goal_offset = self.sample_point(0.1, 0.1, 0.1)
-            goal_height = 0.53
-            base_goal_pos = np.array([-0.5, 0.5, goal_height])
+            goal_height = 0.43
+            base_goal_pos = np.array([0.63, 1.525, goal_height])
             if agent == '0':
                 base_goal_pos = np.array([0.63, 0.5, goal_height])
             if agent == '1':
-                base_goal_pos = np.array([-0.5, 0.5, goal_height])
+                base_goal_pos = np.array([0.63, 1.525, goal_height])
             goal_pos = base_goal_pos #+ goal_offset  # A goal just beside the robot
 
             #theta = np.random.uniform(0, 2 * np.pi)  # TODO: make random in later implementation
@@ -309,6 +310,7 @@ class ConceptEnv(gym.Env):
                 goal_rel_rot.ravel(),
             ])
 
+        self.goal_visuliser_array[int(agent)] = [(concept, goal)]
         return np.concatenate((goal, obs))
 
     """
@@ -473,10 +475,33 @@ class ConceptEnv(gym.Env):
     def _render_callback(self):
         # Visualize target.
         sites_offset = (self.sim.data.site_xpos - self.sim.model.site_pos).copy()
-        site_id = self.sim.model.site_name2id('target0')
-        self.sim.forward()
+        site_id = [self.sim.model.site_name2id('target0'), self.sim.model.site_name2id('target1')]
+        for agent in range(len(self.goal_visuliser_array)):
+            if self.goal_visuliser_array[agent][0][0] == self.actions_available["REACH"]:
+                visualized_goal = self.goal_visuliser_array[agent][0][1]
+                self.sim.model.site_pos[site_id[agent]] = visualized_goal - sites_offset[0]
 
+            if self.goal_visuliser_array[agent][0][0] == self.actions_available["ORIENT"]:
+                visualized_goal = self.goal_visuliser_array[agent][0][1]
+                self.sim.model.site_pos[site_id[agent]] = visualized_goal[:3] - sites_offset[0]
+                self.sim.model.site_quat[site_id[agent]] = rotations.mat2quat(self.sim.data.get_site_xmat('object'+str(agent)))
 
+            if self.goal_visuliser_array[agent][0][0] == self.actions_available["LIFT"]:
+                # Lift only has a height goal, so we set the visualization target to the box xy pos and the goal height
+                visualized_goal = self.sim.data.get_site_xpos('box').copy()
+                visualized_goal[2] = self.goal_visuliser_array[agent][0][1]  # z-axis of the goal is the only thing contained in goal in lift
+                self.sim.model.site_pos[site_id[agent]] = visualized_goal - sites_offset[0]
+
+            elif self.goal_visuliser_array[agent][0][0] == self.actions_available["PLACE"]:
+                # Place also has a orientation as goal
+                goal_pos = self.goal_visuliser_array[agent][0][1][:3]
+                goal_quat = self.goal_visuliser_array[agent][0][1][3:]
+                self.sim.model.site_pos[site_id[agent]] = goal_pos - sites_offset[0]
+                self.sim.model.site_quat[site_id[agent]] = goal_quat
+            else:
+                pass
+#                self.sim.model.site_pos[site_id[i]] = self.goal_visuliser_array[i][1] - sites_offset[0]
+            self.sim.forward()
 
     def sample_box_position(self):
         box_xpos = self.initial_box_xpos[:2] + self.np_random.uniform(-0.1, 0.1, size=2)
