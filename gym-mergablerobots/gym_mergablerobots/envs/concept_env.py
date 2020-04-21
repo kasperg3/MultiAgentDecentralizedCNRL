@@ -125,8 +125,8 @@ class ConceptEnv(gym.Env):
         grip_velp = self.sim.data.get_site_xvelp('robot' + str(agent) + ':grip') * dt
         grip_velr = self.sim.data.get_site_xvelr('robot' + str(agent) + ':grip') * dt
 
-        object_velp = self.sim.data.get_site_xvelp('object' + agent) * dt
-        object_velr = self.sim.data.get_site_xvelr('object' + agent) * dt
+        object_velp = self.sim.data.get_site_xvelp('object' + str(agent)) * dt
+        object_velr = self.sim.data.get_site_xvelr('object' + str(agent)) * dt
 
         robot_qpos, robot_qvel = utils.robot_get_obs(self.sim)
 

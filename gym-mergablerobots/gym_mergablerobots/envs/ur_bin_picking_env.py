@@ -601,6 +601,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # goal zone size 10x10cm
             goal_offset = self.sample_point(0.1, 0.1, 0.1)
             goal_height = 0.53
+            # add + 1.025 to y to get the right pos for the second robot
             goal_pos = np.array([0.63, 0.5, goal_height]) + goal_offset  # A goal just beside the robot
 
             theta = np.random.uniform(0, 2 * np.pi)
