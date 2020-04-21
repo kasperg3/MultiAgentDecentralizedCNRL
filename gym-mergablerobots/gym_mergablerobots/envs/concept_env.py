@@ -178,6 +178,17 @@ class ConceptEnv(gym.Env):
         is_lifted = bool(object_position[2] > lift_threshold)
         grip_to_object_rel_distance = goal_distance(object_position, gripper_position)
 
+        #hardcoded shit
+        theta = math.radians(35)
+        place_goal_quat = [np.cos(theta / 2), 0, 0, np.sin(theta / 2)]
+
+        place_goal_pos = np.array([0.63, 1.525, 0.45])
+        if agent == '0':
+            place_goal_pos = np.array([0.63, 0.5, 0.45])
+        if agent == '1':
+            place_goal_pos = np.array([0.63, 1.525, 0.45])
+
+        # rewards
         if grip_to_object_rel_distance < dist_success_threshold and self.orientation_is_success(agent):
             reward = 1
             grasp_ready = True
@@ -187,7 +198,7 @@ class ConceptEnv(gym.Env):
         if has_object and is_lifted:
             reward = 3
             object_lifted = True
-        if object_lifted and False:  # and some critera for finishing a place action
+        if object_lifted and goal_distance(object_position, place_goal_pos) < dist_success_threshold:  # TODO: add rotation criteria
             reward = 4
         return reward
 
