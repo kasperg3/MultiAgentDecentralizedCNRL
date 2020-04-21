@@ -209,8 +209,8 @@ class ConceptEnv(gym.Env):
         grip_velp = self.sim.data.get_site_xvelp('robot' + str(agent) + ':grip') * dt
         grip_velr = self.sim.data.get_site_xvelr('robot' + str(agent) + ':grip') * dt
 
-        object_velp = self.sim.data.get_site_xvelp('object0') * dt
-        object_velr = self.sim.data.get_site_xvelr('object0') * dt
+        object_velp = self.sim.data.get_site_xvelp('object' + agent) * dt
+        object_velr = self.sim.data.get_site_xvelr('object' + agent) * dt
 
         robot_qpos, robot_qvel = utils.robot_get_obs(self.sim)
 
@@ -349,15 +349,17 @@ class ConceptEnv(gym.Env):
             agent_done = (d < 0.01).astype(np.bool)
         elif action == self.actions_available["CLOSE_GRIPPER"]:
             self.gripper_ctrl[agent] = 0.3
+            # Todo implement agent done
         elif action == self.actions_available["OPEN_GRIPPER"]:
             self.gripper_ctrl[agent] = -1
+            # TODO implement agent done
         elif action == self.actions_available["PLACE"]:
             state = self.get_concept_state(action, str(agent))
             policy_output = self.policies[action].select_action(state)
             rot_ctrl = (rotations.euler2quat([0, np.pi, policy_output[3] * 2 * np.pi]) * rotations.quat_conjugate(rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip')))) * 2
             pos_crtl = policy_output[:3] * 0.5
             agent_movement = np.concatenate((pos_crtl, rot_ctrl))
-
+            # TODO Implement agent done for place
         return agent_done, agent_movement
 
     """ step:
