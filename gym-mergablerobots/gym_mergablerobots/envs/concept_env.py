@@ -293,7 +293,7 @@ class ConceptEnv(gym.Env):
         elif concept == self.actions_available["PLACE"]:
             # TODO: make the goal dynamic, so one can change it if one wants to move the position of place
             goal_offset = self.sample_point(0.1, 0.1, 0.1)
-            goal_height = 0.55
+            goal_height = 0.65
             base_goal_pos = np.array([0.63, 1.525, goal_height])
             if agent == '0':
                 base_goal_pos = np.array([0.63, 0.5, goal_height])
