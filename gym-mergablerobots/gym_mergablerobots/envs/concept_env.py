@@ -356,7 +356,7 @@ class ConceptEnv(gym.Env):
             agent_movement = self.policies[action][agent].select_action(state)
             table_height = 0.414
             object_height = self.sim.data.get_site_xpos('object' + str(agent))[2]
-            if np.abs(object_height - table_height) >= 0.15:
+            if np.abs(object_height - table_height) >= 0.14:
                 agent_done = True
         elif action == self.actions_available["ORIENT"]:
             state = self.get_concept_state(action, str(agent))
@@ -568,6 +568,8 @@ class ConceptEnv(gym.Env):
         object_qpos[:3] = self.sim.data.get_joint_qpos('box:joint')[:3] + object_offset
 
         self.sim.forward()
+        if np.linalg.norm(self.sim.data.get_joint_qpos('object1:joint')[:3] - self.sim.data.get_joint_qpos('object0:joint')[:3]) < 0.10:
+            self._reset_sim()
         return True
 
     def _sample_goal(self):
