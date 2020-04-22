@@ -125,7 +125,8 @@ class ConceptEnv(gym.Env):
                                     "PLACE": 3,
                                     "CLOSE_GRIPPER": 4,
                                     "OPEN_GRIPPER": 5,
-                                    "NOOP": 6}
+                                    "NOOP": 6
+        }
 
         self.n_agents = n_agents
         self.current_action_steps = [0, 0]
@@ -157,8 +158,9 @@ class ConceptEnv(gym.Env):
                 "max_action": max_action,
             }
             file_name = f"TD3_UrBinPicking{name}-v0_1000"
-            self.policies[self.actions_available[action]] = TD3(**kwargs)
-            self.policies[self.actions_available[action]].load(f"./models/new_states/{file_name}")
+            self.policies[self.actions_available[action]] = [TD3(**kwargs), TD3(**kwargs)]
+            self.policies[self.actions_available[action]][0].load(f"./models/final_concepts/agent0/{file_name}")
+            self.policies[self.actions_available[action]][1].load(f"./models/final_concepts/agent1/{file_name}")
 
     @property
     def dt(self):
@@ -291,7 +293,7 @@ class ConceptEnv(gym.Env):
         elif concept == self.actions_available["PLACE"]:
             # TODO: make the goal dynamic, so one can change it if one wants to move the position of place
             goal_offset = self.sample_point(0.1, 0.1, 0.1)
-            goal_height = 0.43
+            goal_height = 0.50
             base_goal_pos = np.array([0.63, 1.525, goal_height])
             if agent == '0':
                 base_goal_pos = np.array([0.63, 0.5, goal_height])
@@ -345,19 +347,19 @@ class ConceptEnv(gym.Env):
             self.move_allowed[agent] = False
         elif action == self.actions_available["REACH"]:
             state = self.get_concept_state(action, str(agent))
-            agent_movement = self.policies[action].select_action(state)
+            agent_movement = self.policies[action][agent].select_action(state)
             d = np.linalg.norm(self.sim.data.get_site_xpos('robot' + str(agent) + ':grip') - (self.sim.data.get_site_xpos('box') + [0, 0, 0.05]), axis=-1)
             agent_done = (d < 0.05).astype(np.bool)
         elif action == self.actions_available["LIFT"]:
             state = self.get_concept_state(action, str(agent))
-            agent_movement = self.policies[action].select_action(state)
+            agent_movement = self.policies[action][agent].select_action(state)
             table_height = 0.414
             object_height = self.sim.data.get_site_xpos('object' + str(agent))[2]
             if np.abs(object_height - table_height) >= 0.15:
                 agent_done = True
         elif action == self.actions_available["ORIENT"]:
             state = self.get_concept_state(action, str(agent))
-            agent_movement = self.policies[action].select_action(state)
+            agent_movement = self.policies[action][agent].select_action(state)
             d = np.linalg.norm(self.sim.data.get_site_xpos('robot' + str(agent) + ':grip') - self.sim.data.get_site_xpos('object' + str(agent)), axis=-1)
             agent_done = (d < 0.01).astype(np.bool)
         elif action == self.actions_available["CLOSE_GRIPPER"]:
@@ -368,7 +370,7 @@ class ConceptEnv(gym.Env):
             # TODO implement agent done
         elif action == self.actions_available["PLACE"]:
             state = self.get_concept_state(action, str(agent))
-            policy_output = self.policies[action].select_action(state)
+            policy_output = self.policies[action][agent].select_action(state)
             rot_ctrl = (rotations.euler2quat([0, np.pi, policy_output[3] * 2 * np.pi]) * rotations.quat_conjugate(rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip')))) * 2
             pos_crtl = policy_output[:3] * 0.5
             agent_movement = np.concatenate((pos_crtl, rot_ctrl))
