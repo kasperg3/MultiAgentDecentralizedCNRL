@@ -293,7 +293,7 @@ class ConceptEnv(gym.Env):
         elif concept == self.actions_available["PLACE"]:
             # TODO: make the goal dynamic, so one can change it if one wants to move the position of place
             goal_offset = self.sample_point(0.1, 0.1, 0.1)
-            goal_height = 0.50
+            goal_height = 0.55
             base_goal_pos = np.array([0.63, 1.525, goal_height])
             if agent == '0':
                 base_goal_pos = np.array([0.63, 0.5, goal_height])
@@ -339,10 +339,11 @@ class ConceptEnv(gym.Env):
         self.move_allowed[agent] = True
         agent_movement = np.zeros(7)
         agent_done = False
+
+        # increment timeout counter
         self.current_action_steps[agent] += 1  # increment the amount of
         if self.current_action_steps[agent] >= self.max_action_steps:
             agent_done = True
-            self.current_action_steps[agent] = 0
         elif action == self.actions_available["NOOP"]:
             self.move_allowed[agent] = False
         elif action == self.actions_available["REACH"]:
@@ -375,6 +376,9 @@ class ConceptEnv(gym.Env):
             pos_crtl = policy_output[:3] * 0.5
             agent_movement = np.concatenate((pos_crtl, rot_ctrl))
             # TODO Implement agent done for place
+
+        if agent_done:
+            self.current_action_steps[agent] = 0
         return agent_done, agent_movement
 
     """ step:
@@ -383,7 +387,6 @@ class ConceptEnv(gym.Env):
     """
 
     def step(self, action):
-        # TODO What will happen if two agents finish simultaneously
         # This should be the same concept until the concept is done
         # Choose a new concept independently depending on the robot
         agent_movement = np.empty((2, 7))
