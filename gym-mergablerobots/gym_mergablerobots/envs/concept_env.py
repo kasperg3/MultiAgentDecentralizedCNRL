@@ -55,7 +55,7 @@ class ConceptEnv(gym.Env):
         angle_45 = math.radians(45)
         angle_90 = math.radians(90)
 
-        theta_array = np.array([0, 0, 0])
+        theta_array = np.array([0.785, 0.785, 0.001]) # float of worst-case
         theta_array[0] = angle_45 - np.abs(theta_x - angle_45)
         theta_array[1] = angle_45 - np.abs(theta_y - angle_45)
         theta_array[2] = angle_90 - np.abs(theta_z - angle_90)
@@ -65,18 +65,18 @@ class ConceptEnv(gym.Env):
         xy_success_threshold = math.radians(10)
         z_success_threshold = math.radians(45)
         theta_xyz = self.rad_between_obj_and_grip(agent)
-        if min(theta_xyz[0], theta_xyz[1]) < xy_success_threshold and theta_xyz[2] < z_success_threshold:
+        if min(theta_xyz[0], theta_xyz[1]) < xy_success_threshold and theta_xyz[2] > z_success_threshold:
             return True
         return False
 
-    def gripper_is_closed(self, agent):
+    def gripper_is_closed(self, agent, threshold):
         body_id1 = self.sim.model.body_name2id('robot' + agent + ':left_finger')
         body_id2 = self.sim.model.body_name2id('robot' + agent + ':right_finger')
 
         finger_left = self.sim.data.body_xpos[body_id1]
         finger_right = self.sim.data.body_xpos[body_id2]
 
-        fingers_closed = bool(goal_distance(finger_left, finger_right) < 0.03)
+        fingers_closed = bool(goal_distance(finger_left, finger_right) < threshold)
         return fingers_closed
 
     def _is_collision(self):
@@ -113,9 +113,11 @@ class ConceptEnv(gym.Env):
         self.n_actions = n_actions
         self.agent = '0' # 0 or 1 in a string
         self.goal_visuliser_array = [('0', [0]), ('1', [0])]
+        self.goal = []
         obs = self._get_obs(self.agent)
         self.action_space = spaces.Discrete(n_actions)
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=obs.shape, dtype='float32')
+        self.goal_place = np.array([[0.63, 0.5, 0.65], [0.63, 1.525, 0.65]])
 
         # Multi-agent variables
         self.actions_available = {
@@ -166,15 +168,16 @@ class ConceptEnv(gym.Env):
     def dt(self):
         return self.sim.model.opt.timestep * self.sim.nsubsteps
 
-    def compute_reward(self, agent):
+    def compute_agent_reward(self, agent):
         reward = 0
         lift_threshold = 0.15
-        dist_success_threshold = 0.02
+        dist_success_threshold = 0.05
         grasp_ready = False
         has_object = False
         object_lifted = False
+        reached = False
         orientation_bool = self.orientation_is_success(agent)
-        gripper_is_closed = self.gripper_is_closed(agent)
+        gripper_is_closed = self.gripper_is_closed(agent, 0.03)
         object_position = self.sim.data.get_site_xpos('object'+agent)
         gripper_position = self.sim.data.get_site_xpos('robot'+agent+':grip')
         is_lifted = bool(object_position[2] > lift_threshold)
@@ -183,25 +186,23 @@ class ConceptEnv(gym.Env):
         #hardcoded shit
         theta = math.radians(35)
         place_goal_quat = [np.cos(theta / 2), 0, 0, np.sin(theta / 2)]
-
-        place_goal_pos = np.array([0.63, 1.525, 0.45])
-        if agent == '0':
-            place_goal_pos = np.array([0.63, 0.5, 0.45])
-        if agent == '1':
-            place_goal_pos = np.array([0.63, 1.525, 0.45])
+        place_goal_pos = self.goal_place[int(agent)]
 
         # rewards
-        if grip_to_object_rel_distance < dist_success_threshold and self.orientation_is_success(agent):
+        if grip_to_object_rel_distance < dist_success_threshold:  # TODO: make more specific for reach
             reward = 1
-            grasp_ready = True
-        if grasp_ready and self.gripper_is_closed(agent):
+            reached = True
+        if reached and self.orientation_is_success(agent):
             reward = 2
+            grasp_ready = True
+        if grasp_ready and self.gripper_is_closed(agent, 0.03):
+            reward = 3
             has_object = True
         if has_object and is_lifted:
-            reward = 3
+            reward = 4
             object_lifted = True
         if object_lifted and goal_distance(object_position, place_goal_pos) < dist_success_threshold:  # TODO: add rotation criteria
-            reward = 4
+            reward = 5
         return reward
 
     def _step_callback(self):
@@ -293,12 +294,7 @@ class ConceptEnv(gym.Env):
         elif concept == self.actions_available["PLACE"]:
             # TODO: make the goal dynamic, so one can change it if one wants to move the position of place
             goal_offset = self.sample_point(0.1, 0.1, 0.1)
-            goal_height = 0.65
-            base_goal_pos = np.array([0.63, 1.525, goal_height])
-            if agent == '0':
-                base_goal_pos = np.array([0.63, 0.5, goal_height])
-            if agent == '1':
-                base_goal_pos = np.array([0.63, 1.525, goal_height])
+            base_goal_pos = self.goal_place[int(agent)]
             goal_pos = base_goal_pos #+ goal_offset  # A goal just beside the robot
 
             #theta = np.random.uniform(0, 2 * np.pi)  # TODO: make random in later implementation
@@ -324,6 +320,7 @@ class ConceptEnv(gym.Env):
             ])
 
         self.goal_visuliser_array[int(agent)] = [(concept, goal)]
+        self.goal = goal
         return np.concatenate((goal, obs))
 
     """
@@ -344,6 +341,7 @@ class ConceptEnv(gym.Env):
         self.current_action_steps[agent] += 1  # increment the amount of
         if self.current_action_steps[agent] >= self.max_action_steps:
             agent_done = True
+            self.current_action_steps[agent] = 0
         elif action == self.actions_available["NOOP"]:
             self.move_allowed[agent] = False
         elif action == self.actions_available["REACH"]:
@@ -362,20 +360,26 @@ class ConceptEnv(gym.Env):
             state = self.get_concept_state(action, str(agent))
             agent_movement = self.policies[action][agent].select_action(state)
             d = np.linalg.norm(self.sim.data.get_site_xpos('robot' + str(agent) + ':grip') - self.sim.data.get_site_xpos('object' + str(agent)), axis=-1)
-            agent_done = (d < 0.01).astype(np.bool)
+            #agent_done = (d < 0.01).astype(np.bool)
+            test = self.rad_between_obj_and_grip(str(agent))
+            if d < 0.02 and self.orientation_is_success(str(agent)):
+                agent_done = True
         elif action == self.actions_available["CLOSE_GRIPPER"]:
             self.gripper_ctrl[agent] = 0.3
-            # Todo implement agent done
+            if self.gripper_is_closed(str(agent), 0.04):
+                agent_done = True
         elif action == self.actions_available["OPEN_GRIPPER"]:
             self.gripper_ctrl[agent] = -1
-            # TODO implement agent done
+            if not self.gripper_is_closed(str(agent), 0.04):
+                agent_done = True
         elif action == self.actions_available["PLACE"]:
             state = self.get_concept_state(action, str(agent))
             policy_output = self.policies[action][agent].select_action(state)
             rot_ctrl = (rotations.euler2quat([0, np.pi, policy_output[3] * 2 * np.pi]) * rotations.quat_conjugate(rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip')))) * 2
             pos_crtl = policy_output[:3] * 0.5
             agent_movement = np.concatenate((pos_crtl, rot_ctrl))
-            # TODO Implement agent done for place
+            if goal_distance(self.goal_place[int(agent)], self.sim.data.get_site_xpos('robot'+str(agent)+':grip')) < 0.05:
+                agent_done = True
 
         if agent_done:
             self.current_action_steps[agent] = 0
@@ -410,7 +414,7 @@ class ConceptEnv(gym.Env):
                 if info["agent_done"][agent] == 1:
                     # TODO If action is done, compute reward for the agent
                     obs = self._get_obs(str(agent))
-                    reward = self.compute_reward(str(agent))
+                    reward = self.compute_agent_reward(str(agent))
                     return obs, reward, done, info
 
     def sample_action(self):
@@ -463,7 +467,7 @@ class ConceptEnv(gym.Env):
 
         if grip_to_object_rel_distance < dist_success_threshold and self.orientation_is_success(agent):
             grasp_ready = True
-        if grasp_ready and self.gripper_is_closed(agent) and grip_to_object_rel_distance < dist_success_threshold:
+        if grasp_ready and self.gripper_is_closed(agent, 0.04) and grip_to_object_rel_distance < dist_success_threshold:
             has_object = True
         if has_object and object_position[2] > lift_threshold:
             object_lifted = True
