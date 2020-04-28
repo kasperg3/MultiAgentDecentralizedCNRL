@@ -210,14 +210,14 @@ if __name__ == '__main__':
     load_checkpoint = False
     n_games = 1500
     agent0 = DQNAgent(gamma=0.99, epsilon=1.0, lr=0.0001,
-                     input_dims=(env.observation_space.shape),
+                     input_dims=(env.observation_space.shape[0],),
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.1,
                      batch_size=32, replace=1000, eps_dec=1e-5,
                      chkpt_dir='models/', algo='DQNAgent',
                      env_name='Concept-v0')
 
     agent1 = DQNAgent(gamma=0.99, epsilon=1.0, lr=0.0001,
-                     input_dims=(env.observation_space.shape),
+                     input_dims=(env.observation_space.shape[0],),
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.1,
                      batch_size=32, replace=1000, eps_dec=1e-5,
                      chkpt_dir='models/', algo='DQNAgent',
@@ -246,16 +246,15 @@ if __name__ == '__main__':
             print("Stepping with action:" + str(action))
             observation_, reward, done, info = env.step(action)
 
-            for agent in range(2):
-                if info["agent_done"][agent]:
-                    # if the action is done, add the transition to the replay buffer and learn
-                    agents[agent].store_transition(observation, action[agent], reward, observation_, int(done))
-                    agents[agent].learn()
-                    # when the previous action is done, choose a new action
-                    action[agent] = agents[agent].choose_action(observation)
-
             env.render()
-            score += reward
+            for agent in range(2):
+                # if the action is done, add the transition to the replay buffer and learn
+                agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
+                agents[agent].learn()
+                # when the previous action is done, choose a new action
+                action[agent] = agents[agent].choose_action(observation[agent])
+
+                score[agent] += reward[agent]
             observation = observation_
             n_steps += 1
         scores.append(score)

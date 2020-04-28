@@ -79,6 +79,16 @@ class ConceptEnv(gym.Env):
         fingers_closed = bool(goal_distance(finger_left, finger_right) < threshold)
         return fingers_closed
 
+    def grasped_object(self, agent):
+        contact_points = 0
+        for i in range(self.sim.data.ncon):
+            contact = self.sim.data.contact[i]
+            if 'robot' + str(agent) in self.sim.model.geom_id2name(contact.geom1) or 'robot' + str(agent) in self.sim.model.geom_id2name(contact.geom2):
+                if 'object' + str(agent) not in self.sim.model.geom_id2name(contact.geom1) or 'object' + str(agent) not in self.sim.model.geom_id2name(contact.geom2):
+                    contact_points += 1
+
+        return contact_points
+
     def _is_collision(self):
         pass
 
@@ -107,18 +117,21 @@ class ConceptEnv(gym.Env):
             'video.frames_per_second': int(np.round(1.0 / self.dt))
         }
 
+        self.initial_gripper_xpos = [0, 0]
+        self.initial_gripper_quat = [0, 0]
+
         self.seed()
         self._env_setup(initial_qpos=initial_qpos)
         self.initial_state = copy.deepcopy(self.sim.get_state())
         self.n_actions = n_actions
-        self.agent = '0' # 0 or 1 in a string
         self.goal_visuliser_array = [('0', [0]), ('1', [0])]
         self.goal = []
-        obs = self._get_obs(self.agent)
+        obs = self._get_obs('0')
         self.action_space = spaces.Discrete(n_actions)
-        self.observation_space = spaces.Box(-np.inf, np.inf, shape=obs.shape, dtype='float32')
+        self.observation_space = spaces.Box(-np.inf, np.inf, shape=(obs.shape[0], n_agents), dtype='float32')
         self.goal_place = np.array([[0.63, 0.5, 0.65], [0.63, 1.525, 0.65]])
 
+        self.move_home = [False, False]
         # Multi-agent variables
         self.actions_available = {
                                     "REACH": 0,
@@ -127,7 +140,8 @@ class ConceptEnv(gym.Env):
                                     "PLACE": 3,
                                     "CLOSE_GRIPPER": 4,
                                     "OPEN_GRIPPER": 5,
-                                    "NOOP": 6
+                                    "NOOP": 6,
+                                    "HOME": 7,
         }
 
         self.n_agents = n_agents
@@ -334,6 +348,7 @@ class ConceptEnv(gym.Env):
         # get a movement from a policy dependent on the agent and the action chosen
         # Set agent_action_done to True if
         self.move_allowed[agent] = True
+        self.move_home[agent] = False
         agent_movement = np.zeros(7)
         agent_done = False
 
@@ -360,13 +375,11 @@ class ConceptEnv(gym.Env):
             state = self.get_concept_state(action, str(agent))
             agent_movement = self.policies[action][agent].select_action(state)
             d = np.linalg.norm(self.sim.data.get_site_xpos('robot' + str(agent) + ':grip') - self.sim.data.get_site_xpos('object' + str(agent)), axis=-1)
-            #agent_done = (d < 0.01).astype(np.bool)
-            test = self.rad_between_obj_and_grip(str(agent))
-            if d < 0.02 and self.orientation_is_success(str(agent)):
+            if d < 0.015:
                 agent_done = True
         elif action == self.actions_available["CLOSE_GRIPPER"]:
             self.gripper_ctrl[agent] = 0.3
-            if self.gripper_is_closed(str(agent), 0.04):
+            if self.gripper_is_closed(str(agent), 0.04) or self.grasped_object(agent) > 2:
                 agent_done = True
         elif action == self.actions_available["OPEN_GRIPPER"]:
             self.gripper_ctrl[agent] = -1
@@ -380,6 +393,8 @@ class ConceptEnv(gym.Env):
             agent_movement = np.concatenate((pos_crtl, rot_ctrl))
             if goal_distance(self.goal_place[int(agent)], self.sim.data.get_site_xpos('robot'+str(agent)+':grip')) < 0.05:
                 agent_done = True
+        elif action == self.actions_available["HOME"]:
+            self.move_home[agent] = True
 
         if agent_done:
             self.current_action_steps[agent] = 0
@@ -397,9 +412,11 @@ class ConceptEnv(gym.Env):
         info = {"agent_done": [-1, -1]}
 
         while True:
+            # Choose action
             for agent in range(self.n_agents):
                 agent_done, agent_movement[agent] = self.choose_action(action[agent], agent)
                 if agent_done:
+                    self.move_allowed[agent] = False
                     info["agent_done"][agent] = True
 
             # Act in the environment
@@ -410,12 +427,13 @@ class ConceptEnv(gym.Env):
             self.render()
 
             # If any agents are done, then break the while
-            for agent in range(len((info["agent_done"]))):
-                if info["agent_done"][agent] == 1:
-                    # TODO If action is done, compute reward for the agent
-                    obs = self._get_obs(str(agent))
-                    reward = self.compute_agent_reward(str(agent))
-                    return obs, reward, done, info
+            observation_arr = []
+            reward_arr = []
+            if info["agent_done"][0] == 1 and info["agent_done"][1] == 1:
+                for agent in range(len((info["agent_done"]))):
+                    observation_arr.append(self._get_obs(str(agent)))
+                    reward_arr.append(self.compute_agent_reward(str(agent)))
+                return observation_arr, reward_arr, done, info
 
     def sample_action(self):
         return np.array((
@@ -448,6 +466,9 @@ class ConceptEnv(gym.Env):
                 pos_ctrl[2] = 0.0002  # To avoid drifting in z
                 rot_ctrl = np.zeros(4)
 
+            if self.move_home[i]:
+                pos_ctrl = (self.initial_gripper_xpos[i] - self.sim.data.mocap_pos[i])*0.2
+                rot_ctrl = rotations.euler2quat([0, np.pi, 1.5*np.pi])
             mocap_action[i] = np.concatenate([pos_ctrl, rot_ctrl])
 
         # Apply action to simulation.
@@ -501,12 +522,12 @@ class ConceptEnv(gym.Env):
                 visualized_goal = self.goal_visuliser_array[agent][0][1]
                 self.sim.model.site_pos[site_id[agent]] = visualized_goal - sites_offset[0]
 
-            if self.goal_visuliser_array[agent][0][0] == self.actions_available["ORIENT"]:
+            elif self.goal_visuliser_array[agent][0][0] == self.actions_available["ORIENT"]:
                 visualized_goal = self.goal_visuliser_array[agent][0][1]
                 self.sim.model.site_pos[site_id[agent]] = visualized_goal[:3] - sites_offset[0]
                 self.sim.model.site_quat[site_id[agent]] = rotations.mat2quat(self.sim.data.get_site_xmat('object'+str(agent)))
 
-            if self.goal_visuliser_array[agent][0][0] == self.actions_available["LIFT"]:
+            elif self.goal_visuliser_array[agent][0][0] == self.actions_available["LIFT"]:
                 # Lift only has a height goal, so we set the visualization target to the box xy pos and the goal height
                 visualized_goal = self.sim.data.get_site_xpos('box').copy()
                 visualized_goal[2] = self.goal_visuliser_array[agent][0][1]  # z-axis of the goal is the only thing contained in goal in lift
@@ -518,9 +539,9 @@ class ConceptEnv(gym.Env):
                 goal_quat = self.goal_visuliser_array[agent][0][1][3:]
                 self.sim.model.site_pos[site_id[agent]] = goal_pos - sites_offset[0]
                 self.sim.model.site_quat[site_id[agent]] = goal_quat
-            else:
-                pass
-#                self.sim.model.site_pos[site_id[i]] = self.goal_visuliser_array[i][1] - sites_offset[0]
+
+            elif self.goal_visuliser_array[agent][0][0] == self.actions_available["HOME"]:
+                self.sim.model.site_pos[site_id[agent]] = self.initial_gripper_xpos[agent] - sites_offset[0]
             self.sim.forward()
 
     def sample_box_position(self):
@@ -600,9 +621,11 @@ class ConceptEnv(gym.Env):
             self.sim.step()
 
         # Extract information for sampling goals.
-        self.initial_gripper0_xpos = self.sim.data.get_site_xpos('robot0:grip').copy()
-        self.initial_gripper1_xpos = self.sim.data.get_site_xpos('robot1:grip').copy()
         self.initial_box_xpos = self.sim.data.get_site_xpos('box').copy()
+        self.initial_gripper_xpos[0] = self.sim.data.get_site_xpos('robot0:grip').copy()
+        self.initial_gripper_xpos[1] = self.sim.data.get_site_xpos('robot1:grip').copy()
+        self.initial_gripper_quat[0] = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip').copy())
+        self.initial_gripper_quat[1] = rotations.mat2quat(self.sim.data.get_site_xmat('robot1:grip').copy())
 
     def render(self, mode='human', width=500, height=500):
         self._render_callback()
@@ -634,7 +657,7 @@ class ConceptEnv(gym.Env):
         did_reset_sim = False
         while not did_reset_sim:
             did_reset_sim = self._reset_sim()
-        obs = self._get_obs(self.agent)
+        obs = self._get_obs('0')
         return obs
 
     def close(self):
