@@ -52,13 +52,14 @@ for episode in range(1000):
     np.append(reward_array, [agent0_reward, agent1_reward], axis=0)
     print('episode number: ', episode, ' | agent0 reward: ', agent0_reward, ' | agent1 reward: ', agent1_reward)
 
-    if agent0_reward == 4:
+    if agent0_reward == 1:
         episode_success_array[0] += 1
-    if agent1_reward == 4:
+    if agent1_reward == 1:
         episode_success_array[1] += 1
-    if agent0_reward == 4 and agent1_reward == 4:
+    if agent0_reward == 1 and agent1_reward == 1:
         episode_success_array[2] += 1
-    print('episode success array', episode_success_array)
+    success_array += episode_success_array
+    print('success array', success_array)
     env.reset()
 env.close()
     # Evaluate episode

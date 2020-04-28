@@ -172,6 +172,7 @@ class ConceptEnv(gym.Env):
         reward = 0
         lift_threshold = 0.15
         dist_success_threshold = 0.05
+        dist_success_threshold_place = 0.1
         grasp_ready = False
         has_object = False
         object_lifted = False
@@ -189,20 +190,18 @@ class ConceptEnv(gym.Env):
         place_goal_pos = self.goal_place[int(agent)]
 
         # rewards
-        if grip_to_object_rel_distance < dist_success_threshold:  # TODO: make more specific for reach
+        if grip_to_object_rel_distance < dist_success_threshold:  # Reach
+            reward = 0.25
+
+        if self.orientation_is_success(agent):                    # Orient
+            reward = 0.5
+
+        if self.gripper_is_closed(agent, 0.03) and grip_to_object_rel_distance < dist_success_threshold:     # Lift
+            reward = 0.75
+
+        if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
+            # TODO: add rotation criteria?
             reward = 1
-            reached = True
-        if reached and self.orientation_is_success(agent):
-            reward = 2
-            grasp_ready = True
-        if grasp_ready and self.gripper_is_closed(agent, 0.03):
-            reward = 3
-            has_object = True
-        if has_object and is_lifted:
-            reward = 4
-            object_lifted = True
-        if object_lifted and goal_distance(object_position, place_goal_pos) < dist_success_threshold:  # TODO: add rotation criteria
-            reward = 5
         return reward
 
     def _step_callback(self):
