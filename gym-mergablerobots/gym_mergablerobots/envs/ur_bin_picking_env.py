@@ -273,7 +273,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 object_rel_pos.ravel(),
                 box_pos.ravel(),
                 box_rel_pos.ravel(),
-                box_rot.ravel(),
                 goal_rel_height,
             ])
         elif self.reward_type == 'place':
