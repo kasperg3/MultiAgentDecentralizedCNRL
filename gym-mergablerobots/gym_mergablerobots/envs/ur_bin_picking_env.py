@@ -147,10 +147,16 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             else:
                 r_theta = -(1 - (np.clip((1 - (theta_y / angle_45)), 0, 1)) ** alpha)
 
+            # Calculate move box penalty
+            dt = self.sim.nsubsteps * self.sim.model.opt.timestep
+            box_velp = self.sim.data.get_site_xvelp('box') * dt
+            penalty_weight = 10
+            velp_pen = -(np.linalg.norm(box_velp)*penalty_weight)
+
             if self._is_success(achieved_goal, goal):
                 reward = bonus
             else:
-                reward = r_theta * w_theta + position_score * w_d
+                reward = r_theta * w_theta + position_score * w_d + velp_pen
         return reward
 
     # RobotEnv methods
@@ -288,6 +294,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 object_velp,
                 object_velr,
                 object_rel_pos,
+                box_pos.ravel(),
+                box_rel_pos.ravel(),
                 goal_rel_pos,
                 goal_rel_rot.ravel(),
             ])
