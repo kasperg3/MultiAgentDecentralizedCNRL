@@ -165,7 +165,7 @@ class ConceptEnv(gym.Env):
             elif action == "PLACE":
                 name = "Place"
                 action_dim = 4
-                state_dim = 34
+                state_dim = 40
             else:  # If not a trained policy, then skip and dont load a policy
                 continue
             kwargs = {
@@ -173,10 +173,10 @@ class ConceptEnv(gym.Env):
                 "action_dim": action_dim,
                 "max_action": max_action,
             }
-            file_name = f"TD3_UrBinPicking{name}-v0_1000"
+            file_name = f"TD3_UrBinPicking{name}-v0_2345"
             self.policies[self.actions_available[action]] = [TD3(**kwargs), TD3(**kwargs)]
-            self.policies[self.actions_available[action]][0].load(f"./models/final_concepts/agent0/{file_name}")
-            self.policies[self.actions_available[action]][1].load(f"./models/final_concepts/agent1/{file_name}")
+            self.policies[self.actions_available[action]][0].load(f"./models/concepts_29_04/agent0/{file_name}")
+            self.policies[self.actions_available[action]][1].load(f"./models/concepts_29_04/agent1/{file_name}")
 
     @property
     def dt(self):
@@ -328,6 +328,8 @@ class ConceptEnv(gym.Env):
                 object_velp,
                 object_velr,
                 object_rel_pos,
+                box_pos.ravel(),
+                box_rel_pos.ravel(),
                 goal_rel_pos,
                 goal_rel_rot.ravel(),
             ])
