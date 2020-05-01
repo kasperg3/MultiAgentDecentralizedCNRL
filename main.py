@@ -40,7 +40,8 @@ def main(args):
     print("---------------------------------------")
     print(f"Loading existing model from: ./models/{policy_file}")
     print("---------------------------------------")
-    policy.load(f"./models/rot_optimal_concepts/{policy_file}")
+    print(f"state_dim: {state_dim} action_dim: {action_dim}")
+    policy.load(f"./models/concepts_29_04/agent0/{policy_file}")
 
 
     success_counter = 0

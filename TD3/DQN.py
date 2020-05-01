@@ -132,8 +132,7 @@ class DQNAgent(object):
             self.q_next.load_state_dict(self.q_eval.state_dict())
 
     def decrement_epsilon(self):
-        self.epsilon = self.epsilon - self.eps_dec \
-                           if self.epsilon > self.eps_min else self.eps_min
+        self.epsilon = self.epsilon - self.eps_dec if self.epsilon > self.eps_min else self.eps_min
 
     def save_models(self):
         self.q_eval.save_checkpoint()
@@ -208,22 +207,23 @@ if __name__ == '__main__':
     env = gym.make('Concept-v0')
     best_score = -np.inf
     load_checkpoint = False
-    n_games = 1500
-    agent0 = DQNAgent(gamma=0.99, epsilon=1.0, lr=0.0001,
-                     input_dims=(env.observation_space.shape[0],),
+    n_games = 1000
+    save_freq = 50
+    agent0 = DQNAgent(gamma=0.99, epsilon=0.9, lr=0.0001,
+                     input_dims=(env.observation_space.shape[1],),
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.1,
                      batch_size=32, replace=1000, eps_dec=1e-5,
-                     chkpt_dir='models/', algo='DQNAgent',
+                     chkpt_dir='models/', algo='DQNAgent0',
                      env_name='Concept-v0')
 
-    agent1 = DQNAgent(gamma=0.99, epsilon=1.0, lr=0.0001,
-                     input_dims=(env.observation_space.shape[0],),
+    agent1 = DQNAgent(gamma=0.99, epsilon=0.9, lr=0.0001,
+                     input_dims=(env.observation_space.shape[1],),
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.1,
                      batch_size=32, replace=1000, eps_dec=1e-5,
-                     chkpt_dir='models/', algo='DQNAgent',
+                     chkpt_dir='models/', algo='DQNAgent1',
                      env_name='Concept-v0')
 
-    agents = [agent0, agent1]
+    agents = [agent0, agent1].copy()
 
     # TODO implement this
     if load_checkpoint:
@@ -239,43 +239,32 @@ if __name__ == '__main__':
     for i in range(n_games):
         done = False
         observation = env.reset()
-        score = 0
+        score = [0, 0]
         action = [5, 5]
         while not done:
             # Step in the environment
-            print("Stepping with action:" + str(action))
             observation_, reward, done, info = env.step(action)
-
-            env.render()
             for agent in range(2):
                 # if the action is done, add the transition to the replay buffer and learn
                 agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
                 agents[agent].learn()
                 # when the previous action is done, choose a new action
                 action[agent] = agents[agent].choose_action(observation[agent])
-
                 score[agent] += reward[agent]
             observation = observation_
             n_steps += 1
         scores.append(score)
         steps_array.append(n_steps)
 
-        avg_score = np.mean(scores[-100:])
         print(  'episode: ', i,
-                'score: ', score,
-                ' average score %.1f' % avg_score,
-                'best score %.2f' % best_score,
-                'epsilon %.2f' % agent0.epsilon,
-                'steps', n_steps)
+                ' | score: [%.2f %.2f]' % (score[0], score[1]),
+                ' | epsilon agent[0,1]: [%.3f %.3f]' % (agents[0].epsilon, agents[1].epsilon),
+                ' | steps', n_steps)
 
-        if avg_score > best_score:
-            #if not load_checkpoint:
-            agent0.save_models()
-            best_score = avg_score
+        if i % save_freq == 0:
+            agents[0].save_models()
+            agents[1].save_models()
 
         eps_history.append(agent0.epsilon)
         if load_checkpoint and n_steps >= 18000:
             break
-
-    x = [i+1 for i in range(len(scores))]
-    plot_learning_curve(steps_array, scores, eps_history, figure_file)
