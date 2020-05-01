@@ -207,25 +207,24 @@ if __name__ == '__main__':
     env = gym.make('Concept-v0')
     best_score = -np.inf
     load_checkpoint = False
-    n_games = 1000
+    n_games = 5000
     save_freq = 50
-    agent0 = DQNAgent(gamma=0.99, epsilon=0.9, lr=0.0001,
+    agent0 = DQNAgent(gamma=0.98, epsilon=1, lr=0.0005,
                      input_dims=(env.observation_space.shape[1],),
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.1,
-                     batch_size=32, replace=1000, eps_dec=1e-5,
+                     batch_size=64, replace=1000, eps_dec=0.0001,
                      chkpt_dir='models/', algo='DQNAgent0',
                      env_name='Concept-v0')
 
-    agent1 = DQNAgent(gamma=0.99, epsilon=0.9, lr=0.0001,
+    agent1 = DQNAgent(gamma=0.98, epsilon=1, lr=0.0005,
                      input_dims=(env.observation_space.shape[1],),
-                     n_actions=env.action_space.n, mem_size=50000, eps_min=0.1,
-                     batch_size=32, replace=1000, eps_dec=1e-5,
+                     n_actions=env.action_space.n, mem_size=50000, eps_min=0.02,
+                     batch_size=64, replace=1000, eps_dec=0.0001,
                      chkpt_dir='models/', algo='DQNAgent1',
                      env_name='Concept-v0')
 
     agents = [agent0, agent1].copy()
 
-    # TODO implement this
     if load_checkpoint:
         for agent in agents:
             agent.load_models()
