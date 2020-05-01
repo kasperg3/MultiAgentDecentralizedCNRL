@@ -484,6 +484,12 @@ class ConceptEnv(gym.Env):
         object_lifted = False
 
         pinch_point = self.sim.data.get_site_xpos('robot'+agent+':grip')
+        opposite_pinch_point = []
+        if agent == '0':
+            opposite_pinch_point = self.sim.data.get_site_xpos('robot1:grip')
+        if agent == '1':
+            opposite_pinch_point = self.sim.data.get_site_xpos('robot0:grip')
+
         object_position = self.sim.data.get_site_xpos('object' + agent)
         grip_to_object_rel_distance = goal_distance(pinch_point, object_position)
 
@@ -501,6 +507,7 @@ class ConceptEnv(gym.Env):
             np.array([grasp_ready]),
             np.array([has_object]),
             np.array([object_lifted]),
+            opposite_pinch_point.ravel(),
         ])
 
         return obs.copy()
