@@ -4,7 +4,7 @@ from gym.envs.registration import register
 register(
     id='Concept-v0',
     entry_point='gym_mergablerobots.envs:Concept',
-    max_episode_steps=20,
+    max_episode_steps=10,
 )
 
 for reward_type in ['sparse', 'dense', 'place', 'orient', 'lift', 'reach']:

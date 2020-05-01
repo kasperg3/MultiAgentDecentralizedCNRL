@@ -27,7 +27,7 @@ class Concept(ConceptEnv, utils.EzPickle):
             model_path=MODEL_XML_PATH,
             n_substeps=20,
             initial_qpos=initial_qpos,
-            n_actions=7,
+            n_actions=8,
             n_agents=2,
             max_action_steps=35)
         utils.EzPickle.__init__(self)

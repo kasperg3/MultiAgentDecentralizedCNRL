@@ -128,7 +128,7 @@ class ConceptEnv(gym.Env):
         self.goal = []
         obs = self._get_obs('0')
         self.action_space = spaces.Discrete(n_actions)
-        self.observation_space = spaces.Box(-np.inf, np.inf, shape=(obs.shape[0], n_agents), dtype='float32')
+        self.observation_space = spaces.Box(-np.inf, np.inf, shape=(n_agents, obs.shape[0]), dtype='float32')
         self.goal_place = np.array([[0.63, 0.5, 0.65], [0.63, 1.525, 0.65]])
 
         self.move_home = [False, False]
@@ -425,15 +425,16 @@ class ConceptEnv(gym.Env):
             self.sim.step()
             self._step_callback()
             done = False
-            self.render()
+            #self.render()
 
             # If any agents are done, then break the while
-            observation_arr = []
-            reward_arr = []
+            observation_arr = np.empty(self.observation_space.shape)
+            reward_arr = np.empty((2,))
             if info["agent_done"][0] == 1 and info["agent_done"][1] == 1:
                 for agent in range(len((info["agent_done"]))):
-                    observation_arr.append(self._get_obs(str(agent)))
-                    reward_arr.append(self.compute_agent_reward(str(agent)))
+                    # Extract the observation and reward
+                    observation_arr[agent] = self._get_obs(str(agent))
+                    reward_arr[agent] = self.compute_agent_reward(str(agent))
                 return observation_arr, reward_arr, done, info
 
     def sample_action(self):
@@ -658,7 +659,7 @@ class ConceptEnv(gym.Env):
         did_reset_sim = False
         while not did_reset_sim:
             did_reset_sim = self._reset_sim()
-        obs = self._get_obs('0')
+        obs = np.array((self._get_obs('0'), self._get_obs('1')))
         return obs
 
     def close(self):
