@@ -207,16 +207,16 @@ if __name__ == '__main__':
     env = gym.make('Concept-v0')
     best_score = -np.inf
     load_checkpoint = False
-    n_games = 5000
+    n_games = 50000
     save_freq = 50
-    agent0 = DQNAgent(gamma=0.98, epsilon=1, lr=0.0005,
+    agent0 = DQNAgent(gamma=0.98, epsilon=1.0, lr=0.0005,
                      input_dims=(env.observation_space.shape[1],),
-                     n_actions=env.action_space.n, mem_size=50000, eps_min=0.1,
+                     n_actions=env.action_space.n, mem_size=50000, eps_min=0.02,
                      batch_size=64, replace=1000, eps_dec=0.0001,
                      chkpt_dir='models/', algo='DQNAgent0',
                      env_name='Concept-v0')
 
-    agent1 = DQNAgent(gamma=0.98, epsilon=1, lr=0.0005,
+    agent1 = DQNAgent(gamma=0.98, epsilon=1.0, lr=0.0005,
                      input_dims=(env.observation_space.shape[1],),
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.02,
                      batch_size=64, replace=1000, eps_dec=0.0001,

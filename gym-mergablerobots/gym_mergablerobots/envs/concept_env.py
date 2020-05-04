@@ -184,38 +184,31 @@ class ConceptEnv(gym.Env):
 
     def compute_agent_reward(self, agent):
         reward = 0
-        lift_threshold = 0.15
+        lift_threshold = 0.10
         dist_success_threshold = 0.05
-        dist_success_threshold_place = 0.1
-        grasp_ready = False
-        has_object = False
-        object_lifted = False
-        reached = False
-        orientation_bool = self.orientation_is_success(agent)
-        gripper_is_closed = self.gripper_is_closed(agent, 0.03)
+        dist_success_threshold_place = 0.10
         object_position = self.sim.data.get_site_xpos('object'+agent)
         gripper_position = self.sim.data.get_site_xpos('robot'+agent+':grip')
-        is_lifted = bool(object_position[2] > lift_threshold)
+        object_height = object_position[2] - 0.414
+        is_lifted = bool(object_height > lift_threshold)
         grip_to_object_rel_distance = goal_distance(object_position, gripper_position)
 
         #hardcoded shit
         theta = math.radians(35)
-        place_goal_quat = [np.cos(theta / 2), 0, 0, np.sin(theta / 2)]
         place_goal_pos = self.goal_place[int(agent)]
 
         # rewards
         if grip_to_object_rel_distance < dist_success_threshold:  # Reach
-            reward = 0.25
-
-        if self.orientation_is_success(agent):                    # Orient
-            reward = 0.5
-
-        if self.gripper_is_closed(agent, 0.03) and grip_to_object_rel_distance < dist_success_threshold:     # Lift
-            reward = 0.75
-
-        if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
-            # TODO: add rotation criteria?
             reward = 1
+        if self.orientation_is_success(agent):                    # Orient
+            reward = 1.5
+        if self.gripper_is_closed(agent, 0.03) and grip_to_object_rel_distance < dist_success_threshold:     # Grasped
+            reward = 2.5
+        if is_lifted:                                               # Lift
+            reward = 4
+        if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
+            reward = 15
+        #reward = -goal_distance(object_position, place_goal_pos)
         return reward
 
     def _step_callback(self):
@@ -425,7 +418,7 @@ class ConceptEnv(gym.Env):
             self.sim.step()
             self._step_callback()
             done = False
-            #self.render()
+            self.render()
 
             # If any agents are done, then break the while
             observation_arr = np.empty(self.observation_space.shape)
@@ -479,7 +472,7 @@ class ConceptEnv(gym.Env):
 
     def _get_obs(self, agent):
         dist_success_threshold = 0.02
-        lift_threshold = 0.15
+        lift_threshold = 0.10
         grasp_ready = False
         has_object = False
         object_lifted = False
@@ -492,7 +485,7 @@ class ConceptEnv(gym.Env):
             grasp_ready = True
         if grasp_ready and self.gripper_is_closed(agent, 0.04) and grip_to_object_rel_distance < dist_success_threshold:
             has_object = True
-        if has_object and object_position[2] > lift_threshold:
+        if has_object and (object_position[2]-0.414) > lift_threshold: #TODO Make a function to get the height of the object above the table
             object_lifted = True
 
         obs = np.concatenate([
@@ -502,6 +495,7 @@ class ConceptEnv(gym.Env):
             np.array([grasp_ready]),
             np.array([has_object]),
             np.array([object_lifted]),
+            np.array([self.gripper_is_closed(agent, 0.04)]),
         ])
 
         return obs.copy()
