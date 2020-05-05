@@ -105,14 +105,21 @@ class DQNAgent(object):
                                     name=self.env_name+'_'+self.algo+'_q_next'+'_lr'+str(self.lr),
                                     chkpt_dir=self.chkpt_dir)
 
-    def choose_action(self, observation):
-        if np.random.random() > self.epsilon:
-            state = T.tensor([observation],dtype=T.float).to(self.q_eval.device)
+    def choose_action(self, observation, epsilon_random=True):
+
+        if epsilon_random:
+            # Choose a random action with epsilon greedy chance
+            if np.random.random() > self.epsilon:
+                state = T.tensor([observation],dtype=T.float).to(self.q_eval.device)
+                actions = self.q_eval.forward(state)
+                action = T.argmax(actions).item()
+            else:
+                action = np.random.choice(self.action_space)
+        else:
+            # No random action, choose the policy action
+            state = T.tensor([observation], dtype=T.float).to(self.q_eval.device)
             actions = self.q_eval.forward(state)
             action = T.argmax(actions).item()
-        else:
-            action = np.random.choice(self.action_space)
-
         return action
 
     def store_transition(self, state, action, reward, state_, done):
@@ -293,7 +300,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", default=1234, type=int)  # Sets Gym, PyTorch and Numpy seeds
-    parser.add_argument("--episodes", default=50000, type=int)  # Max time steps to run environment
+    parser.add_argument("--episodes", default=10000, type=int)  # Max time steps to run environment
     parser.add_argument("--lr", default=0.0005, type=float)
     parser.add_argument("--save_freq", default=50, type=int)
     parser.add_argument("--load_model", action="store_true")  # Render the Training
