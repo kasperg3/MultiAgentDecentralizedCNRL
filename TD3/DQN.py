@@ -1,8 +1,10 @@
+import argparse
 import os
 import torch as T
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torch
 import numpy as np
 
 # from https://github.com/philtabor/Deep-Q-Learning-Paper-To-Code/tree/master/DQN
@@ -95,12 +97,12 @@ class DQNAgent(object):
 
         self.q_eval = DeepQNetwork(self.lr, self.n_actions,
                                     input_dims=self.input_dims,
-                                    name=self.env_name+'_'+self.algo+'_q_eval',
+                                    name=self.env_name+'_'+self.algo+'_q_eval'+'_lr'+str(self.lr),
                                     chkpt_dir=self.chkpt_dir)
 
         self.q_next = DeepQNetwork(self.lr, self.n_actions,
                                     input_dims=self.input_dims,
-                                    name=self.env_name+'_'+self.algo+'_q_next',
+                                    name=self.env_name+'_'+self.algo+'_q_next'+'_lr'+str(self.lr),
                                     chkpt_dir=self.chkpt_dir)
 
     def choose_action(self, observation):
@@ -203,20 +205,32 @@ def plot_learning_curve(x, scores, epsilons, filename, lines=None):
 
 import gym_mergablerobots
 
-if __name__ == '__main__':
+def main(args):
+
     env = gym.make('Concept-v0')
     best_score = -np.inf
     load_checkpoint = False
-    n_games = 50000
-    save_freq = 50
-    agent0 = DQNAgent(gamma=0.98, epsilon=1.0, lr=0.0005,
+
+    # Get the adjustable parameters
+    n_games = args.episodes
+    save_freq = args.save_freq
+    seed = args.seed
+    learning_rate = args.lr
+    load_checkpoint = args.load_model
+
+    # Set seeds
+    env.seed(args.seed)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+
+    agent0 = DQNAgent(gamma=0.98, epsilon=1.0, lr=learning_rate,
                      input_dims=(env.observation_space.shape[1],),
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.02,
                      batch_size=64, replace=1000, eps_dec=0.0001,
                      chkpt_dir='models/', algo='DQNAgent0',
                      env_name='Concept-v0')
 
-    agent1 = DQNAgent(gamma=0.98, epsilon=1.0, lr=0.0005,
+    agent1 = DQNAgent(gamma=0.98, epsilon=1.0, lr=learning_rate,
                      input_dims=(env.observation_space.shape[1],),
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.02,
                      batch_size=64, replace=1000, eps_dec=0.0001,
@@ -233,7 +247,9 @@ if __name__ == '__main__':
     figure_file = 'plots/' + fname + '.png'
 
     n_steps = 0
-    scores, eps_history, steps_array = [], [], []
+    scores_agent0, scores_agent1, eps_history, steps_array = [], [], [], []
+
+    print("STARTING TRAINING WITH LR: " + str(learning_rate))
 
     for i in range(n_games):
         done = False
@@ -243,7 +259,7 @@ if __name__ == '__main__':
         while not done:
             # Step in the environment
             observation_, reward, done, info = env.step(action)
-            for agent in range(2):
+            for agent in range(1):
                 # if the action is done, add the transition to the replay buffer and learn
                 agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
                 agents[agent].learn()
@@ -252,7 +268,10 @@ if __name__ == '__main__':
                 score[agent] += reward[agent]
             observation = observation_
             n_steps += 1
-        scores.append(score)
+
+        # save the scores for each agent
+        scores_agent0.append(score[0])
+        scores_agent1.append(score[1])
         steps_array.append(n_steps)
 
         print(  'episode: ', i,
@@ -263,7 +282,20 @@ if __name__ == '__main__':
         if i % save_freq == 0:
             agents[0].save_models()
             agents[1].save_models()
+            np.save(f"./results/agent0_scores_lr={str(learning_rate)}_history", scores_agent0)
+            np.save(f"./results/agent1_scores_lr={str(learning_rate)}_history", scores_agent1)
 
         eps_history.append(agent0.epsilon)
         if load_checkpoint and n_steps >= 18000:
             break
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", default=1234, type=int)  # Sets Gym, PyTorch and Numpy seeds
+    parser.add_argument("--episodes", default=50000, type=int)  # Max time steps to run environment
+    parser.add_argument("--lr", default=0.0005, type=float)
+    parser.add_argument("--save_freq", default=50, type=int)
+    parser.add_argument("--load_model", action="store_true")  # Render the Training
+    args = parser.parse_args()
+    main(args)

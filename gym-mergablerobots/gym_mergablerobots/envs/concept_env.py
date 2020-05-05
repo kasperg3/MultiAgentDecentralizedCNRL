@@ -369,7 +369,7 @@ class ConceptEnv(gym.Env):
             state = self.get_concept_state(action, str(agent))
             agent_movement = self.policies[action][agent].select_action(state)
             d = np.linalg.norm(self.sim.data.get_site_xpos('robot' + str(agent) + ':grip') - self.sim.data.get_site_xpos('object' + str(agent)), axis=-1)
-            if d < 0.015:
+            if d < 0.012:
                 agent_done = True
         elif action == self.actions_available["CLOSE_GRIPPER"]:
             self.gripper_ctrl[agent] = 0.3
