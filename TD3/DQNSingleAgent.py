@@ -1,10 +1,8 @@
-import argparse
 import os
 import torch as T
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import torch
 import numpy as np
 
 # from https://github.com/philtabor/Deep-Q-Learning-Paper-To-Code/tree/master/DQN
@@ -97,12 +95,12 @@ class DQNAgent(object):
 
         self.q_eval = DeepQNetwork(self.lr, self.n_actions,
                                     input_dims=self.input_dims,
-                                    name=self.env_name+'_'+self.algo+'_q_eval'+'_lr'+str(self.lr),
+                                    name=self.env_name+'_'+self.algo+'_q_eval',
                                     chkpt_dir=self.chkpt_dir)
 
         self.q_next = DeepQNetwork(self.lr, self.n_actions,
                                     input_dims=self.input_dims,
-                                    name=self.env_name+'_'+self.algo+'_q_next'+'_lr'+str(self.lr),
+                                    name=self.env_name+'_'+self.algo+'_q_next',
                                     chkpt_dir=self.chkpt_dir)
 
     def choose_action(self, observation):
@@ -134,7 +132,8 @@ class DQNAgent(object):
             self.q_next.load_state_dict(self.q_eval.state_dict())
 
     def decrement_epsilon(self):
-        self.epsilon = self.epsilon - self.eps_dec if self.epsilon > self.eps_min else self.eps_min
+        self.epsilon = self.epsilon - self.eps_dec \
+                           if self.epsilon > self.eps_min else self.eps_min
 
     def save_models(self):
         self.q_eval.save_checkpoint()
@@ -203,99 +202,57 @@ def plot_learning_curve(x, scores, epsilons, filename, lines=None):
 
     plt.savefig(filename)
 
-import gym_mergablerobots
 
-def main(args):
-
-    env = gym.make('Concept-v0')
+if __name__ == '__main__':
+    env = gym.make('CartPole-v1')
     best_score = -np.inf
     load_checkpoint = False
-
-    # Get the adjustable parameters
-    n_games = args.episodes
-    save_freq = args.save_freq
-    seed = args.seed
-    learning_rate = args.lr
-    load_checkpoint = args.load_model
-
-    # Set seeds
-    env.seed(args.seed)
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-
-    agent0 = DQNAgent(gamma=0.98, epsilon=1.0, lr=learning_rate,
-                     input_dims=(env.observation_space.shape[1],),
-                     n_actions=env.action_space.n, mem_size=50000, eps_min=0.02,
-                     batch_size=64, replace=1000, eps_dec=0.0001,
-                     chkpt_dir='models/', algo='DQNAgent0',
-                     env_name='Concept-v0')
-
-    agent1 = DQNAgent(gamma=0.98, epsilon=1.0, lr=learning_rate,
-                     input_dims=(env.observation_space.shape[1],),
-                     n_actions=env.action_space.n, mem_size=50000, eps_min=0.02,
-                     batch_size=64, replace=1000, eps_dec=0.0001,
-                     chkpt_dir='models/', algo='DQNAgent1',
-                     env_name='Concept-v0')
-
-    agents = [agent0, agent1].copy()
+    n_games = 1500
+    agent = DQNAgent(gamma=0.99, epsilon=1.0, lr=0.0001,
+                     input_dims=(env.observation_space.shape),
+                     n_actions=env.action_space.n, mem_size=50000, eps_min=0.1,
+                     batch_size=32, replace=1000, eps_dec=1e-5,
+                     chkpt_dir='models/', algo='DQNAgent',
+                     env_name='CartPole-v1')
 
     if load_checkpoint:
-        for agent in agents:
-            agent.load_models()
+        agent.load_models()
 
-    fname = agent0.algo + '_' + agent0.env_name + '_lr' + str(agent0.lr) +'_' + str(n_games) + 'games'
+    fname = agent.algo + '_' + agent.env_name + '_lr' + str(agent.lr) +'_' + str(n_games) + 'games'
     figure_file = 'plots/' + fname + '.png'
 
     n_steps = 0
-    scores_agent0, scores_agent1, eps_history, steps_array = [], [], [], []
-
-    print("STARTING TRAINING WITH LR: " + str(learning_rate))
+    scores, eps_history, steps_array = [], [], []
 
     for i in range(n_games):
         done = False
         observation = env.reset()
-        score = [0, 0]
-        action = [5, 5]
+        env.render()
+        score = 0
         while not done:
-            # Step in the environment
+            action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
-            for agent in range(1):
-                # if the action is done, add the transition to the replay buffer and learn
-                agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
-                agents[agent].learn()
-                # when the previous action is done, choose a new action
-                action[agent] = agents[agent].choose_action(observation[agent])
-                score[agent] += reward[agent]
+            score += reward
+
+            if not load_checkpoint:
+                agent.store_transition(observation, action,
+                                     reward, observation_, int(done))
+                agent.learn()
             observation = observation_
             n_steps += 1
-
-        # save the scores for each agent
-        scores_agent0.append(score[0])
-        scores_agent1.append(score[1])
+        scores.append(score)
         steps_array.append(n_steps)
 
-        print(  'episode: ', i,
-                ' | score: [%.2f %.2f]' % (score[0], score[1]),
-                ' | epsilon agent[0,1]: [%.3f %.3f]' % (agents[0].epsilon, agents[1].epsilon),
-                ' | steps', n_steps)
+        avg_score = np.mean(scores[-100:])
+        print('episode: ', i,'score: ', score,
+             ' average score %.1f' % avg_score, 'best score %.2f' % best_score,
+            'epsilon %.2f' % agent.epsilon, 'steps', n_steps)
 
-        if i % save_freq == 0:
-            agents[0].save_models()
-            agents[1].save_models()
-            np.save(f"./results/agent0_scores_lr={str(learning_rate)}_history", scores_agent0)
-            np.save(f"./results/agent1_scores_lr={str(learning_rate)}_history", scores_agent1)
+        if avg_score > best_score:
+            #if not load_checkpoint:
+            agent.save_models()
+            best_score = avg_score
 
-        eps_history.append(agent0.epsilon)
+        eps_history.append(agent.epsilon)
         if load_checkpoint and n_steps >= 18000:
             break
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", default=1234, type=int)  # Sets Gym, PyTorch and Numpy seeds
-    parser.add_argument("--episodes", default=50000, type=int)  # Max time steps to run environment
-    parser.add_argument("--lr", default=0.0005, type=float)
-    parser.add_argument("--save_freq", default=50, type=int)
-    parser.add_argument("--load_model", action="store_true")  # Render the Training
-    args = parser.parse_args()
-    main(args)
