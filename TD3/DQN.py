@@ -224,6 +224,7 @@ def main(args):
     seed = args.seed
     learning_rate = args.lr
     load_checkpoint = args.load_model
+    eval_model = args.eval_model
 
     # Set seeds
     env.seed(args.seed)
@@ -246,7 +247,7 @@ def main(args):
 
     agents = [agent0, agent1].copy()
 
-    if load_checkpoint:
+    if load_checkpoint or eval_model:
         for agent in agents:
             agent.load_models()
 
@@ -271,7 +272,7 @@ def main(args):
                 agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
                 agents[agent].learn()
                 # when the previous action is done, choose a new action
-                action[agent] = agents[agent].choose_action(observation[agent])
+                action[agent] = agents[agent].choose_action(observation[agent], not eval_model)
                 score[agent] += reward[agent]
             observation = observation_
             n_steps += 1
@@ -303,6 +304,9 @@ if __name__ == '__main__':
     parser.add_argument("--episodes", default=10000, type=int)  # Max time steps to run environment
     parser.add_argument("--lr", default=0.0005, type=float)
     parser.add_argument("--save_freq", default=50, type=int)
-    parser.add_argument("--load_model", action="store_true")  # Render the Training
+    parser.add_argument("--load_model", action="store_true")  # Load a existing model
+    parser.add_argument("--eval_model", action="store_true")  #Evaluate a existing model
+    parser.set_defaults(eval_model=False)       # change this to true for model evaluation
+
     args = parser.parse_args()
     main(args)
