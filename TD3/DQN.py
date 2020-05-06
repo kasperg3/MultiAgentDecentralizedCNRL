@@ -225,9 +225,7 @@ def eval(eval_agents, seed, env, eval_episodes=15):
             # Step in the environment
             observation_, reward, done, info = env.step(action)
             for agent in range(1):
-                # if the action is done, add the transition to the replay buffer and learn
-                eval_agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
-                eval_agents[agent].learn()
+
                 # when the previous action is done, choose a new action
                 action[agent] = eval_agents[agent].choose_action(observation[agent], False)
                 score[agent] += reward[agent]
