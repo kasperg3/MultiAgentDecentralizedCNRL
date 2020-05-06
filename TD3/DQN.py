@@ -212,6 +212,36 @@ def plot_learning_curve(x, scores, epsilons, filename, lines=None):
 
 import gym_mergablerobots
 
+
+def eval(eval_agents, seed, env, eval_episodes=15):
+
+    avg_reward = [0., 0.]
+    for i in range(eval_episodes):
+        done = False
+        observation = env.reset()
+        score = [0, 0]
+        action = [5, 5]
+        while not done:
+            # Step in the environment
+            observation_, reward, done, info = env.step(action)
+            for agent in range(1):
+                # if the action is done, add the transition to the replay buffer and learn
+                eval_agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
+                eval_agents[agent].learn()
+                # when the previous action is done, choose a new action
+                action[agent] = eval_agents[agent].choose_action(observation[agent], False)
+                score[agent] += reward[agent]
+                avg_reward[agent] += reward[agent]
+            observation = observation_
+
+    for agent in range(len(eval_agents)):
+        avg_reward[agent] /= eval_episodes
+
+    print("---------------------------------------")
+    print(f"Evaluation over {eval_episodes} episodes: {avg_reward}")
+    print("---------------------------------------")
+    return avg_reward
+
 def main(args):
 
     env = gym.make('Concept-v0')
@@ -292,6 +322,7 @@ def main(args):
             agents[1].save_models()
             np.save(f"./results/agent0_scores_lr={str(learning_rate)}_history", scores_agent0)
             np.save(f"./results/agent1_scores_lr={str(learning_rate)}_history", scores_agent1)
+            test = eval(agents, seed, env)
 
         eps_history.append(agent0.epsilon)
         if load_checkpoint and n_steps >= 18000:
