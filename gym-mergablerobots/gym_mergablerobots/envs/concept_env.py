@@ -453,7 +453,7 @@ class ConceptEnv(gym.Env):
             self.sim.step()
             self._step_callback()
             done = False
-            self.render()
+            #self.render()
 
             # If any agents are done, then break the while
             observation_arr = np.empty(self.observation_space.shape)
