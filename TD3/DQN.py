@@ -6,6 +6,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch
 import numpy as np
+import gym_mergablerobots
+import time
 
 # from https://github.com/philtabor/Deep-Q-Learning-Paper-To-Code/tree/master/DQN
 
@@ -210,7 +212,7 @@ def plot_learning_curve(x, scores, epsilons, filename, lines=None):
 
     plt.savefig(filename)
 
-def evaluation(env, agents, episodes):
+def evaluation(env, agents, episodes, dual_agent, agent_id=0):
 
     scores_agent0, scores_agent1, eps_history, steps_array, success_agent0, success_agent1 = [], [], [], [], [], []
     for episode in range(episodes):
@@ -222,11 +224,15 @@ def evaluation(env, agents, episodes):
         while not done:
             # Step in the environment
             observation_, reward, done, info = env.step(action)
-            for agent in range(len(agents)):
-                # when the previous action is done, choose a new action
-                action[agent] = agents[agent].choose_action(observation[agent], False)
-                score[agent] += reward[agent]
-                success[agent] = int(env.task_success(str(agent)))
+            if dual_agent:
+                for agent in range(2):
+                    action[agent] = agents[agent].choose_action(observation[agent], False)
+                    score[agent] += reward[agent]
+                    success[agent] = int(env.task_success(str(agent)))
+            else:
+                action[agent_id] = agents[agent_id].choose_action(observation[agent_id], False)
+                score[agent_id] += reward[agent_id]
+                success[agent_id] = int(env.task_success(str(agent_id)))
             observation = observation_
 
         # save the scores for each agent
@@ -239,37 +245,7 @@ def evaluation(env, agents, episodes):
     agent1scores = [np.mean(scores_agent1), np.mean(success_agent1)]
     return agent0scores, agent1scores
 
-import gym_mergablerobots
 
-
-def eval(eval_agents, seed, env, eval_episodes=15):
-
-    avg_reward = [0., 0.]
-    for i in range(eval_episodes):
-        done = False
-        observation = env.reset()
-        score = [0, 0]
-        action = [5, 5]
-        while not done:
-            # Step in the environment
-            observation_, reward, done, info = env.step(action)
-            for agent in range(1):
-
-                # when the previous action is done, choose a new action
-                action[agent] = eval_agents[agent].choose_action(observation[agent], False)
-                score[agent] += reward[agent]
-                avg_reward[agent] += reward[agent]
-            observation = observation_
-
-    for agent in range(len(eval_agents)):
-        avg_reward[agent] /= eval_episodes
-
-    print("---------------------------------------")
-    print(f"Evaluation over {eval_episodes} episodes: {avg_reward}")
-    print("---------------------------------------")
-    return avg_reward
-
-import time
 def main(args):
     seconds_start = time.time()
     env = gym.make('Concept-v0')
@@ -290,6 +266,8 @@ def main(args):
     load_checkpoint = args.load_model
     eval_model = args.eval_model
 
+    dual_agent = args.dual_robot
+    agent_id = args.agent_id
     # Set seeds
     env.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -332,13 +310,20 @@ def main(args):
         while not done:
             # Step in the environment
             observation_, reward, done, info = env.step(action)
-            for agent in range(1):
-                # if the action is done, add the transition to the replay buffer and learn
-                agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
-                agents[agent].learn()
-                # when the previous action is done, choose a new action
-                action[agent] = agents[agent].choose_action(observation[agent], not eval_model)
-                score[agent] += reward[agent]
+            if dual_agent:
+                for agent in range(len(agents)):
+                    # if the action is done, add the transition to the replay buffer and learn
+                    agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
+                    agents[agent].learn()
+                    # when the previous action is done, choose a new action
+                    action[agent] = agents[agent].choose_action(observation[agent], not eval_model)
+                    score[agent] += reward[agent]
+            else:
+                agents[agent_id].store_transition(observation[agent_id], action[agent_id], reward[agent_id], observation_[agent_id], int(done))
+                agents[agent_id].learn()
+                action[agent_id] = agents[agent_id].choose_action(observation[agent_id], not eval_model)
+                score[agent_id] += reward[agent_id]
+
             observation = observation_
             n_steps += 1
 
@@ -349,29 +334,51 @@ def main(args):
 
         print(  'episode: ', i,
                 ' | score: [%.2f %.2f]' % (score[0], score[1]),
-                ' | epsilon agent[0,1]: [%.3f %.3f]' % (agents[0].epsilon, agents[1].epsilon),
+                ' | epsilon agent: [%.3f %.3f]' % (agents[0].epsilon, agents[1].epsilon),
                 ' | steps', n_steps)
 
         if i % save_freq == 0:
-            agents[0].save_models()
-            agents[1].save_models()
-            np.save(f"./results/{note}_agent0_scores_lr={str(learning_rate)}_history", scores_agent0)
-            np.save(f"./results/{note}_agent1_scores_lr={str(learning_rate)}_history", scores_agent1)
+            # Only save the agent/agents which are being trained
+            if dual_agent:
+                agents[0].save_models()
+                agents[1].save_models()
+                np.save(f"./results/{note}_agent0_scores_lr={str(learning_rate)}_history", scores_agent0)
+                np.save(f"./results/{note}_agent1_scores_lr={str(learning_rate)}_history", scores_agent1)
+            else:
+                agents[agent_id].save_models()
+                np.save(f"./results/{note}_agent{agent_id}_scores_lr={str(learning_rate)}_history", scores_agent0)
 
         if (i+1) % eval_freq == 0:
-            agent0score, agent1score = evaluation(env, agents, 15)  # scores given as (mean_episode_score, mean_success_rate)
+            # Save scores
+            agent0score, agent1score = evaluation(env, agents, 40, dual_agent, agent_id)  # scores given as (mean_episode_score, mean_success_rate)
             agent0returns_history.append(agent0score[0])
             agent0success_history.append(agent0score[1])
             agent1returns_history.append(agent1score[0])
             agent1success_history.append(agent1score[1])
+
+            # Log time
             seconds_end = time.time()
             time_elapsed_history.append((seconds_end - seconds_start)/60)
-            np.save(f"./results/{note}_agent0_test_return", agent0returns_history)
-            np.save(f"./results/{note}_agent1_test_return", agent1returns_history)
-            np.save(f"./results/{note}_agent0_test_success", agent0success_history)
-            np.save(f"./results/{note}_agent1_test_success", agent1success_history)
-            np.save(f"./results/{note}_time_elapsed_history", agent1success_history)
-            print("eval_return: ", agent0score[0], " | eval_success: ", agent0score[1], " | minutes trained: ", (seconds_end - seconds_start)/60)
+
+            # Save models
+
+            if dual_agent:
+                np.save(f"./results/{note}_agent0_test_return", agent0returns_history)
+                np.save(f"./results/{note}_agent1_test_return", agent1returns_history)
+                np.save(f"./results/{note}_agent0_test_success", agent0success_history)
+                np.save(f"./results/{note}_agent1_test_success", agent1success_history)
+                np.save(f"./results/{note}_time_elapsed_history", time_elapsed_history)
+            elif agent_id == 1:
+                np.save(f"./results/{note}_agent1_test_return", agent1returns_history)
+                np.save(f"./results/{note}_agent1_test_success", agent1success_history)
+                np.save(f"./results/{note}_time_elapsed_history", time_elapsed_history)
+            elif agent_id == 0:
+                np.save(f"./results/{note}_agent0_test_return", agent0returns_history)
+                np.save(f"./results/{note}_agent0_test_success", agent0success_history)
+                np.save(f"./results/{note}_time_elapsed_history", time_elapsed_history)
+
+            print("AGENT0 | eval_return: ", agent0score[0], " | eval_success: ", agent0score[1], " | minutes trained: ", (seconds_end - seconds_start)/60)
+            print("AGENT1 | eval_return: ", agent1score[0], " | eval_success: ", agent1score[1], " | minutes trained: ", (seconds_end - seconds_start)/60)
         eps_history.append(agent0.epsilon)
         if load_checkpoint and n_steps >= 18000:
             break
@@ -380,14 +387,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--note", default="sparse", type=str)
-    parser.add_argument("--seed", default=1234, type=int)  # Sets Gym, PyTorch and Numpy seeds
-    parser.add_argument("--episodes", default=10000, type=int)  # Max time steps to run environment
+    parser.add_argument("--seed", default=1000, type=int)  # Sets Gym, PyTorch and Numpy seeds
+    parser.add_argument("--episodes", default=5000, type=int)  # Max time steps to run environment
     parser.add_argument("--lr", default=0.0005, type=float)
     parser.add_argument("--save_freq", default=50, type=int)
     parser.add_argument("--eval_freq", default=50, type=int)
+    parser.add_argument("--agent_id", default=0, type=int)
     parser.add_argument("--load_model", action="store_true")  # Load a existing model
     parser.add_argument("--eval_model", action="store_true")  #Evaluate a existing model
-    parser.set_defaults(eval_model=False)       # change this to true for model evaluation
+    parser.add_argument("--dual_robot", action="store_true")
+    #parser.set_defaults(eval_model=False)       # change this to true for model evaluation
 
     args = parser.parse_args()
     main(args)

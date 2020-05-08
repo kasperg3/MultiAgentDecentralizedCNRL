@@ -202,7 +202,7 @@ class ConceptEnv(gym.Env):
         is_lifted = bool(object_height > lift_threshold)
         grip_to_object_rel_distance = goal_distance(object_position, gripper_position)
 
-        #hardcoded shit
+        #hardcoded
         theta = math.radians(35)
         place_goal_pos = self.goal_place[int(agent)]
 
@@ -217,6 +217,8 @@ class ConceptEnv(gym.Env):
            reward = 4
         if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
            reward = 15  # 15 if not sparse
+        # if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
+        #     reward = 1
         return reward
 
     def _step_callback(self):
@@ -349,7 +351,7 @@ class ConceptEnv(gym.Env):
     def choose_action(self, action, agent):
         # get a movement from a policy dependent on the agent and the action chosen
         # Set agent_action_done to True if
-        Negative_termination_active = False   # SET TRUE TO ACTIVATE NEGATIVE TERMINATION
+        Negative_termination_active = True   # SET TRUE TO ACTIVATE NEGATIVE TERMINATION
         self.move_allowed[agent] = True
         self.move_home[agent] = False
         agent_movement = np.zeros(7)
@@ -358,8 +360,8 @@ class ConceptEnv(gym.Env):
         has_object = False
         object_pos = self.sim.data.get_site_xpos('object'+str(agent))
         gripper_pos = self.sim.data.get_site_xpos('robot'+str(agent)+':grip')
-        gripper_closed = self.gripper_is_closed(str(agent), 0.04)
-        if goal_distance(object_pos, gripper_pos) < 0.02 and not gripper_closed:
+        gripper_open = np.bool(self.gripper_ctrl[int(agent)] == -1)
+        if goal_distance(object_pos, gripper_pos) < 0.02 and not gripper_open:
             has_object = True
 
 
@@ -368,8 +370,10 @@ class ConceptEnv(gym.Env):
         if self.current_action_steps[agent] >= self.max_action_steps:
             agent_done = True
             self.current_action_steps[agent] = 0
+
         elif action == self.actions_available["NOOP"]:
             self.move_allowed[agent] = False
+
         elif action == self.actions_available["REACH"]:
             state = self.get_concept_state(action, str(agent))
             agent_movement = self.policies[action][agent].select_action(state)
@@ -394,17 +398,19 @@ class ConceptEnv(gym.Env):
             d = np.linalg.norm(self.sim.data.get_site_xpos('robot' + str(agent) + ':grip') - self.sim.data.get_site_xpos('object' + str(agent)), axis=-1)
             if d < 0.015:
                 agent_done = True
-            if (d > 0.4 or gripper_closed) and Negative_termination_active:
+            if (d > 0.4 or not gripper_open) and Negative_termination_active:
                 agent_done = True  # Neg termination
 
         elif action == self.actions_available["CLOSE_GRIPPER"]:
             self.gripper_ctrl[agent] = 0.3
             if self.gripper_is_closed(str(agent), 0.04) or self.grasped_object(agent) > 2:
                 agent_done = True
+
         elif action == self.actions_available["OPEN_GRIPPER"]:
             self.gripper_ctrl[agent] = -1
             if not self.gripper_is_closed(str(agent), 0.04):
                 agent_done = True
+
         elif action == self.actions_available["PLACE"]:
             state = self.get_concept_state(action, str(agent))
             policy_output = self.policies[action][agent].select_action(state)
@@ -415,6 +421,7 @@ class ConceptEnv(gym.Env):
                 agent_done = True
             if not has_object and Negative_termination_active:
                 agent_done = True  # Neg Termination
+
         elif action == self.actions_available["HOME"]:
             self.move_home[agent] = True
 
@@ -517,7 +524,7 @@ class ConceptEnv(gym.Env):
         gripper_open = np.bool(self.gripper_ctrl[int(agent)] == -1)
         if grip_to_object_rel_distance < dist_success_threshold and self.orientation_is_success(agent):
             grasp_ready = True
-        if not gripper_open and grip_to_object_rel_distance < 0.015:
+        if not gripper_open and grip_to_object_rel_distance < 0.02:
             has_object = True
         if (object_position[2]-0.414) > lift_threshold:
             object_lifted = True
