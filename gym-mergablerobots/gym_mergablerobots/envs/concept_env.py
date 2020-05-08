@@ -32,6 +32,13 @@ def unit_vector(vector):
 class ConceptEnv(gym.Env):
     """
     """
+    def task_success(self, agent):
+        object_position = self.sim.data.get_site_xpos('object'+agent)
+        if goal_distance(self.goal_place[int(agent)], object_position) < 0.10:
+            # print('Success -- for debug')
+            return True
+        return False
+
     def sample_point(self, x_range, y_range, z_range):
         return [
             float(self.np_random.uniform(-x_range, x_range)),
@@ -124,6 +131,7 @@ class ConceptEnv(gym.Env):
         self._env_setup(initial_qpos=initial_qpos)
         self.initial_state = copy.deepcopy(self.sim.get_state())
         self.n_actions = n_actions
+        self.current_action = [6, 6]
         self.goal_visuliser_array = [('0', [0]), ('1', [0])]
         self.goal = []
         self.gripper_ctrl = np.array((-0.3, -0.3))
@@ -198,17 +206,17 @@ class ConceptEnv(gym.Env):
         theta = math.radians(35)
         place_goal_pos = self.goal_place[int(agent)]
 
-        # # rewards
-        # if grip_to_object_rel_distance < dist_success_threshold:  # Reach
-        #     reward = 1
-        # if self.orientation_is_success(agent):                    # Orient
-        #     reward = 1.5
-        # if self.gripper_is_closed(agent, 0.03) and grip_to_object_rel_distance < 0.010:     # Grasped
-        #     reward = 2.5
-        # if is_lifted:                                             # Lift
-        #     reward = 4
+         # rewards
+        if grip_to_object_rel_distance < dist_success_threshold:  # Reach
+            reward = 1
+        if self.orientation_is_success(agent):                    # Orient
+            reward = 1.5
+        if self.gripper_is_closed(agent, 0.03) and grip_to_object_rel_distance < 0.010:     # Grasped
+            reward = 2.5
+        if is_lifted:                                             # Lift
+           reward = 4
         if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
-            reward = 15
+           reward = 15  # 15 if not sparse
         return reward
 
     def _step_callback(self):
@@ -341,10 +349,19 @@ class ConceptEnv(gym.Env):
     def choose_action(self, action, agent):
         # get a movement from a policy dependent on the agent and the action chosen
         # Set agent_action_done to True if
+        Negative_termination_active = False   # SET TRUE TO ACTIVATE NEGATIVE TERMINATION
         self.move_allowed[agent] = True
         self.move_home[agent] = False
         agent_movement = np.zeros(7)
         agent_done = False
+
+        has_object = False
+        object_pos = self.sim.data.get_site_xpos('object'+str(agent))
+        gripper_pos = self.sim.data.get_site_xpos('robot'+str(agent)+':grip')
+        gripper_closed = self.gripper_is_closed(str(agent), 0.04)
+        if goal_distance(object_pos, gripper_pos) < 0.02 and not gripper_closed:
+            has_object = True
+
 
         # increment timeout counter
         self.current_action_steps[agent] += 1  # increment the amount of
@@ -358,6 +375,9 @@ class ConceptEnv(gym.Env):
             agent_movement = self.policies[action][agent].select_action(state)
             d = np.linalg.norm(self.sim.data.get_site_xpos('robot' + str(agent) + ':grip') - (self.sim.data.get_site_xpos('box') + [0, 0, 0.05]), axis=-1)
             agent_done = (d < 0.05).astype(np.bool)
+            if has_object and Negative_termination_active:
+                agent_done = True  # Neg Termination
+
         elif action == self.actions_available["LIFT"]:
             state = self.get_concept_state(action, str(agent))
             agent_movement = self.policies[action][agent].select_action(state)
@@ -365,12 +385,18 @@ class ConceptEnv(gym.Env):
             object_height = self.sim.data.get_site_xpos('object' + str(agent))[2]
             if np.abs(object_height - table_height) >= 0.14:
                 agent_done = True
+            if not has_object and Negative_termination_active:
+                agent_done = True  # Neg Termination
+
         elif action == self.actions_available["ORIENT"]:
             state = self.get_concept_state(action, str(agent))
             agent_movement = self.policies[action][agent].select_action(state)
             d = np.linalg.norm(self.sim.data.get_site_xpos('robot' + str(agent) + ':grip') - self.sim.data.get_site_xpos('object' + str(agent)), axis=-1)
             if d < 0.015:
                 agent_done = True
+            if (d > 0.4 or gripper_closed) and Negative_termination_active:
+                agent_done = True  # Neg termination
+
         elif action == self.actions_available["CLOSE_GRIPPER"]:
             self.gripper_ctrl[agent] = 0.3
             if self.gripper_is_closed(str(agent), 0.04) or self.grasped_object(agent) > 2:
@@ -387,6 +413,8 @@ class ConceptEnv(gym.Env):
             agent_movement = np.concatenate((pos_crtl, rot_ctrl))
             if goal_distance(self.goal_place[int(agent)], self.sim.data.get_site_xpos('robot'+str(agent)+':grip')) < 0.05:
                 agent_done = True
+            if not has_object and Negative_termination_active:
+                agent_done = True  # Neg Termination
         elif action == self.actions_available["HOME"]:
             self.move_home[agent] = True
 
@@ -476,7 +504,6 @@ class ConceptEnv(gym.Env):
         grasp_ready = False
         has_object = False
         object_lifted = False
-
         pinch_point = self.sim.data.get_site_xpos('robot'+agent+':grip')
         opposite_pinch_point = []
         if agent == '0':

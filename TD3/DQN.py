@@ -210,6 +210,35 @@ def plot_learning_curve(x, scores, epsilons, filename, lines=None):
 
     plt.savefig(filename)
 
+def evaluation(env, agents, episodes):
+
+    scores_agent0, scores_agent1, eps_history, steps_array, success_agent0, success_agent1 = [], [], [], [], [], []
+    for episode in range(episodes):
+        done = False
+        observation = env.reset()
+        score = [0, 0]
+        success = [0, 0]
+        action = [5, 5]
+        while not done:
+            # Step in the environment
+            observation_, reward, done, info = env.step(action)
+            for agent in range(len(agents)):
+                # when the previous action is done, choose a new action
+                action[agent] = agents[agent].choose_action(observation[agent], False)
+                score[agent] += reward[agent]
+                success[agent] = int(env.task_success(str(agent)))
+            observation = observation_
+
+        # save the scores for each agent
+        scores_agent0.append(score[0])
+        scores_agent1.append(score[1])
+        success_agent0.append(success[0])
+        success_agent1.append(success[1])
+
+    agent0scores = [np.mean(scores_agent0), np.mean(success_agent0)]
+    agent1scores = [np.mean(scores_agent1), np.mean(success_agent1)]
+    return agent0scores, agent1scores
+
 import gym_mergablerobots
 
 
@@ -240,17 +269,24 @@ def eval(eval_agents, seed, env, eval_episodes=15):
     print("---------------------------------------")
     return avg_reward
 
+import time
 def main(args):
-
+    seconds_start = time.time()
     env = gym.make('Concept-v0')
     best_score = -np.inf
     load_checkpoint = False
-
+    agent0returns_history = []
+    agent0success_history = []
+    agent1returns_history = []
+    agent1success_history = []
+    time_elapsed_history = []
     # Get the adjustable parameters
     n_games = args.episodes
     save_freq = args.save_freq
+    eval_freq = args.eval_freq
     seed = args.seed
     learning_rate = args.lr
+    note = args.note
     load_checkpoint = args.load_model
     eval_model = args.eval_model
 
@@ -263,14 +299,14 @@ def main(args):
                      input_dims=(env.observation_space.shape[1],),
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.02,
                      batch_size=64, replace=1000, eps_dec=0.0001,
-                     chkpt_dir='models/', algo='DQNAgent0',
+                     chkpt_dir='models/', algo=note+'DQNAgent0',
                      env_name='Concept-v0')
 
     agent1 = DQNAgent(gamma=0.98, epsilon=1.0, lr=learning_rate,
                      input_dims=(env.observation_space.shape[1],),
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.02,
                      batch_size=64, replace=1000, eps_dec=0.0001,
-                     chkpt_dir='models/', algo='DQNAgent1',
+                     chkpt_dir='models/', algo=note+'DQNAgent1',
                      env_name='Concept-v0')
 
     agents = [agent0, agent1].copy()
@@ -286,6 +322,7 @@ def main(args):
     scores_agent0, scores_agent1, eps_history, steps_array = [], [], [], []
 
     print("STARTING TRAINING WITH LR: " + str(learning_rate))
+    print("note: " + note)
 
     for i in range(n_games):
         done = False
@@ -318,10 +355,23 @@ def main(args):
         if i % save_freq == 0:
             agents[0].save_models()
             agents[1].save_models()
-            np.save(f"./results/agent0_scores_lr={str(learning_rate)}_history", scores_agent0)
-            np.save(f"./results/agent1_scores_lr={str(learning_rate)}_history", scores_agent1)
-            test = eval(agents, seed, env)
+            np.save(f"./results/{note}_agent0_scores_lr={str(learning_rate)}_history", scores_agent0)
+            np.save(f"./results/{note}_agent1_scores_lr={str(learning_rate)}_history", scores_agent1)
 
+        if (i+1) % eval_freq == 0:
+            agent0score, agent1score = evaluation(env, agents, 15)  # scores given as (mean_episode_score, mean_success_rate)
+            agent0returns_history.append(agent0score[0])
+            agent0success_history.append(agent0score[1])
+            agent1returns_history.append(agent1score[0])
+            agent1success_history.append(agent1score[1])
+            seconds_end = time.time()
+            time_elapsed_history.append((seconds_end - seconds_start)/60)
+            np.save(f"./results/{note}_agent0_test_return", agent0returns_history)
+            np.save(f"./results/{note}_agent1_test_return", agent1returns_history)
+            np.save(f"./results/{note}_agent0_test_success", agent0success_history)
+            np.save(f"./results/{note}_agent1_test_success", agent1success_history)
+            np.save(f"./results/{note}_time_elapsed_history", agent1success_history)
+            print("eval_return: ", agent0score[0], " | eval_success: ", agent0score[1], " | minutes trained: ", (seconds_end - seconds_start)/60)
         eps_history.append(agent0.epsilon)
         if load_checkpoint and n_steps >= 18000:
             break
@@ -329,10 +379,12 @@ def main(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--note", default="sparse", type=str)
     parser.add_argument("--seed", default=1234, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--episodes", default=10000, type=int)  # Max time steps to run environment
     parser.add_argument("--lr", default=0.0005, type=float)
     parser.add_argument("--save_freq", default=50, type=int)
+    parser.add_argument("--eval_freq", default=50, type=int)
     parser.add_argument("--load_model", action="store_true")  # Load a existing model
     parser.add_argument("--eval_model", action="store_true")  #Evaluate a existing model
     parser.set_defaults(eval_model=False)       # change this to true for model evaluation
