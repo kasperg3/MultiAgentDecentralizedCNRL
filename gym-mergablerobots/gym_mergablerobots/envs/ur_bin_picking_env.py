@@ -555,18 +555,20 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             grip_test_pos = object_qpos[:3] + [0, 0, 0.1]
             self.sim.data.set_mocap_pos('robot0:mocap', grip_test_pos)  # this is test or perfect alignment
             self.sim.data.set_mocap_quat('robot0:mocap', quat_test_grip)
+
+            action = np.concatenate([[0, 0, 0], [0, 0, 0, 0], [0, 0]])
+            utils.ctrl_set_action(self.sim, action)
             for _ in range(10):
                 self.sim.data.set_joint_qpos('robot0:joint7_l', -0.0)
                 self.sim.data.set_joint_qpos('robot0:joint7_r', -0.0)
                 self.sim.forward()
-                # self.render()
                 self.sim.step()
+            utils.ctrl_set_action(self.sim, action)
             self.sim.data.set_mocap_pos('robot0:mocap', object_qpos[:3])
             for _ in range(10):
                 self.sim.data.set_joint_qpos('robot0:joint7_l', -0.0)
                 self.sim.data.set_joint_qpos('robot0:joint7_r', -0.0)
                 self.sim.forward()
-                # self.render()
                 self.sim.step()
 
             # Grasp and lift the gripper

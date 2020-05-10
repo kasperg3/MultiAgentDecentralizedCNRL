@@ -206,19 +206,19 @@ class ConceptEnv(gym.Env):
         theta = math.radians(35)
         place_goal_pos = self.goal_place[int(agent)]
 
-         # rewards
-        if grip_to_object_rel_distance < dist_success_threshold:  # Reach
-            reward = 1
-        if self.orientation_is_success(agent):                    # Orient
-            reward = 1.5
-        if self.gripper_is_closed(agent, 0.03) and grip_to_object_rel_distance < 0.010:     # Grasped
-            reward = 2.5
-        if is_lifted:                                             # Lift
-           reward = 4
-        if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
-           reward = 15  # 15 if not sparse
-        # if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
+        #  # rewards
+        # if grip_to_object_rel_distance < dist_success_threshold:  # Reach
         #     reward = 1
+        # if self.orientation_is_success(agent):                    # Orient
+        #     reward = 1.5
+        # if self.gripper_is_closed(agent, 0.03) and grip_to_object_rel_distance < 0.010:     # Grasped
+        #     reward = 2.5
+        # if is_lifted:                                             # Lift
+        #    reward = 4
+        # if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
+        #    reward = 15  # 15 if not sparse
+        if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
+            reward = 1
         return reward
 
     def _step_callback(self):
@@ -351,7 +351,7 @@ class ConceptEnv(gym.Env):
     def choose_action(self, action, agent):
         # get a movement from a policy dependent on the agent and the action chosen
         # Set agent_action_done to True if
-        Negative_termination_active = False   # SET TRUE TO ACTIVATE NEGATIVE TERMINATION
+        Negative_termination_active = True   # SET TRUE TO ACTIVATE NEGATIVE TERMINATION
         self.move_allowed[agent] = True
         self.move_home[agent] = False
         agent_movement = np.zeros(7)

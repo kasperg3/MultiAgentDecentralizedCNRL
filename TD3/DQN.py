@@ -212,8 +212,8 @@ def plot_learning_curve(x, scores, epsilons, filename, lines=None):
 
     plt.savefig(filename)
 
-def evaluation(env, agents, episodes, dual_agent, agent_id=0):
 
+def evaluation(env, agents, episodes, dual_agent, agent_id=0):
     scores_agent0, scores_agent1, eps_history, steps_array, success_agent0, success_agent1 = [], [], [], [], [], []
     for episode in range(episodes):
         done = False
@@ -363,19 +363,19 @@ def main(args):
             # Save models
 
             if dual_agent:
-                np.save(f"./results/{note}_agent0_test_return", agent0returns_history)
-                np.save(f"./results/{note}_agent1_test_return", agent1returns_history)
-                np.save(f"./results/{note}_agent0_test_success", agent0success_history)
-                np.save(f"./results/{note}_agent1_test_success", agent1success_history)
-                np.save(f"./results/{note}_time_elapsed_history", time_elapsed_history)
+                np.save(f"./results/{note}_agent0_test_return_lr={str(learning_rate)}", agent0returns_history)
+                np.save(f"./results/{note}_agent1_test_return_lr={str(learning_rate)}", agent1returns_history)
+                np.save(f"./results/{note}_agent0_test_success_lr={str(learning_rate)}", agent0success_history)
+                np.save(f"./results/{note}_agent1_test_success_lr={str(learning_rate)}", agent1success_history)
+                np.save(f"./results/{note}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
             elif agent_id == 1:
-                np.save(f"./results/{note}_agent1_test_return", agent1returns_history)
-                np.save(f"./results/{note}_agent1_test_success", agent1success_history)
-                np.save(f"./results/{note}_time_elapsed_history", time_elapsed_history)
+                np.save(f"./results/{note}_agent1_test_return_lr={str(learning_rate)}", agent1returns_history)
+                np.save(f"./results/{note}_agent1_test_success_lr={str(learning_rate)}", agent1success_history)
+                np.save(f"./results/{note}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
             elif agent_id == 0:
-                np.save(f"./results/{note}_agent0_test_return", agent0returns_history)
-                np.save(f"./results/{note}_agent0_test_success", agent0success_history)
-                np.save(f"./results/{note}_time_elapsed_history", time_elapsed_history)
+                np.save(f"./results/{note}_agent0_test_return_lr={str(learning_rate)}", agent0returns_history)
+                np.save(f"./results/{note}_agent0_test_success_lr={str(learning_rate)}", agent0success_history)
+                np.save(f"./results/{note}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
 
             print("AGENT0 | eval_return: ", agent0score[0], " | eval_success: ", agent0score[1], " | minutes trained: ", (seconds_end - seconds_start)/60)
             print("AGENT1 | eval_return: ", agent1score[0], " | eval_success: ", agent1score[1], " | minutes trained: ", (seconds_end - seconds_start)/60)
@@ -388,7 +388,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--note", default="sparse", type=str)
     parser.add_argument("--seed", default=1000, type=int)  # Sets Gym, PyTorch and Numpy seeds
-    parser.add_argument("--episodes", default=5000, type=int)  # Max time steps to run environment
+    parser.add_argument("--episodes", default=1500, type=int)  # Max time steps to run environment
     parser.add_argument("--lr", default=0.0005, type=float)
     parser.add_argument("--save_freq", default=50, type=int)
     parser.add_argument("--eval_freq", default=50, type=int)
