@@ -183,7 +183,7 @@ class ConceptEnv(gym.Env):
             }
             file_name = f"TD3_UrBinPicking{name}-v0_2345"
             self.policies[self.actions_available[action]] = [TD3(**kwargs), TD3(**kwargs)]
-            self.policies[self.actions_available[action]][0].load(f"./models/concepts_11_05/agent0/{file_name}")
+            self.policies[self.actions_available[action]][0].load(f"./models/concepts_12_05/agent0/{file_name}")
             self.policies[self.actions_available[action]][1].load(f"./models/concepts_08_05/agent1/{file_name}")
 
     @property

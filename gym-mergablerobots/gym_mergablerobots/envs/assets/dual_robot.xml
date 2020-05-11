@@ -35,7 +35,8 @@
 		<body pos="0.4 1.2 0.2" name="table0">
 			<geom size="0.4 1.2 0.2" type="box" name="table0" mass="2000" material="table_mat"/>
 		</body>
-        <body name="box" pos="0.50 1.025 0.4225">
+<!--        <body name="box" pos="0.50 1.025 0.4225">-->
+        <body name="box" pos="0.575 1.075 0.4225">
             <joint name="box:joint" type="free"/>
             <body name="box_bottom" pos="0 0 -0.025" euler="0 0 0">
                 <geom size="0.15 0.10 0.005" type="box" condim="3" name="box_bottom" material="block_mat" mass="5"/>

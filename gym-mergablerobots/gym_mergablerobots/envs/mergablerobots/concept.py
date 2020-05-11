@@ -9,12 +9,19 @@ MODEL_XML_PATH = ROOT_DIR[:-15] + '/assets/dual_robot.xml'
 class Concept(ConceptEnv, utils.EzPickle):
     def __init__(self):
         initial_qpos = {
-            'robot0:joint1': -0,
-            'robot0:joint2': -0.2,
-            'robot0:joint3': 2,
-            'robot0:joint4': 0.6,
-            'robot0:joint5': 1.6,
-            'robot0:joint6': 0,
+            # 'robot0:joint1': -0,
+            # 'robot0:joint2': -0.2,
+            # 'robot0:joint3': 2,
+            # 'robot0:joint4': 0.6,
+            # 'robot0:joint5': 1.6,
+            # 'robot0:joint6': 0,
+            # Fair position:
+            'robot0:joint1': 2.65,
+            'robot0:joint2': 0.5,
+            'robot0:joint3': -1.6,
+            'robot0:joint4': 0.28,
+            'robot0:joint5': -1.25,
+            'robot0:joint6': 0.3,
             'robot1:joint1': -1.3,
             'robot1:joint2': -0.2,
             'robot1:joint3': 2,

@@ -24,20 +24,22 @@ for test in range(1):
         #    env.render()
         env.step([5, 5])  # 5 = open gripper
         if test == 0 or test == 2:
-            env.step([6, 0])
-            env.step([6, 1])
-            env.step([6, 4])  # 4 = close gripper
-            env.step([6, 2])
-            env.step([6, 3])
-            env.step([6, 3])
+            env.step([5, 0])
+            env.step([5, 1])
+            env.step([5, 4])  # 4 = close gripper
+            env.step([5, 2])
+            env.step([5, 3])
+            env.step([5, 3])
+            env.step([5, 3])
             #env.step([6, 7])
         if test == 1 or test == 2:
-            env.step([0, 6])
-            env.step([1, 6])
-            env.step([4, 6])  # 4 = close gripper
-            env.step([2, 6])
-            env.step([3, 6])
-            env.step([3, 6])
+            env.step([0, 4])
+            env.step([1, 4])
+            env.step([4, 4])  # 4 = close gripper
+            env.step([2, 4])
+            env.step([3, 4])
+            env.step([3, 4])
+            env.step([3, 4])
             #env.step([7, 6])
         if test == 3:
             env.step([0, 5])

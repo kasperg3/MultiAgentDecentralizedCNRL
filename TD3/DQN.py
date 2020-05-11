@@ -389,7 +389,7 @@ if __name__ == '__main__':
     parser.add_argument("--note", default="sparse", type=str)
     parser.add_argument("--seed", default=1000, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--episodes", default=1500, type=int)  # Max time steps to run environment
-    parser.add_argument("--lr", default=0.0005, type=float)
+    parser.add_argument("--lr", default=0.00005, type=float)
     parser.add_argument("--save_freq", default=50, type=int)
     parser.add_argument("--eval_freq", default=50, type=int)
     parser.add_argument("--agent_id", default=0, type=int)
