@@ -5,23 +5,6 @@ import numpy as np
 env = gym.make('Concept-v0')
 env.reset()
 render = False
-# while True:
-#     env.render()
-#     env.step([5, 5])  # 5 = open gripper
-#     env.step([0, 6])
-#     env.step([1, 6])
-#     env.step([4, 6])  # 4 = close gripper
-#     env.step([2, 6])
-#     env.step([3, 6])
-#     env.step([3, 6])
-#     env.step([6, 0])
-#     env.step([6, 1])
-#     env.step([6, 4])  # close
-#     env.step([6, 2])
-#     env.step([6, 3])
-#     env.step([6, 3])
-#     env.reset()
-# env.close()
 
 #"REACH": 0,
 #"ORIENT": 1,
@@ -32,7 +15,8 @@ render = False
 #"NOOP": 6,
 #"HOME": 7,
 overall_success_array = np.array([[0,0,0], [0,0,0], [0,0,0], [0,0,0]])
-for test in range(4):
+for test in range(1):
+    test = 3
     success_array = np.array([0, 0, 0])
     reward_array = np.array([0, 0])
     for episode in range(1000):
@@ -56,19 +40,21 @@ for test in range(4):
             env.step([3, 6])
             #env.step([7, 6])
         if test == 3:
-            env.step([0, 6])
-            env.step([1, 6])
-            env.step([4, 6])  # 4 = close gripper
-            env.step([2, 6])
-            env.step([3, 6])
-            env.step([3, 6])
+            env.step([0, 5])
+            env.step([1, 5])
+            env.step([4, 5])  # 4 = close gripper
+            env.step([2, 5])
+            env.step([3, 5])
+            env.step([3, 5])
+            env.step([3, 5])
             #env.step([7, 6])
-            env.step([6, 0])
-            env.step([6, 1])
-            env.step([6, 4])  # 4 = close gripper
-            env.step([6, 2])
-            env.step([6, 3])
-            env.step([6, 3])
+            env.step([4, 0])
+            env.step([4, 1])
+            env.step([4, 4])  # 4 = close gripper
+            env.step([4, 2])
+            env.step([4, 3])
+            env.step([4, 3])
+            env.step([4, 3])
             #env.step([6, 7])
         episode_reward = 0
         episode_success_array = [0, 0, 0]
@@ -90,15 +76,3 @@ for test in range(4):
     print('success array', success_array)
 print('overall: ', overall_success_array)
 env.close()
-    # Evaluate episode
-
-#np.save(f"./results/{file_name}_test", evaluations)
-#np.save(f"./results/{file_name}_train", train_history)
-#np.save(f"./results/{file_name}_train_success", success_history)
-#print(f"success since last evaluation: {eval_success:.2f} best score: {best_eval_success}")
-#if eval_success >= best_eval_success:
-#    best_eval_success = eval_success
-#if args.save_model:
-#    policy.save(f"./models/{file_name}")
-#    print(".............Saving model..............")
-#    print("---------------------------------------")

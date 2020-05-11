@@ -150,7 +150,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # Calculate move box penalty
             dt = self.sim.nsubsteps * self.sim.model.opt.timestep
             box_velp = self.sim.data.get_site_xvelp('box') * dt
-            penalty_weight = 10
+            penalty_weight = 0
             velp_pen = -(np.linalg.norm(box_velp)*penalty_weight)
 
             if self._is_success(achieved_goal, goal):

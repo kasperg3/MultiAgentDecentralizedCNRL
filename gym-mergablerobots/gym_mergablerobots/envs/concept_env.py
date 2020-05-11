@@ -133,12 +133,11 @@ class ConceptEnv(gym.Env):
         self.n_actions = n_actions
         self.current_action = [6, 6]
         self.goal_visuliser_array = [('0', [0]), ('1', [0])]
-        self.goal = []
         self.gripper_ctrl = np.array((-0.3, -0.3))
         obs = self._get_obs('0')
         self.action_space = spaces.Discrete(n_actions)
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(n_agents, obs.shape[0]), dtype='float32')
-        self.goal_place = np.array([[0.63, 0.5, 0.65], [0.63, 1.525, 0.65]])
+        self.goal_place = np.array([[0.55, 0.5, 0.60], [0.63, 1.525, 0.65]])
 
         self.move_home = [False, False]
         # Multi-agent variables
@@ -184,7 +183,7 @@ class ConceptEnv(gym.Env):
             }
             file_name = f"TD3_UrBinPicking{name}-v0_2345"
             self.policies[self.actions_available[action]] = [TD3(**kwargs), TD3(**kwargs)]
-            self.policies[self.actions_available[action]][0].load(f"./models/concepts_08_05/agent0/{file_name}")
+            self.policies[self.actions_available[action]][0].load(f"./models/concepts_11_05/agent0/{file_name}")
             self.policies[self.actions_available[action]][1].load(f"./models/concepts_08_05/agent1/{file_name}")
 
     @property
@@ -338,7 +337,6 @@ class ConceptEnv(gym.Env):
             ])
 
         self.goal_visuliser_array[int(agent)] = [(concept, goal)]
-        self.goal = goal
         return np.concatenate((goal, obs))
 
     """
@@ -453,7 +451,7 @@ class ConceptEnv(gym.Env):
             self.sim.step()
             self._step_callback()
             done = False
-            self.render()
+            #self.render()
 
             # If any agents are done, then break the while
             observation_arr = np.empty(self.observation_space.shape)
