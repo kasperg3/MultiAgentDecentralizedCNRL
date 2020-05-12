@@ -248,7 +248,17 @@ def evaluation(env, agents, episodes, dual_agent, agent_id=0):
 
 def main(args):
     seconds_start = time.time()
-    env = gym.make('Concept-v0')
+    suffix = ''
+    if args.dual_robot:
+        suffix = 'dual'
+        if args.synchronous:
+            suffix += '-synchronous'
+        else:
+            suffix += '-asynchronous'
+
+    env_name = 'Concept-' + suffix + '-v0'
+
+    env = gym.make(env_name)
     best_score = -np.inf
     load_checkpoint = False
     agent0returns_history = []
@@ -298,9 +308,11 @@ def main(args):
 
     n_steps = 0
     scores_agent0, scores_agent1, eps_history, steps_array = [], [], [], []
-
-    print("STARTING TRAINING WITH LR: " + str(learning_rate))
+    print("_____________________________________________________")
+    print("Environment: " + env_name)
+    print("Learning rate: " + str(learning_rate))
     print("note: " + note)
+    print("_____________________________________________________")
 
     for i in range(n_games):
         done = False
@@ -318,6 +330,7 @@ def main(args):
                     # when the previous action is done, choose a new action
                     action[agent] = agents[agent].choose_action(observation[agent], not eval_model)
                     score[agent] += reward[agent]
+                    env.render()
             else:
                 agents[agent_id].store_transition(observation[agent_id], action[agent_id], reward[agent_id], observation_[agent_id], int(done))
                 agents[agent_id].learn()
@@ -337,18 +350,7 @@ def main(args):
                 ' | epsilon agent: [%.3f %.3f]' % (agents[0].epsilon, agents[1].epsilon),
                 ' | steps', n_steps)
 
-        if i % save_freq == 0:
-            # Only save the agent/agents which are being trained
-            if dual_agent:
-                agents[0].save_models()
-                agents[1].save_models()
-                np.save(f"./results/{note}_agent0_scores_lr={str(learning_rate)}_history", scores_agent0)
-                np.save(f"./results/{note}_agent1_scores_lr={str(learning_rate)}_history", scores_agent1)
-            else:
-                agents[agent_id].save_models()
-                np.save(f"./results/{note}_agent{agent_id}_scores_lr={str(learning_rate)}_history", scores_agent0)
-
-        if (i+1) % eval_freq == 0:
+        if (i+1) % save_freq == 0:
             # Save scores
             agent0score, agent1score = evaluation(env, agents, 40, dual_agent, agent_id)  # scores given as (mean_episode_score, mean_success_rate)
             agent0returns_history.append(agent0score[0])
@@ -360,22 +362,28 @@ def main(args):
             seconds_end = time.time()
             time_elapsed_history.append((seconds_end - seconds_start)/60)
 
-            # Save models
-
+            # Only save the agent/agents which are being trained
             if dual_agent:
+                agents[0].save_models()
+                agents[1].save_models()
+                np.save(f"./results/{note}_agent0_scores_lr={str(learning_rate)}_history", scores_agent0)
+                np.save(f"./results/{note}_agent1_scores_lr={str(learning_rate)}_history", scores_agent1)
                 np.save(f"./results/{note}_agent0_test_return_lr={str(learning_rate)}", agent0returns_history)
                 np.save(f"./results/{note}_agent1_test_return_lr={str(learning_rate)}", agent1returns_history)
                 np.save(f"./results/{note}_agent0_test_success_lr={str(learning_rate)}", agent0success_history)
                 np.save(f"./results/{note}_agent1_test_success_lr={str(learning_rate)}", agent1success_history)
                 np.save(f"./results/{note}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
-            elif agent_id == 1:
-                np.save(f"./results/{note}_agent1_test_return_lr={str(learning_rate)}", agent1returns_history)
-                np.save(f"./results/{note}_agent1_test_success_lr={str(learning_rate)}", agent1success_history)
-                np.save(f"./results/{note}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
-            elif agent_id == 0:
-                np.save(f"./results/{note}_agent0_test_return_lr={str(learning_rate)}", agent0returns_history)
-                np.save(f"./results/{note}_agent0_test_success_lr={str(learning_rate)}", agent0success_history)
-                np.save(f"./results/{note}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
+            else:
+                agents[agent_id].save_models()
+                np.save(f"./results/{note}_agent{agent_id}_scores_lr={str(learning_rate)}_history", scores_agent0)
+                if agent_id == 1:
+                    np.save(f"./results/{note}_agent1_test_return_lr={str(learning_rate)}", agent1returns_history)
+                    np.save(f"./results/{note}_agent1_test_success_lr={str(learning_rate)}", agent1success_history)
+                    np.save(f"./results/{note}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
+                elif agent_id == 0:
+                    np.save(f"./results/{note}_agent0_test_return_lr={str(learning_rate)}", agent0returns_history)
+                    np.save(f"./results/{note}_agent0_test_success_lr={str(learning_rate)}", agent0success_history)
+                    np.save(f"./results/{note}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
 
             print("AGENT0 | eval_return: ", agent0score[0], " | eval_success: ", agent0score[1], " | minutes trained: ", (seconds_end - seconds_start)/60)
             print("AGENT1 | eval_return: ", agent1score[0], " | eval_success: ", agent1score[1], " | minutes trained: ", (seconds_end - seconds_start)/60)
@@ -387,6 +395,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--note", default="sparse", type=str)
+    parser.add_argument("--synchronous", default=True, type=bool)
     parser.add_argument("--seed", default=1000, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--episodes", default=1500, type=int)  # Max time steps to run environment
     parser.add_argument("--lr", default=0.00005, type=float)
@@ -396,7 +405,7 @@ if __name__ == '__main__':
     parser.add_argument("--load_model", action="store_true")  # Load a existing model
     parser.add_argument("--eval_model", action="store_true")  #Evaluate a existing model
     parser.add_argument("--dual_robot", action="store_true")
-    #parser.set_defaults(eval_model=False)       # change this to true for model evaluation
-
+    # parser.set_defaults(eval_model=False)       # change this to true for model evaluation
+    parser.set_defaults(dual_robot=True)
     args = parser.parse_args()
     main(args)

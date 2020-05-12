@@ -96,8 +96,6 @@ class ConceptEnv(gym.Env):
 
         return contact_points
 
-    def _is_collision(self):
-        pass
 
     def __init__(self,
                  model_path,
@@ -130,6 +128,7 @@ class ConceptEnv(gym.Env):
         self.seed()
         self._env_setup(initial_qpos=initial_qpos)
         self.initial_state = copy.deepcopy(self.sim.get_state())
+        self.collision_bool = False
         self.n_actions = n_actions
         self.current_action = [6, 6]
         self.goal_visuliser_array = [('0', [0]), ('1', [0])]
@@ -137,7 +136,7 @@ class ConceptEnv(gym.Env):
         obs = self._get_obs('0')
         self.action_space = spaces.Discrete(n_actions)
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(n_agents, obs.shape[0]), dtype='float32')
-        self.goal_place = np.array([[0.55, 0.5, 0.60], [0.63, 1.525, 0.65]])
+        self.goal_place = np.array([[0.63, 0.6, 0.65], [0.63, 1.525, 0.65]])
 
         self.move_home = [False, False]
         # Multi-agent variables
@@ -190,6 +189,13 @@ class ConceptEnv(gym.Env):
     def dt(self):
         return self.sim.model.opt.timestep * self.sim.nsubsteps
 
+    def _is_collision(self):
+        for i in range(self.sim.data.ncon):
+            contact = self.sim.data.contact[i]
+            if str(self.sim.model.geom_id2name(contact.geom1)).__contains__('robot0') and str(self.sim.model.geom_id2name(contact.geom2)).__contains__('robot1'):
+                return True
+        return False
+
     def compute_agent_reward(self, agent):
         reward = 0
         lift_threshold = 0.10
@@ -218,6 +224,15 @@ class ConceptEnv(gym.Env):
         #    reward = 15  # 15 if not sparse
         if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
             reward = 1
+            # # If the agent has finished, check if the other agent has finished as well and give extra reward
+            # if agent == '1' and goal_distance(self.sim.data.get_site_xpos('object0'), self.goal_place[int('0')]) < dist_success_threshold_place:
+            #     reward = 4
+            # elif agent == '0' and goal_distance(self.sim.data.get_site_xpos('object1'), self.goal_place[int('1')]) < dist_success_threshold_place:
+            #     reward = 4
+        if self.collision_bool:
+            pass
+            #reward = -4
+
         return reward
 
     def _step_callback(self):
@@ -453,6 +468,10 @@ class ConceptEnv(gym.Env):
             done = False
             #self.render()
 
+            # Evaluate at each time step whether there is a collision
+            if self._is_collision():
+                self.collision_bool = True
+
             # If any agents are done, then break the while
             observation_arr = np.empty(self.observation_space.shape)
             reward_arr = np.empty((2,))
@@ -461,6 +480,7 @@ class ConceptEnv(gym.Env):
                     # Extract the observation and reward
                     observation_arr[agent] = self._get_obs(str(agent))
                     reward_arr[agent] = self.compute_agent_reward(str(agent))
+                self.collision_bool = False     # reset collision bool
                 return observation_arr, reward_arr, done, info
 
     def sample_action(self):
@@ -511,10 +531,15 @@ class ConceptEnv(gym.Env):
         object_lifted = False
         pinch_point = self.sim.data.get_site_xpos('robot'+agent+':grip')
         opposite_pinch_point = []
+        opposite_object = []
         if agent == '0':
             opposite_pinch_point = self.sim.data.get_site_xpos('robot1:grip')
+            opposite_object = self.sim.data.get_site_xpos('object1')
         if agent == '1':
             opposite_pinch_point = self.sim.data.get_site_xpos('robot0:grip')
+            opposite_object = self.sim.data.get_site_xpos('object0')
+
+        dist_pp0_to_pp1 = np.linalg.norm(self.sim.data.get_site_xpos('robot1:grip') - self.sim.data.get_site_xpos('robot0:grip'))
 
         object_position = self.sim.data.get_site_xpos('object' + agent)
         grip_to_object_rel_distance = goal_distance(pinch_point, object_position)
@@ -528,14 +553,17 @@ class ConceptEnv(gym.Env):
             object_lifted = True
 
         obs = np.concatenate([
-            pinch_point.ravel(),
-            object_position.ravel(),
-            grip_to_object_rel_distance.ravel(),
-            np.array([grasp_ready]),
-            np.array([has_object]),
-            np.array([object_lifted]),
-            np.array([gripper_open]), # Gripper open bool
-            opposite_pinch_point.ravel(),
+            pinch_point.ravel(),                    # Pinch point position
+            object_position.ravel(),                # Object position
+            grip_to_object_rel_distance.ravel(),    # relative dist to the gripper
+            np.array([grasp_ready]),                # Ready to close grippers bool
+            np.array([has_object]),                 # Has object bool
+            np.array([object_lifted]),              # Object lifted bool
+            np.array([gripper_open]),               # Gripper open bool
+            opposite_pinch_point.ravel(),           # The pinch point of the other robot
+            opposite_object.ravel(),                # The object of the other robots
+            [dist_pp0_to_pp1],                      # Distance from gripper0 to gripper1
+            [self.collision_bool],                 # Collision between the two robots
         ])
 
         return obs.copy()
