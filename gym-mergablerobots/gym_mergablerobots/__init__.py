@@ -10,13 +10,13 @@ register(
 register(
     id='Concept-dual-asynchronous-v0',
     entry_point='gym_mergablerobots.envs:Concept',
-    max_episode_steps=15,
+    max_episode_steps=20,
 )
 
 register(
     id='Concept-dual-synchronous-v0',
     entry_point='gym_mergablerobots.envs:Concept',
-    max_episode_steps=15,
+    max_episode_steps=20,
 )
 
 

@@ -196,6 +196,16 @@ class ConceptEnv(gym.Env):
                 return True
         return False
 
+    def is_agent_success(self, agent):
+        dist_success_threshold_place = 0.10
+        object_position = self.sim.data.get_site_xpos('object' + agent)
+        place_goal_pos = self.goal_place[int(agent)]
+        if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
+            return True
+        else:
+            return False
+
+
     def compute_agent_reward(self, agent):
         reward = 0
         lift_threshold = 0.10
@@ -224,14 +234,13 @@ class ConceptEnv(gym.Env):
         #    reward = 15  # 15 if not sparse
         if goal_distance(object_position, place_goal_pos) < dist_success_threshold_place:  # Place
             reward = 1
-            # # If the agent has finished, check if the other agent has finished as well and give extra reward
-            # if agent == '1' and goal_distance(self.sim.data.get_site_xpos('object0'), self.goal_place[int('0')]) < dist_success_threshold_place:
-            #     reward = 4
-            # elif agent == '0' and goal_distance(self.sim.data.get_site_xpos('object1'), self.goal_place[int('1')]) < dist_success_threshold_place:
-            #     reward = 4
+        #     # If the agent has finished, check if the other agent has finished as well and give extra reward
+        #     if agent == '1' and goal_distance(self.sim.data.get_site_xpos('object0'), self.goal_place[int('0')]) < dist_success_threshold_place:
+        #         reward = 4
+        #     elif agent == '0' and goal_distance(self.sim.data.get_site_xpos('object1'), self.goal_place[int('1')]) < dist_success_threshold_place:
+        #         reward = 4
         if self.collision_bool:
-            pass
-            #reward = -4
+            reward = -5
 
         return reward
 
@@ -452,7 +461,8 @@ class ConceptEnv(gym.Env):
         # Choose a new concept independently depending on the robot
         agent_movement = np.empty((2, 7))
         info = {"agent_done": [-1, -1]}
-
+        info["agent_success"] = [self.is_agent_success('0'), self.is_agent_success('1')]
+        info["collision"] = False
         while True:
             # Choose action
             for agent in range(self.n_agents):
@@ -471,11 +481,13 @@ class ConceptEnv(gym.Env):
             # Evaluate at each time step whether there is a collision
             if self._is_collision():
                 self.collision_bool = True
+                info["collision"] = True
+                done = True
 
             # If any agents are done, then break the while
             observation_arr = np.empty(self.observation_space.shape)
             reward_arr = np.empty((2,))
-            if info["agent_done"][0] == 1 and info["agent_done"][1] == 1:
+            if (info["agent_done"][0] == 1 and info["agent_done"][1] == 1) or done:
                 for agent in range(len((info["agent_done"]))):
                     # Extract the observation and reward
                     observation_arr[agent] = self._get_obs(str(agent))
