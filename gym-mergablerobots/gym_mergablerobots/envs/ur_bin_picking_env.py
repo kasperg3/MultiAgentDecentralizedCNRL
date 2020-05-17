@@ -370,6 +370,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             goal_rel_pos = self.goal[:3] - achieved_goal[:3]
             grip_q = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
             goal_q = self.goal[3:]
+            # Set the goal position over the other object
+            self.goal = self.sim.data.get_site_xpos('object0') + [0, 0, 0.030]
             obs = np.concatenate([
                 [self.gripper_open()],
                 grip_pos,
