@@ -58,7 +58,11 @@
 			<geom size="0.015 0.015 0.015" type="box" name="object0" material="block_mat" mass="2" condim="3" friction="1.2 0.05 0.01"/>
 			<site name="object0" pos="0 0 0" size="0.01 0.01 0.01" rgba="1 0 0 1" type="sphere"/>
 		</body>
-
+		<body name="object1" pos="0.50 1.65 0.45">
+			<joint name="object1:joint" type="free" frictionloss="0" damping="0"/>
+			<geom size="0.015 0.015 0.015" type="box" name="object1" material="block_mat" mass="2" condim="3" friction="1.2 0.05 0.01"/>
+			<site name="object1" pos="0 0 0" size="0.01 0.01 0.01" rgba="1 0 0 1" type="sphere"/>
+		</body>
 		<light directional="true" ambient="0.1 0.1 0.1" diffuse="0.8 0.8 0.8" specular="0.3 0.3 0.3" castshadow="false" pos="0 0 4" dir="0 0 -1" name="light0"/>
 	</worldbody>
 

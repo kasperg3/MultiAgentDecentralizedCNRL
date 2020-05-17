@@ -54,6 +54,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
         if self.reward_type == 'place':
             n_actions = 4
+        elif self.reward_type == 'composite_reward':
+            n_actions = 8
         else:
             n_actions = 7
 
@@ -63,6 +65,31 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
     # GoalEnv methods
     # ----------------------------
+
+    def is_grasped(self, b_z):
+        return (b_z > 0.025).astype(np.bool)
+
+
+    def is_stacked(self,  object0, object1):
+        # In the paper the threshold used for stacking is half the size of reaching, this will also be used here
+        # The paper distinguish between the orientation, but in out case we use a symmetric object
+        cube_threshold = [0.01, 0.01, 0.02]
+        if abs(object0[0] - object1[0]) < cube_threshold[0] and \
+           abs(object0[1] - object1[1]) < cube_threshold[1] and \
+           abs(object0[2] - object1[2]) < cube_threshold[2]:
+            return True
+        else:
+            return False
+
+
+    def is_reached(self, object, gripper):
+        cube_threshold = [0.01, 0.01, 0.01]
+        if abs(object[0] - gripper[0]) < cube_threshold[0] and \
+           abs(object[1] - gripper[1]) < cube_threshold[1] and \
+           abs(object[2] - gripper[2]) < cube_threshold[2]:
+            return True
+        else:
+            return False
 
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.
@@ -157,6 +184,36 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 reward = bonus
             else:
                 reward = r_theta * w_theta + position_score * w_d + velp_pen
+
+        elif self.reward_type == 'composite_reward':
+            # Set the goal to follow object0
+            self.goal = self.sim.data.get_site_xpos('object0') + [0, 0, 0.030]
+
+            # Calculate the different metrics
+            # b_z   : height of brick 1 above table
+            # s_B1  : XYZ pos of the site located in the center of brick1
+            # s_B2  : XYZ pos of the site located just over brick0
+            # s_P   : XYZ pos of the pinch site in the gripper, the position where the fingers meet
+            # w1    : weights used in the reaching reward function
+            # w2    : weights used in the stack reward function
+            s_B1 = self.sim.data.get_site_xpos('object1').copy()  # The object to grasp
+            s_B2 = self.goal  # The position where object1 will lay once stacked
+            b_z = s_B1[2] - 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
+            s_P = self.sim.data.get_site_xpos('robot0:grip').copy()
+
+            # if the blocks are stacked return the maximum reward
+            if self.is_stacked(s_B1, s_B2):
+                return 1
+            # If the blocks are not stacked but the block is grasped
+            elif not self.is_stacked(s_B1, s_B2) and self.is_grasped(b_z):
+                value = 1 - np.square(np.tanh(np.linalg.norm(s_B1 - s_B2)))
+                return 0.25 + 0.25 * value
+            # if the blocks are not stacked or grasped but is reached
+            elif not (self.is_stacked(s_B1, s_B2) or self.is_grasped(b_z)) and self.is_reached(s_B1, s_P):
+                return 0.125
+            else:  # otherwise
+                value = 1 - np.square(np.tanh(np.linalg.norm(s_B1 - s_P)))
+                return 0.125 * value
         return reward
 
     # RobotEnv methods
@@ -170,18 +227,25 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             self.sim.forward()
         self.episode_steps += 1
 
+    def gripper_open(self):
+        return np.bool(self.sim.data.ctrl[0] <= 0)
+
     def _set_action(self, action):
         # Change action space if number of is changed
         action = action.copy()  # ensure that we don't change the action outside of this scope
 
         if action.shape == (7,):
             pos_ctrl, rot_ctrl = action[:3], action[3:7]
+            gripper_ctrl = np.array([0, 0])
         elif action.shape == (4,):
             pos_ctrl, rot_ctrl = action[:3], action[3]
+            gripper_ctrl = np.array([0, 0])
+        elif action.shape == (8,):
+            pos_ctrl, rot_ctrl, g_ctrl = action[:3], action[3:7], action[7]
+            gripper_ctrl = np.array([g_ctrl, g_ctrl]) * 0.3 # Limit gripper ctrl to 0.3
         else:
             raise Exception('Invalid action space for ' + self.reward_type)
 
-        gripper_ctrl = np.array([0, 0])
         assert gripper_ctrl.shape == (2,)
         if self.reward_type == 'reach' or self.reward_type == 'orient':
             gripper_ctrl = np.zeros_like(gripper_ctrl)
@@ -299,6 +363,24 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 goal_rel_pos,
                 goal_rel_rot.ravel(),
             ])
+        elif self.reward_type == 'composite_reward':
+            # The relative position to the goal
+            # achieved_goal = np.concatenate((grip_pos, grip_rot))
+            achieved_goal = np.concatenate((object_pos, object_rot.ravel()))
+            goal_rel_pos = self.goal[:3] - achieved_goal[:3]
+            grip_q = rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))
+            goal_q = self.goal[3:]
+            obs = np.concatenate([
+                [self.gripper_open()],
+                grip_pos,
+                grip_rot,
+                object_pos,
+                object_rot.ravel(),
+                object_velp,
+                object_velr,
+                object_rel_pos,
+                goal_rel_pos,
+            ])
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift')
 
@@ -330,6 +412,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # Place also has a orientation as goal
             self.sim.model.site_pos[site_id] = self.goal[:3] - sites_offset[0]
             self.sim.model.site_quat[site_id] = self.goal[3:]
+        elif self.reward_type == 'composite_reward':
+            self.sim.model.site_pos[site_id] = self.goal[:3] - sites_offset[0]
         else:
             self.sim.model.site_pos[site_id] = self.goal - sites_offset[0]
         self.sim.forward()
@@ -585,9 +669,65 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             for _ in range(10):
                 self.sim.step()
             self.initial_goal_distance = goal_distance(overbox_pos, object_qpos[:3])
+        elif self.reward_type == 'composite_reward':
+            # Place the box far away from the workspace
+            box_xpos = self.initial_box_xpos[:2] + self.np_random.uniform(-self.box_range, self.box_range, size=2) + [1,2]
+            self.box_qpos = self.sim.data.get_joint_qpos('box:joint')
+            assert self.box_qpos.shape == (7,)
+            self.box_qpos[:2] = box_xpos
+            # Set box position
+            self.initial_box_xpos = self.box_qpos[:3]
+            self.sim.data.set_joint_qpos('box:joint', self.box_qpos)
+
+
+            object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-0.15, 0.15, size=2)
+            base_to_object_distance = np.linalg.norm(object_xpos[:2] - self.sim.data.get_site_xpos('robot0:base')[:2])
+
+            # Set object 0 initial position
+            object0_qpos = self.sim.data.get_joint_qpos('object0:joint')
+            object0_qpos[:2] = object_xpos
+
+            # Place object 1 within object range of object0
+            object1_qpos = self.sim.data.get_joint_qpos('object1:joint')
+            object1_xpos = object_xpos + self.np_random.uniform(-0.15, 0.15, size=2)
+
+            # place the objects at least 5 cm apart
+            while np.linalg.norm(object1_xpos - object_xpos) > 0.1:
+                object1_xpos = object_xpos + self.np_random.uniform(-0.15, 0.15, size=2)
+
+            object1_qpos[:2] = object1_xpos
+
+            # Set object positions
+            self.initial_object_xpos = object0_qpos[:3]
+            self.sim.data.set_joint_qpos('object0:joint', object0_qpos)
+            self.initial_object_xpos = object1_qpos[:3]
+            self.sim.data.set_joint_qpos('object1:joint', object1_qpos)
+
+            # open the grippers
+            action = np.concatenate([[0, 0, 0], [0, 0, 0, 0], [-1, -1]])
+            utils.ctrl_set_action(self.sim, action)
+            utils.mocap_set_action(self.sim, action)
+
+            # Place the end effector at the object every other episode
+            if bool(np.random.binomial(0.5, 1)):
+                initial_grip = np.add(self.initial_object_xpos, [0, 0, 0.043])
+                self.sim.data.set_mocap_quat('robot0:mocap', [0, 0, 1, 0])
+                self.sim.data.set_mocap_pos('robot0:mocap', initial_grip)
+                for _ in range(20):
+                    self.sim.step()
+                self.sim.data.set_mocap_quat('robot0:mocap', [0, 0, 1, 0])
+                self.sim.data.set_mocap_pos('robot0:mocap', np.subtract(initial_grip, [0, 0, 0.035]))
+                for _ in range(20):
+                    self.sim.step()
+                # Grasp
+                action = np.concatenate([[0, 0, 0], [0, 0, 0, 0], [0.3, 0.3]])
+                # Apply action to simulation.
+                utils.ctrl_set_action(self.sim, action)
+                for _ in range(20):
+                    self.sim.forward()
 
         else:
-            raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
+            raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place, composite_reward')
         self.sim.forward()
         return True
 
@@ -646,6 +786,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # TODO: Test if this works properly
             #goal = np.concatenate((goal_pos, rotations.euler2quat(object_rot_euler)))
 
+        elif self.reward_type == 'composite_reward':
+            goal = self.sim.data.get_site_xpos('object0') + [0, 0, 0.030] # Set the goal position over the other object
         else:
             raise Exception('Invalid reward type:' + self.reward_type + ' \n use either: reach, orient, lift, place')
         return goal.ravel().copy()
@@ -703,6 +845,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
             if goal_distance(self.sim.data.get_site_xpos('object0'), desired_goal[:3]) < self.success_threshold and (theta_x < math.radians(10) or theta_y > math.radians(10)):
                 result = True
+        elif self.reward_type == 'composite_reward':
+            if goal_distance(self.goal, desired_goal[:3]) < 0.01:
+                result = True
         return result
 
     def _is_failed(self):
@@ -735,6 +880,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # If the object is further than 5cm of the gripper
             if np.linalg.norm(self.sim.data.get_site_xpos('object0') - self.sim.data.get_site_xpos('robot0:grip'), axis=-1) > 0.05:
                 result = True
+        elif self.reward_type == 'composite_reward':
+            result = False
         return result
 
     def _is_collision(self):
