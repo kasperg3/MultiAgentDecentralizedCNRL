@@ -12,8 +12,8 @@ class UrBinPicking(UrBinPickingEnv, utils.EzPickle):
             'robot0:joint1': 2.65,
             'robot0:joint2': 0.5,
             'robot0:joint3': -1.6,
-            'robot0:joint4': 0.28,
-            'robot0:joint5': -1.25,
+            'robot0:joint4': -0.5,
+            'robot0:joint5': -1.55,
             'robot0:joint6': 0.3,
         }
         UrBinPickingEnv.__init__(
