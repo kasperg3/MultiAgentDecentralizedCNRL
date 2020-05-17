@@ -848,7 +848,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             if goal_distance(self.sim.data.get_site_xpos('object0'), desired_goal[:3]) < self.success_threshold and (theta_x < math.radians(10) or theta_y > math.radians(10)):
                 result = True
         elif self.reward_type == 'composite_reward':
-            if goal_distance(self.goal, desired_goal[:3]) < 0.01:
+            if goal_distance(achieved_goal[:3], desired_goal[:3]) < 0.01:
                 result = True
         return result
 
