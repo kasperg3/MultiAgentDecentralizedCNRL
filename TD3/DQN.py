@@ -79,10 +79,11 @@ class DeepQNetwork(nn.Module):
 class DQNAgent(object):
     def __init__(self, gamma, epsilon, lr, n_actions, input_dims,
                  mem_size, batch_size, eps_min=0.01, eps_dec=5e-7,
-                 replace=1000, algo=None, env_name=None, chkpt_dir='tmp/dqn'):
+                 replace=1000, algo=None, env_name=None, hysteresis=False, chkpt_dir='tmp/dqn'):
         self.gamma = gamma
         self.epsilon = epsilon
         self.lr = lr
+        self.hysteresis = hysteresis
         self.n_actions = n_actions
         self.input_dims = input_dims
         self.batch_size = batch_size
@@ -170,6 +171,18 @@ class DQNAgent(object):
         q_next[dones] = 0.0
         q_target = rewards + self.gamma*q_next
 
+        # Hysteresis
+        if self.hysteresis:
+            # Estimate the delta value of the batch
+            delta = q_target - q_pred
+            if delta.mean() >= 0:
+                # Change the learning rate to alpha = default lr
+                self.q_eval.optimizer.param_groups[0]['lr'] = self.lr
+            else:
+                # Change the learning rate to beta = alpha*0.1
+                self.q_eval.optimizer.param_groups[0]['lr'] = self.lr*0.1
+
+        # Compute the loss and back propagate
         loss = self.q_eval.loss(q_target, q_pred).to(self.q_eval.device)
         loss.backward()
         self.q_eval.optimizer.step()
@@ -412,6 +425,7 @@ if __name__ == '__main__':
     parser.add_argument("--save_freq", default=50, type=int)
     parser.add_argument("--eval_freq", default=50, type=int)
     parser.add_argument("--agent_id", default=0, type=int)
+    parser.add_argument("--hysteresis", default=False, type=bool)
     parser.add_argument("--load_model", action="store_true")  # Load a existing model
     parser.add_argument("--eval_model", action="store_true")  #Evaluate a existing model
     parser.add_argument("--dual_robot", action="store_true")
