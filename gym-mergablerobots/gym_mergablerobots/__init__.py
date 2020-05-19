@@ -21,7 +21,7 @@ register(
 
 
 
-for reward_type in ['sparse', 'dense', 'place', 'orient', 'lift', 'reach', 'composite_reward']:
+for reward_type in ['sparse', 'dense', 'place', 'orient', 'lift', 'reach', 'composite']:
     suffix = 'Dense' if reward_type == 'dense' else ''
     episode_steps = 70  # The default episode step
     if reward_type == 'place':
@@ -36,9 +36,9 @@ for reward_type in ['sparse', 'dense', 'place', 'orient', 'lift', 'reach', 'comp
     elif reward_type == 'reach':
         episode_steps = 70
         suffix = 'Reach'
-    elif reward_type == 'composite_reward':
+    elif reward_type == 'composite':
         episode_steps = 200
-        suffix = 'CompositeReward'
+        suffix = 'Composite'
     elif reward_type == 'dense':
         episode_steps = 70
     elif reward_type == 'sparse':
