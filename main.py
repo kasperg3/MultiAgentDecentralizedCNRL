@@ -45,15 +45,18 @@ def main(args):
 
 
     success_counter = 0
-    for _ in range(1000):
+    episodes_to_test = 1000
+    for count in range(episodes_to_test):
         state, done, is_success = env.reset(), False, False
         while not done and not is_success:
             action = policy.select_action(np.array(state))
             state, reward, done, info = env.step(action)
             is_success = info['is_success']
-            env.render()
+            if args.render:
+                env.render()
             success_counter += int(is_success)
-    print(success_counter)
+        print("Success:" + str(success_counter) + "/" + str(count), end='\r')
+    print("Success:" + str(success_counter) + "/" + str(episodes_to_test))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

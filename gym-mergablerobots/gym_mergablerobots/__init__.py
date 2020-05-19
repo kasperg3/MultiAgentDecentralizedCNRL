@@ -37,7 +37,7 @@ for reward_type in ['sparse', 'dense', 'place', 'orient', 'lift', 'reach', 'comp
         episode_steps = 70
         suffix = 'Reach'
     elif reward_type == 'composite':
-        episode_steps = 200
+        episode_steps = 150
         suffix = 'Composite'
     elif reward_type == 'dense':
         episode_steps = 70
