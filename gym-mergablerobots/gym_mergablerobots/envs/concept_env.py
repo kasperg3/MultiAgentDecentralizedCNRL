@@ -240,7 +240,7 @@ class ConceptEnv(gym.Env):
         #     elif agent == '0' and goal_distance(self.sim.data.get_site_xpos('object1'), self.goal_place[int('1')]) < dist_success_threshold_place:
         #         reward = 4
         if self.collision_bool:
-            reward = -5
+            reward = 0          # default is no reward
 
         return reward
 
@@ -461,7 +461,6 @@ class ConceptEnv(gym.Env):
         # Choose a new concept independently depending on the robot
         agent_movement = np.empty((2, 7))
         info = {"agent_done": [-1, -1]}
-        info["agent_success"] = [self.is_agent_success('0'), self.is_agent_success('1')]
         info["collision"] = False
         while True:
             # Choose action
@@ -492,6 +491,7 @@ class ConceptEnv(gym.Env):
                     # Extract the observation and reward
                     observation_arr[agent] = self._get_obs(str(agent))
                     reward_arr[agent] = self.compute_agent_reward(str(agent))
+                info["agent_success"] = [self.is_agent_success('0'), self.is_agent_success('1')]
                 self.collision_bool = False     # reset collision bool
                 return observation_arr, reward_arr, done, info
 

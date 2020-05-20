@@ -79,10 +79,11 @@ class DeepQNetwork(nn.Module):
 class DQNAgent(object):
     def __init__(self, gamma, epsilon, lr, n_actions, input_dims,
                  mem_size, batch_size, eps_min=0.01, eps_dec=5e-7,
-                 replace=1000, algo=None, env_name=None, hysteresis=False, chkpt_dir='tmp/dqn'):
+                 replace=1000, algo=None, env_name=None, hysteresis=False, chkpt_dir='tmp/dqn', beta_scale=0.1):
         self.gamma = gamma
         self.epsilon = epsilon
         self.lr = lr
+        self.beta_scale = beta_scale
         self.hysteresis = hysteresis
         self.n_actions = n_actions
         self.input_dims = input_dims
@@ -180,7 +181,8 @@ class DQNAgent(object):
                 self.q_eval.optimizer.param_groups[0]['lr'] = self.lr
             else:
                 # Change the learning rate to beta = alpha*0.1
-                self.q_eval.optimizer.param_groups[0]['lr'] = self.lr*0.1
+                self.q_eval.optimizer.param_groups[0]['lr'] = self.lr * self.beta_scale
+
 
         # Compute the loss and back propagate
         loss = self.q_eval.loss(q_target, q_pred).to(self.q_eval.device)
@@ -237,14 +239,17 @@ def evaluation(env, agents, episodes, dual_agent, agent_id=0):
         action = [5, 5]
         info = {}
         collision_in_episode = False
+        agent_success = [False, False]
         while not done:
             # Step in the environment
             observation_, reward, done, info = env.step(action)
             if dual_agent:
                 for agent in range(2):
-                    action[agent] = agents[agent].choose_action(observation[agent], False)
-                    score[agent] += reward[agent]
-                    success[agent] = int(env.task_success(str(agent)))
+                    if not agent_success[agent]:
+                        action[agent] = agents[agent].choose_action(observation[agent], False)
+                        score[agent] += reward[agent]
+                        success[agent] = int(env.task_success(str(agent)))
+                        agent_success[agent] = info["agent_success"][agent]
             else:
                 action[agent_id] = agents[agent_id].choose_action(observation[agent_id], False)
                 score[agent_id] += reward[agent_id]
@@ -272,11 +277,11 @@ def main(args):
     if args.dual_robot:
         suffix = 'dual'
         if args.synchronous:
-            suffix += '-synchronous'
+            suffix += '-synchronous-'
         else:
-            suffix += '-asynchronous'
+            suffix += '-asynchronous-'
 
-    env_name = 'Concept-' + suffix + '-v0'
+    env_name = 'Concept-' + suffix + 'v0'
 
     env = gym.make(env_name)
     best_score = -np.inf
@@ -293,10 +298,11 @@ def main(args):
     eval_freq = args.eval_freq
     seed = args.seed
     learning_rate = args.lr
+    beta_scale = args.beta_scale
     reward_type = args.reward_type
     load_checkpoint = args.load_model
     eval_model = args.eval_model
-
+    hysteresis = args.hysteresis
     dual_agent = args.dual_robot
     agent_id = args.agent_id
     # Set seeds
@@ -309,14 +315,14 @@ def main(args):
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.02,
                      batch_size=64, replace=1000, eps_dec=0.0001,
                      chkpt_dir='models/', algo=reward_type+'DQNAgent0',
-                     env_name='Concept-v0')
+                     env_name='Concept-v0', hysteresis=hysteresis, beta_scale=beta_scale)
 
     agent1 = DQNAgent(gamma=0.98, epsilon=1.0, lr=learning_rate,
                      input_dims=(env.observation_space.shape[1],),
                      n_actions=env.action_space.n, mem_size=50000, eps_min=0.02,
                      batch_size=64, replace=1000, eps_dec=0.0001,
                      chkpt_dir='models/', algo=reward_type+'DQNAgent1',
-                     env_name='Concept-v0')
+                     env_name='Concept-v0', hysteresis=hysteresis, beta_scale=beta_scale)
 
     agents = [agent0, agent1].copy()
 
@@ -333,6 +339,8 @@ def main(args):
     print("Environment: " + env_name)
     print("Learning rate: " + str(learning_rate))
     print("reward_type: " + reward_type)
+    if reward_type == "hysteretic-beta":
+        print("beta_scale: " + str(beta_scale))
     print("_____________________________________________________")
 
     for i in range(n_games):
@@ -340,24 +348,30 @@ def main(args):
         observation = env.reset()
         score = [0, 0]
         action = [5, 5]
+        agent_success = [False, False]
         while not done:
             # Step in the environment
             observation_, reward, done, info = env.step(action)
             if dual_agent:
                 for agent in range(len(agents)):
-                    # if the action is done, add the transition to the replay buffer and learn
-                    agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
-                    agents[agent].learn()
-                    # when the previous action is done, choose a new action
-                    action[agent] = agents[agent].choose_action(observation[agent], not eval_model)
-                    score[agent] += reward[agent]
-
-                    #env.render()
+                    # if the action is done, add the transition to the replay buffer and
+                    if not agent_success[agent]:
+                        agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
+                        agents[agent].learn()
+                        # when the previous action is done, choose a new action
+                        action[agent] = agents[agent].choose_action(observation[agent], not eval_model)
+                        score[agent] += reward[agent]
+                        agent_success[agent] = info["agent_success"][agent]
+                    else:
+                        agents[agent].store_transition(observation[agent], action[agent], reward[agent], observation_[agent], int(done))
+                        agents[agent].learn()
             else:
+                #if not agent_success[agent_id]:
                 agents[agent_id].store_transition(observation[agent_id], action[agent_id], reward[agent_id], observation_[agent_id], int(done))
                 agents[agent_id].learn()
                 action[agent_id] = agents[agent_id].choose_action(observation[agent_id], not eval_model)
                 score[agent_id] += reward[agent_id]
+                agent_success[agent_id] = info["agent_success"][agent_id]
 
             observation = observation_
             n_steps += 1
@@ -425,7 +439,8 @@ if __name__ == '__main__':
     parser.add_argument("--save_freq", default=50, type=int)
     parser.add_argument("--eval_freq", default=50, type=int)
     parser.add_argument("--agent_id", default=0, type=int)
-    parser.add_argument("--hysteresis", default=False, type=bool)
+    parser.add_argument("--hysteresis", default=True, type=bool)
+    parser.add_argument("--beta_scale", default=0.1, type=float)
     parser.add_argument("--load_model", action="store_true")  # Load a existing model
     parser.add_argument("--eval_model", action="store_true")  #Evaluate a existing model
     parser.add_argument("--dual_robot", action="store_true")
