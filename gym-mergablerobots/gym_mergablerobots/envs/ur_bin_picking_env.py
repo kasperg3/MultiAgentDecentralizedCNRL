@@ -197,7 +197,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             # w1    : weights used in the reaching reward function
             # w2    : weights used in the stack reward function
             s_B1 = self.sim.data.get_site_xpos('object1').copy()  # The object to grasp
-            s_B2 = self.goal  # The position where object1 will lay once stacked
+            s_B2 = self.goal.copy()  # The position where object1 will lay once stacked
             b_z = s_B1[2] - 0.414  # 0.4 is the height of the table(0.014 extra for inaccuracies in the sim)
             s_P = self.sim.data.get_site_xpos('robot0:grip').copy()
 
@@ -206,14 +206,16 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 return 1
             # If the blocks are not stacked but the block is grasped
             elif not self.is_stacked(s_B1, s_B2) and self.is_grasped(b_z):
-                value = 1 - np.square(np.tanh(3*np.linalg.norm(s_B1 - s_B2)))
+                value = 1 - np.square(np.tanh(15*np.linalg.norm(s_B1 - s_B2)))
                 return 0.25 + 0.25 * value
             # if the blocks are not stacked or grasped but is reached
             elif not (self.is_stacked(s_B1, s_B2) or self.is_grasped(b_z)) and self.is_reached(s_B1, s_P):
                 return 0.125
-            else:  # otherwise
-                value = 1 - np.square(np.tanh(3*np.linalg.norm(s_B1 - s_P)))
+            elif self.gripper_open():  # otherwise
+                value = 1 - np.square(np.tanh(15*np.linalg.norm(s_B1 - s_P)))
                 return 0.125 * value
+            else:
+                return 0
         return reward
 
     # RobotEnv methods
@@ -710,7 +712,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             utils.mocap_set_action(self.sim, action)
 
             # Place the end effector at the object every other episode
-            if bool(np.random.binomial(0.5, 1)):
+            if bool(np.random.binomial(1, 0.5)):
                 initial_grip = np.add(self.initial_object_xpos, [0, 0, 0.043])
                 self.sim.data.set_mocap_quat('robot0:mocap', [0, 0, 1, 0])
                 self.sim.data.set_mocap_pos('robot0:mocap', initial_grip)
