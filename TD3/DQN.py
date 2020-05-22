@@ -296,7 +296,6 @@ def main(args):
     collision_history = []
     time_elapsed_history = []
     # Get the adjustable parameters
-    n_games = args.episodes
     save_freq = args.save_freq
     eval_freq = args.eval_freq
     seed = args.seed
@@ -333,7 +332,7 @@ def main(args):
         for agent in agents:
             agent.load_models()
 
-    fname = agent0.algo + '_' + agent0.env_name + '_lr' + str(agent0.lr) +'_' + str(n_games) + 'games'
+    fname = agent0.algo + '_' + agent0.env_name + '_lr' + str(agent0.lr) +'_' + str(args.max_samples) + 'samples'
     figure_file = 'plots/' + fname + '.png'
 
     n_steps = 0
@@ -346,7 +345,7 @@ def main(args):
         print("beta_scale: " + str(beta_scale))
     print("_____________________________________________________")
 
-    for i in range(n_games):
+    while n_steps < args.max_samples:
         done = False
         observation = env.reset()
         score = [0, 0]
@@ -384,12 +383,11 @@ def main(args):
         scores_agent1.append(score[1])
         steps_array.append(n_steps)
 
-        print(  'episode: ', i,
+        print(  'sample: ', n_steps,
                 ' | score: [%.2f %.2f]' % (score[0], score[1]),
-                ' | epsilon agent: [%.3f %.3f]' % (agents[0].epsilon, agents[1].epsilon),
-                ' | steps', n_steps)
+                ' | epsilon agent: [%.3f %.3f]' % (agents[0].epsilon, agents[1].epsilon))
 
-        if (i+1) % save_freq == 0:
+        if (n_steps+1) % save_freq == 0:
             # Save scores
             agent0score, agent1score, collision_rate = evaluation(env, agents, 40, dual_agent, agent_id)  # scores given as (mean_episode_score, mean_success_rate)
             agent0returns_history.append(agent0score[0])
@@ -434,13 +432,13 @@ def main(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--reward_type", default="neg_term", type=str) # valid rewards: competitive, cooperative, passive_dominant
+    parser.add_argument("--reward_type", default="test", type=str) # valid rewards: competitive, cooperative, passive_dominant
     parser.add_argument("--synchronous", default=True, type=bool)
     parser.add_argument("--seed", default=1000, type=int)  # Sets Gym, PyTorch and Numpy seeds
-    parser.add_argument("--episodes", default=10000, type=int)  # Max time steps to run environment
+    parser.add_argument("--max_samples", default=1000000, type=int)  # Max time steps to run environment
     parser.add_argument("--lr", default=0.00005, type=float)
-    parser.add_argument("--save_freq", default=50, type=int)
-    parser.add_argument("--eval_freq", default=50, type=int)
+    parser.add_argument("--save_freq", default=500, type=int)
+    parser.add_argument("--eval_freq", default=500, type=int)
     parser.add_argument("--agent_id", default=0, type=int)
     parser.add_argument("--hysteresis", default=True, type=bool)
     parser.add_argument("--beta_scale", default=0.1, type=float)
