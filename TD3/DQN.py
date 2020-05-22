@@ -121,8 +121,8 @@ class DQNAgent(object):
                 action = np.random.choice(self.action_space)
         else:
             # No random action, choose the policy action
-            state = T.tensor([observation], dtype=T.float).to(self.q_eval.device)
-            actions = self.q_eval.forward(state)
+            state = T.tensor([observation], dtype=T.float).to(self.q_next.device)
+            actions = self.q_next.forward(state)
             action = T.argmax(actions).item()
         return action
 
@@ -141,8 +141,11 @@ class DQNAgent(object):
         return states, actions, rewards, states_, dones
 
     def replace_target_network(self):
-        if self.learn_step_counter % self.replace_target_cnt == 0:
-            self.q_next.load_state_dict(self.q_eval.state_dict())
+        # if self.learn_step_counter % self.replace_target_cnt == 0:
+        #     self.q_next.load_state_dict(self.q_eval.state_dict())
+
+        for param, target_param in zip(self.q_eval.parameters(), self.q_next.parameters()):
+            target_param.data.copy_(0.01 * param.data + (1 - 0.01) * target_param.data)
 
     def decrement_epsilon(self):
         self.epsilon = self.epsilon - self.eps_dec if self.epsilon > self.eps_min else self.eps_min
@@ -434,7 +437,7 @@ if __name__ == '__main__':
     parser.add_argument("--reward_type", default="neg_term", type=str) # valid rewards: competitive, cooperative, passive_dominant
     parser.add_argument("--synchronous", default=True, type=bool)
     parser.add_argument("--seed", default=1000, type=int)  # Sets Gym, PyTorch and Numpy seeds
-    parser.add_argument("--episodes", default=5000, type=int)  # Max time steps to run environment
+    parser.add_argument("--episodes", default=10000, type=int)  # Max time steps to run environment
     parser.add_argument("--lr", default=0.00005, type=float)
     parser.add_argument("--save_freq", default=50, type=int)
     parser.add_argument("--eval_freq", default=50, type=int)
