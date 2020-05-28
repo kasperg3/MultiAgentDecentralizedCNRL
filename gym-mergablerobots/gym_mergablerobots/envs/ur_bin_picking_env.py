@@ -255,10 +255,18 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             gripper_ctrl = np.ones_like(gripper_ctrl)*0.3
         elif self.reward_type == 'place':
             gripper_ctrl = np.ones_like(gripper_ctrl) * 0.3
-            rot_ctrl = (rotations.euler2quat([0, np.pi, rot_ctrl * 2 * np.pi]) * rotations.quat_conjugate(rotations.mat2quat(self.sim.data.get_site_xmat('robot0:grip'))))*2
+            rot_ctrl = rotations.quat_mul(rotations.quat_conjugate(self.sim.data.mocap_quat[0]), rotations.euler2quat([0, 0, rot_ctrl * 2 * np.pi]))
 
         pos_ctrl *= 0.05  # limit maximum change in position
         rot_ctrl *= 0.01
+
+        # # SLERP
+        # q2 = rot_ctrl
+        # q1 = self.sim.data.mocap_quat[0]
+        # t = 0.01
+        # theta = np.arccos((rot_ctrl*self.sim.data.mocap_quat[0])/(np.linalg.norm(q1) * np.linalg.norm(q2)))
+        # q_t = (np.sin((1-t)*theta))/np.sin(theta) * q1 + (np.sin(t*theta)/np.sin(theta)) * q2
+
         action = np.concatenate([pos_ctrl, rot_ctrl, gripper_ctrl])
 
         # Apply action to simulation.
