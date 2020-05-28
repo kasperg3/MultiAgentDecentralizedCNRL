@@ -299,9 +299,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 grip_rot,
                 grip_velp,
                 grip_velr,
-                box_pos.ravel(),
+            #   box_pos.ravel(),
                 box_rel_pos.ravel(),
-                box_rot.ravel(),
+            #   box_rot.ravel(),
                 goal_rel_pos,
             ])
         elif self.reward_type == 'orient':
@@ -314,9 +314,9 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 grip_rot,
                 grip_velp,
                 grip_velr,
-                object_pos.ravel(),
-                object_rel_pos.ravel(),
-                object_rot.ravel(),
+                #object_pos.ravel(),
+                #object_rel_pos.ravel(),
+                #object_rot.ravel(),
                 box_pos.ravel(),
                 box_rel_pos.ravel(),
                 box_rot.ravel(),
@@ -332,14 +332,14 @@ class UrBinPickingEnv(robot_env.RobotEnv):
 
             obs = np.concatenate([
                 grip_pos,
-                grip_rot,
+                #grip_rot,
                 grip_velp,
                 grip_velr,
                 object_pos.ravel(),
                 object_rel_pos.ravel(),
-                box_pos.ravel(),
+                #box_pos.ravel(),
                 box_rel_pos.ravel(),
-                box_rot.ravel(),
+                #box_rot.ravel(),
                 goal_rel_height,
             ])
         elif self.reward_type == 'place':
@@ -353,14 +353,14 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             goal_rel_rot = np.array(2 * np.arccos(np.abs(np.inner(grip_q, rotations.quat_conjugate(goal_q)))))
 
             obs = np.concatenate([
-                grip_pos,
-                grip_rot,
+                #grip_pos,
+                #grip_rot,
                 object_pos,
                 object_rot.ravel(),
                 object_velp,
                 object_velr,
-                object_rel_pos,
-                box_pos.ravel(),
+                #object_rel_pos,
+                #box_pos.ravel(),
                 box_rel_pos.ravel(),
                 goal_rel_pos,
                 goal_rel_rot.ravel(),
