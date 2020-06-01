@@ -475,7 +475,7 @@ class ConceptEnv(gym.Env):
             self.sim.step()
             self._step_callback()
             done = False
-            #self.render()
+            self.render()
 
             # Evaluate at each time step whether there is a collision
             if self._is_collision():

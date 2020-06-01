@@ -67,7 +67,7 @@ if __name__ == "__main__":
     parser.add_argument("--episodes", default=100, type=int)
     parser.add_argument("--reward_type", default='reach')
     parser.add_argument("--render", action="store_true")  # Render the Training
-    parser.set_defaults(render=False)
+    parser.set_defaults(render=True)
     argus = parser.parse_args()
 
     main(argus)

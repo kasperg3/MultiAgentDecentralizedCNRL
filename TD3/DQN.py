@@ -336,6 +336,7 @@ def main(args):
     figure_file = 'plots/' + fname + '.png'
 
     n_steps = 0
+    step_counter = 0
     scores_agent0, scores_agent1, eps_history, steps_array = [], [], [], []
     print("_____________________________________________________")
     print("Environment: " + env_name)
@@ -377,6 +378,7 @@ def main(args):
 
             observation = observation_
             n_steps += 1
+            step_counter +=1
 
         # save the scores for each agent
         scores_agent0.append(score[0])
@@ -387,9 +389,10 @@ def main(args):
                 ' | score: [%.2f %.2f]' % (score[0], score[1]),
                 ' | epsilon agent: [%.3f %.3f]' % (agents[0].epsilon, agents[1].epsilon))
 
-        if (n_steps+1) % save_freq == 0:
+        if step_counter > save_freq:
+            step_counter = 0
             # Save scores
-            agent0score, agent1score, collision_rate = evaluation(env, agents, 40, dual_agent, agent_id)  # scores given as (mean_episode_score, mean_success_rate)
+            agent0score, agent1score, collision_rate = evaluation(env, agents, 1000, dual_agent, agent_id)  # scores given as (mean_episode_score, mean_success_rate)
             agent0returns_history.append(agent0score[0])
             agent0success_history.append(agent0score[1])
             agent1returns_history.append(agent1score[0])
@@ -400,28 +403,30 @@ def main(args):
             time_elapsed_history.append((seconds_end - seconds_start)/60)
 
             # Only save the agent/agents which are being trained
-            if dual_agent:
-                agents[0].save_models()
-                agents[1].save_models()
-                np.save(f"./results/{reward_type}_agent0_scores_lr={str(learning_rate)}_history", scores_agent0)
-                np.save(f"./results/{reward_type}_agent1_scores_lr={str(learning_rate)}_history", scores_agent1)
-                np.save(f"./results/{reward_type}_agent0_test_return_lr={str(learning_rate)}", agent0returns_history)
-                np.save(f"./results/{reward_type}_agent1_test_return_lr={str(learning_rate)}", agent1returns_history)
-                np.save(f"./results/{reward_type}_agent0_test_success_lr={str(learning_rate)}", agent0success_history)
-                np.save(f"./results/{reward_type}_agent1_test_success_lr={str(learning_rate)}", agent1success_history)
-                np.save(f"./results/{reward_type}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
-                np.save(f"./results/{reward_type}_collision_history_lr={str(learning_rate)}", collision_history)
-            else:
-                agents[agent_id].save_models()
-                np.save(f"./results/{reward_type}_agent{agent_id}_scores_lr={str(learning_rate)}_history", scores_agent0)
-                if agent_id == 1:
+            # mean_score = np.mean([agent0success_history[-1], agent1success_history[-1]], axis=0)
+            if not eval_model:
+                if dual_agent:
+                    agents[0].save_models()
+                    agents[1].save_models()
+                    np.save(f"./results/{reward_type}_agent0_scores_lr={str(learning_rate)}_history", scores_agent0)
+                    np.save(f"./results/{reward_type}_agent1_scores_lr={str(learning_rate)}_history", scores_agent1)
+                    np.save(f"./results/{reward_type}_agent0_test_return_lr={str(learning_rate)}", agent0returns_history)
                     np.save(f"./results/{reward_type}_agent1_test_return_lr={str(learning_rate)}", agent1returns_history)
+                    np.save(f"./results/{reward_type}_agent0_test_success_lr={str(learning_rate)}", agent0success_history)
                     np.save(f"./results/{reward_type}_agent1_test_success_lr={str(learning_rate)}", agent1success_history)
                     np.save(f"./results/{reward_type}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
-                elif agent_id == 0:
-                    np.save(f"./results/{reward_type}_agent0_test_return_lr={str(learning_rate)}", agent0returns_history)
-                    np.save(f"./results/{reward_type}_agent0_test_success_lr={str(learning_rate)}", agent0success_history)
-                    np.save(f"./results/{reward_type}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
+                    np.save(f"./results/{reward_type}_collision_history_lr={str(learning_rate)}", collision_history)
+                else:
+                    agents[agent_id].save_models()
+                    np.save(f"./results/{reward_type}_agent{agent_id}_scores_lr={str(learning_rate)}_history", scores_agent0)
+                    if agent_id == 1:
+                        np.save(f"./results/{reward_type}_agent1_test_return_lr={str(learning_rate)}", agent1returns_history)
+                        np.save(f"./results/{reward_type}_agent1_test_success_lr={str(learning_rate)}", agent1success_history)
+                        np.save(f"./results/{reward_type}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
+                    elif agent_id == 0:
+                        np.save(f"./results/{reward_type}_agent0_test_return_lr={str(learning_rate)}", agent0returns_history)
+                        np.save(f"./results/{reward_type}_agent0_test_success_lr={str(learning_rate)}", agent0success_history)
+                        np.save(f"./results/{reward_type}_time_elapsed_history_lr={str(learning_rate)}", time_elapsed_history)
 
             print("AGENT0 | eval_return: ", agent0score[0], " | eval_success: ", agent0score[1], " | minutes trained: ", (seconds_end - seconds_start)/60)
             print("AGENT1 | eval_return: ", agent1score[0], " | eval_success: ", agent1score[1], " | minutes trained: ", (seconds_end - seconds_start)/60)
@@ -432,20 +437,20 @@ def main(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--reward_type", default="test", type=str) # valid rewards: competitive, cooperative, passive_dominant
+    parser.add_argument("--reward_type", default="vanilla", type=str) # valid rewards: competitive, cooperative, passive_dominant
     parser.add_argument("--synchronous", default=True, type=bool)
     parser.add_argument("--seed", default=1000, type=int)  # Sets Gym, PyTorch and Numpy seeds
-    parser.add_argument("--max_samples", default=1000000, type=int)  # Max time steps to run environment
-    parser.add_argument("--lr", default=0.00005, type=float)
-    parser.add_argument("--save_freq", default=500, type=int)
-    parser.add_argument("--eval_freq", default=500, type=int)
+    parser.add_argument("--max_samples", default=150000, type=int)  # Max time steps to run environment
+    parser.add_argument("--lr", default=0.0001, type=float)
+    parser.add_argument("--save_freq", default=1000, type=int)
+    parser.add_argument("--eval_freq", default=1000, type=int)
     parser.add_argument("--agent_id", default=0, type=int)
-    parser.add_argument("--hysteresis", default=True, type=bool)
-    parser.add_argument("--beta_scale", default=0.1, type=float)
+    parser.add_argument("--hysteresis", default=False, type=bool)
+    parser.add_argument("--beta_scale", default=0.75, type=float)
     parser.add_argument("--load_model", action="store_true")  # Load a existing model
     parser.add_argument("--eval_model", action="store_true")  #Evaluate a existing model
     parser.add_argument("--dual_robot", action="store_true")
-    parser.set_defaults(eval_model=False)       # change this to true for model evaluation
+    parser.set_defaults(eval_model=True)       # change this to true for model evaluation
     parser.set_defaults(dual_robot=True)
     args = parser.parse_args()
     main(args)

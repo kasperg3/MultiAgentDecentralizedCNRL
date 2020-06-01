@@ -43,6 +43,7 @@ def eval_policy(policy, reward_type, env_name, seed, eval_episodes=15):
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
+	parser.add_argument("--note", default="_2")
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
 	parser.add_argument("--env", default="UrBinPickingReach-v0")  	# OpenAI gym environment name
 	parser.add_argument("--reward", default="reach")      			# reward type
@@ -53,7 +54,7 @@ if __name__ == "__main__":
 	parser.add_argument("--expl_noise", default=0.1)                # Std of Gaussian exploration noise
 	parser.add_argument("--batch_size", default=256, type=int)      # Batch size for both actor and critic
 	parser.add_argument("--discount", default=0.99)                 # Discount factor
-	parser.add_argument("--tau", default=0.0001, type=float)                     # Target network update rate
+	parser.add_argument("--tau", default=0.0001, type=float)        # Target network update rate
 	parser.add_argument("--policy_noise", default=0.2)              # Noise added to target policy during critic update
 	parser.add_argument("--noise_clip", default=0.5)                # Range to clip target policy noise
 	parser.add_argument("--policy_freq", default=2, type=int)       # Frequency of delayed policy updates
@@ -64,7 +65,7 @@ if __name__ == "__main__":
 	parser.set_defaults(render=False)
 	parser.set_defaults(save_model=True)
 	args = parser.parse_args()
-
+	note = args.note
 	file_name = f"{args.policy}_{args.env}_{args.seed}"
 	print("---------------------------------------")
 	print(f"Policy: {args.policy}, Env: {args.env}, Seed: {args.seed}")
@@ -198,14 +199,14 @@ if __name__ == "__main__":
 			eval_success = success_since_last_eval / (episode_num - last_eval_episode)
 			success_history.append(eval_success)
 			evaluations.append(eval_policy(policy, args.reward, args.env, args.seed))
-			np.save(f"./results/{file_name}_test", evaluations)
-			np.save(f"./results/{file_name}_train", train_history)
-			np.save(f"./results/{file_name}_train_success", success_history)
+			np.save(f"./results/{file_name}_test_{note}", evaluations)
+			np.save(f"./results/{file_name}_train_{note}", train_history)
+			np.save(f"./results/{file_name}_train_success_{note}", success_history)
 			print(f"success since last evaluation: {eval_success:.2f} best score: {best_eval_success}")
 			if eval_success >= best_eval_success:
 				best_eval_success = eval_success
 			if args.save_model:
-				policy.save(f"./models/{file_name}")
+				policy.save(f"./models/{file_name}_{note}")
 				print(".............Saving model..............")
 				print("---------------------------------------")
 
