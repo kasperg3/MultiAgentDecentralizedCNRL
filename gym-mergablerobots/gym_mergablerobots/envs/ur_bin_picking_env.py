@@ -51,7 +51,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         self.box_range = box_range
         self.success_threshold = success_threshold
         self.lift_threshold = lift_threshold
-
+        self.counter = 0
+        self.all_evals = []
         if self.reward_type == 'place':
             n_actions = 4
         elif self.reward_type == 'composite':
@@ -272,6 +273,40 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         # Apply action to simulation.
         utils.ctrl_set_action(self.sim, action)
         utils.mocap_set_action(self.sim, action)
+
+# SLERP TEST
+# pos_ctrl *= 0.0  # limit maximum change in position
+# rot_ctrl *= 0.03
+#
+# self.counter += 1
+# if self.counter > 2000:
+#     ranges = [0.001, 0.005, 0.01, 0.05, 0.1]
+#     diff_evaluations = []
+#     for steps in range(ranges.__len__()):
+#         step_size = ranges[steps]
+#         action_sampled = self.action_space.sample()[3:7]
+#         # SLERP
+#         q2 = action_sampled
+#         q1 = self.sim.data.mocap_quat[0]
+#
+#         t = step_size
+#         dot_product = np.sum(action_sampled * self.sim.data.mocap_quat[0])
+#         if dot_product < 0:
+#             q1 = q1 * -1
+#             dot_product = np.sum(action_sampled * self.sim.data.mocap_quat[0])
+#         theta = np.arccos(dot_product / (np.linalg.norm(q1) * np.linalg.norm(q2)))
+#         q_t = (np.sin((1 - t) * theta)) / np.sin(theta) * q1 + (np.sin(t * theta) / np.sin(theta)) * q2
+#
+#         lin_q = q1 + q2 * step_size
+#         sphe_q = q_t
+#
+#         diff = rotations.quat2euler(rotations.quat_mul(rotations.quat_conjugate(sphe_q), lin_q))
+#         diff_evaluations.append(diff)
+#     self.all_evals.append(diff_evaluations)
+#     if self.counter > 12000:
+#         np.save(f"./interpolation_test", self.all_evals)
+#         import sys
+#         sys.exit('Exit this bitch')
 
     def _get_obs(self):
         # positions
