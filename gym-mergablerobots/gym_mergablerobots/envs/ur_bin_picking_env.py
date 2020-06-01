@@ -337,7 +337,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             goal_rel_height = self.goal - object_height
             # Override achieved_goal to fit with the one dimentional goal of lift(the height of the object)
             achieved_goal = object_height
-
+            dist_vec = np.abs(self.sim.data.get_site_xpos('object0')[:2] - self.initial_object_pos[:2])
+            radial_dist = [np.sqrt(np.square(dist_vec[0]) + np.square(dist_vec[1]))]
             obs = np.concatenate([
                 grip_pos,
                 grip_rot,
@@ -349,6 +350,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
                 box_rel_pos.ravel(),
                 box_rot.ravel(),
                 goal_rel_height,
+                self.initial_object_pos[:2],
+                radial_dist,
             ])
         elif self.reward_type == 'place':
             # The relative position to the goal
@@ -417,7 +420,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         site_id = self.sim.model.site_name2id('target0')
         if self.reward_type == 'lift':
             # Lift only has a height goal, so we set the visualization target to the box xy pos and the goal height
-            visualized_goal = self.sim.data.get_site_xpos('box').copy()
+            visualized_goal = self.initial_object_pos.copy()
             visualized_goal[2] = self.goal
             self.sim.model.site_pos[site_id] = visualized_goal - sites_offset[0]
         elif self.reward_type == 'place':
@@ -595,6 +598,8 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             grip_test_pos = object_qpos[:3] + [0, 0, 0.1]
             self.sim.data.set_mocap_pos('robot0:mocap', grip_test_pos)   #this is test or perfect alignment
             self.sim.data.set_mocap_quat('robot0:mocap', quat_test_grip)
+            action = np.concatenate([[0, 0, 0], [0, 0, 0, 0], [0, 0]])
+            utils.ctrl_set_action(self.sim, action)
             for _ in range(10):
                 self.sim.data.set_joint_qpos('robot0:joint7_l', -0.0)
                 self.sim.data.set_joint_qpos('robot0:joint7_r', -0.0)
@@ -769,34 +774,6 @@ class UrBinPickingEnv(robot_env.RobotEnv):
             goal_quat = [np.cos(theta / 2), 0, 0, np.sin(theta / 2)]
             goal = np.concatenate((goal_pos, goal_quat))
 
-            # # goal zone size 10x10cm
-            # goal_offset = self.sample_point(0.02, 0.02, 0.02)
-            # goal_height = 0.43
-            # grip_pos = self.sim.data.get_site_xpos('robot0:grip')
-            # object_pos = self.sim.data.get_site_xpos('object0')
-            # goal_pos = np.array(object_pos) + goal_offset  # A goal just beside the robot
-            # grip_rot = self.sim.data.get_site_xmat('robot0:grip')
-            # object_rot = self.sim.data.get_site_xmat('object0')
-            # grip_rot_euler = rotations.mat2euler(grip_rot)
-            # object_rot_euler = rotations.mat2euler(object_rot)
-            # object_rot_euler[2] = float(self.np_random.uniform(-np.pi, np.pi))
-
-            #Sample a random rotation
-            # rot_grip = Rotation.random().as_matrix()
-            # rot_box = self.sim.data.get_site_xmat('box')
-            # rot_gb = np.matmul(rot_grip.transpose(), rot_box)
-            # p_box = np.array([0, 0, -1])
-            # p_g = np.matmul(rot_gb, p_box)
-            # alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
-            #
-            # while math.degrees(alpha_z) > 15:
-            #     rot_grip = Rotation.random().as_matrix()
-            #     rot_gb = np.matmul(rot_grip.transpose(), rot_box)
-            #     p_g = np.matmul(rot_gb, p_box)
-            #     alpha_z = np.arccos(p_g[2] / np.sqrt(p_g[0] ** 2 + p_g[1] ** 2 + p_g[2] ** 2))
-            # TODO: Test if this works properly
-            #goal = np.concatenate((goal_pos, rotations.euler2quat(object_rot_euler)))
-
         elif self.reward_type == 'composite':
             goal = self.sim.data.get_site_xpos('object0') + [0, 0, 0.030] # Set the goal position over the other object
         else:
@@ -921,6 +898,7 @@ class UrBinPickingEnv(robot_env.RobotEnv):
         # Extract information for sampling goals.
         self.initial_gripper_xpos = self.sim.data.get_site_xpos('robot0:grip').copy()
         self.initial_box_xpos = self.sim.data.get_site_xpos('box').copy()
+        self.initial_object_pos = self.sim.data.get_joint_qpos('object0:joint').copy()
 
     def render(self, mode='human', width=500, height=500):
         return super(UrBinPickingEnv, self).render(mode)

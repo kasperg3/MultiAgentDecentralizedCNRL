@@ -31,7 +31,7 @@
 		</body>
         <!-- <site name="place_goal" pos="0.63 0.5 0.53" size="0.1 0.1 0.1" rgba="0 0 1 0.3" type="box"/>
         <site name="box_area" pos="0.50 1.10 0.399" size="0.299 0.25 0.01" rgba="1 0 0 0.3" type="box"/> -->
-        <body name="box" pos="0.575 1.075 0.4225">
+        <body name="box" pos="0.475 1.075 0.4225">
             <joint name="box:joint" type="free"/>
             <body name="box_bottom" pos="0 0 -0.025" euler="0 0 0">
                 <geom size="0.15 0.10 0.005" type="box" condim="3" name="box_bottom" material="block_mat" mass="5"/>
