@@ -1,4 +1,5 @@
-# MergableIndustrialRobots
+# Multi-Agent Decentralised Coordination using CNRL for Industrial Applications
+
 
 Proof of concept video:
 https://www.youtube.com/watch?v=NQcIwR0BVVg&ab_channel=KasperGr%C3%B8ntved
